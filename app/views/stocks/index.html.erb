@@ -4,7 +4,7 @@
 
   <tr>
     <td colspan=10 align=center>
-        <%= form_tag("/stocks/#{@area}", method: "get") do %>
+        <%= form_tag("/#{@area}", method: "get") do %>
           <%= label_tag(:stock, "Stocks/#{@area.upcase}=") %>
           <%= text_field_tag(:stock) %>
           <%= submit_tag("Stave") %>
