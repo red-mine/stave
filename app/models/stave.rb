@@ -1,0 +1,2 @@
+class Stave < ApplicationRecord
+end

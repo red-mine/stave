@@ -1,0 +1,53 @@
+<h1><%= @stock.upcase %></h1>
+
+<% if !@stave_lohas.nil? %>
+
+<h2>Stave Lohas</h2>
+
+<%= line_chart @stave_lohas.map {
+  |stave| {
+    name: stave[:name], 
+    data: stave[:data]
+  }
+} %>
+
+<% end %>
+
+<% if !@stave_years.nil? %>
+
+<h2>Stave Years</h2>
+
+<%= line_chart @stave_years.map {
+  |stave| {
+    name: stave[:name], 
+    data: stave[:data]
+  }
+} %>
+
+<% end %>
+
+<% if !@bolls_lohas.nil? %>
+
+<h2>Bolls Lohas</h2>
+
+<%= line_chart @bolls_lohas.map {
+  |bolls| {
+    name: bolls[:name], 
+    data: bolls[:data]
+  }
+} %>
+
+<% end %>
+
+<% if !@bolls_years.nil? %>
+
+<h2>Bolls Years</h2>
+
+<%= line_chart @bolls_years.map {
+  |bolls| {
+    name: bolls[:name], 
+    data: bolls[:data]
+  }
+} %>
+
+<% end %>

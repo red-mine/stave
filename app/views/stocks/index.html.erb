@@ -1,0 +1,59 @@
+<h1 align=center>Stock Stave</h1>
+
+<table align=center border=1 cellspacing=0>
+
+  <tr>
+    <td colspan=10 align=center>
+        <%= form_tag("/stocks/#{@area}", method: "get") do %>
+          <%= label_tag(:stock, "Stocks/#{@area.upcase}=") %>
+          <%= text_field_tag(:stock) %>
+          <%= submit_tag("Stave") %>
+        <% end %>
+    </td>
+  </tr>
+
+  <tr>
+    <th>Stock/<%= @area.upcase %></th>
+    <th>Loh</th>
+    <th>One</th>
+    <th>Price</th>
+    <th>b1</th>
+    <th>s1</th>
+    <th>b3</th>
+    <th>s3</th>
+    <th>Year</th>
+    <th>Loha</th>
+  </tr>
+
+  <% @stocks_stavs.each do |stock| %>
+  <tr>
+    <td>
+      <a href="/stocks/<%= stock.stock %>">
+        <%= stock.stock.upcase %>
+      </a>
+    </td>
+    <td>
+      <%= stock.loha.round(2) %>
+    </td>
+    <td>
+      <%= stock.year.round(2) %>
+    </td>
+    <td><%= stock.price %></td>
+    <td align=right><%= stock.boll1 %></td>
+    <td align=right><%= stock.stav1 %></td>
+    <td align=right><%= stock.boll3 %></td>
+    <td align=right><%= stock.stav3 %></td>
+    <td><%= stock.years %></td>
+    <td>
+      <a href="/assets/stave/stave.png">
+        <%= stock.lohas %>
+      </a>
+    </td>
+  </tr>
+  <% end %>
+
+</table>
+
+<h4 align=center><%= @stavs_date %></h4>
+<h3 align=center><a href="/sz">SZ</a></h3>
+<h3 align=center><a href="/sh">SH</a></h3>
