@@ -46,6 +46,12 @@ gem "progress"
 
 gem "os"
 
+gem "ruby-openai"
+
+gem "sprockets-rails"
+
+gem "nokogiri"
+
 # gem "stave", path: "stave"
 
 # gem "ruby-debug-ide"

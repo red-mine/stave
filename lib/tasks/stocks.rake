@@ -31,3 +31,11 @@ task :stock => :environment do
   puts "stock"
   puts "#{Stock::VERSION}"
 end
+
+desc "openai"
+task :openai => :environment do
+  OpenAI.configure do |config|
+    config.access_token = ENV.fetch('OPENAI_ACCESS_TOKEN')
+  end
+  client = OpenAI::Client.new
+end
