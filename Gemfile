@@ -48,7 +48,7 @@ gem "os"
 
 gem "ruby-openai"
 
-gem "sprockets-rails"
+#gem "sprockets-rails"
 
 gem "nokogiri"
 
