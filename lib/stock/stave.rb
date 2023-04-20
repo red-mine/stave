@@ -84,7 +84,7 @@ module Stock
       stocks_stavs  = if !good_stock.nil? and !good_stock.empty?
         staves_area.where(staves_arel[:stock].matches_any(["%" + good_stock + "%"]))
       else
-        staves_area
+        staves_area.where(staves_arel[:lohas].not_eq(""))
       end
       stocks_stavs  = stocks_stavs.order(staves_arel[:price])
       stavs_date    = stocks_stavs.pluck(staves_arel[:date])[-1]
