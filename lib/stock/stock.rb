@@ -93,15 +93,15 @@ module Stock
       good_data       = good_trend(good_stock)
       good_sqrt       = _good_sqrt(good_stock)
       if good_stave
-        good_data.map! { |good_date, good_price| 
+        good_data.map! { |good_date, good_price|
           good_price  = good_price + good_sqrt * good_multi
-          good_stave_ = [good_date, good_price.round(2)] 
+          good_stave_ = [good_date, good_price.round(2)]
           good_stave_
         }
       else
         good_data.map! { |good_date, good_price|
           good_price  = good_price - good_sqrt * good_multi
-          good_stave_ = [good_date, good_price.round(2)] 
+          good_stave_ = [good_date, good_price.round(2)]
           good_stave_
         }
       end
@@ -182,8 +182,8 @@ module Stock
     end
 
     def _good_move(good_price, good_days)
-      good_move   = good_price.each_cons(good_days).map { 
-        |good_aver| good_aver.reduce(&:+).fdiv(good_days).round(2) 
+      good_move   = good_price.each_cons(good_days).map {
+        |good_aver| good_aver.reduce(&:+).fdiv(good_days).round(2)
       }
       good_move
     end
@@ -219,7 +219,7 @@ module Stock
       end
       good_sqrt
     end
-    
+
     def _good_days(good_stock, good_days)
       good_data   = _good_data(good_stock)
       good_start  = STAVE - good_days
@@ -247,13 +247,13 @@ module Stock
       good_price  = good_price.to_i(16).to_f / STAVE
       good_stock  = {
         date:       good_date.to_date,
-        price:      good_price, 
+        price:      good_price,
         index:      good_index
       }
       good_stock
     end
 
-    def _good_data(good_stock) 
+    def _good_data(good_stock)
       good_file     = _good_file(good_stock)
       return [] if good_file.nil?
       good_file.pos = good_file.size - 1 * 32
@@ -283,11 +283,11 @@ module Stock
       return {} if  good_coef < 1.0 / STAVE
       good_inter  = good_model.coefficients[:_intercept]
       good_last   = good_data[-1][:price]
-      good_model  = { 
-        stock:      good_stock, 
+      good_model  = {
+        stock:      good_stock,
         area:       @good_area,
-        coef:       good_coef, 
-        inter:      good_inter, 
+        coef:       good_coef,
+        inter:      good_inter,
         price:      good_last,
         date:       good_date
       }
@@ -354,6 +354,9 @@ module Stock
 
     def _good_base
       good_base   = "C:/new_tdx/vipdoc/" + @good_area + "/lday/"
+      if RUBY_PLATFORM == "x86_64-linux-gnu"
+        good_base   = "vipdoc/" + @good_area + "/lday/"
+      end
       good_base
     end
 

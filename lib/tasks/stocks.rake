@@ -30,6 +30,7 @@ desc "stock"
 task :stock => :environment do
   puts "stock"
   puts "#{Stock::VERSION}"
+  puts "#{RUBY_PLATFORM}"
 end
 
 desc "openai"
