@@ -1,6 +1,6 @@
-module Stock  
+module Stock
   class Stave
-    
+
     def initialize(good_area, good_years)
       @good_area    = good_area
       @good_years   = good_years
@@ -92,12 +92,12 @@ module Stock
     end
 
     private
-  
+
     def _engin(area, years)
       engine  = Stock.new(area, years)
       engine
     end
-  
+
     def _week(stave)
       week    = []
       stave.each do |_stave|
@@ -109,7 +109,7 @@ module Stock
       end
       week
     end
-  
+
     def _month(stave)
       month   = []
       stave.each do |_stave|
@@ -121,7 +121,7 @@ module Stock
       end
       month
     end
-  
+
     def _quarter(stave)
       quarter = []
       stave.each do |_stave|
@@ -132,7 +132,7 @@ module Stock
       end
       quarter
     end
-  
+
     def _smooth(stave)
       smooth  = []
       _date   = nil
@@ -158,7 +158,7 @@ module Stock
       end
       smooth
     end
-  
+
     def _better(stave, years)
       smooth = _smooth(stave)
       better = if years == LOHAS
@@ -168,7 +168,7 @@ module Stock
       end
       better
     end
-  
+
     def _price(stocks, years, stock)
       start         = STAVE - SMUTH
       length        = years + 1
@@ -184,12 +184,12 @@ module Stock
         .pluck(arel[:date], arel[:price])
       stave
     end
-  
+
     def _stave_file(stock, years)
       engine      = _engin(@good_area, years)
       stave_price, stave_trend, stave_up1, stave_dn1, stave_top, stave_bot = _stave(engine, years, stock)
       stave_file  = [
-        { name: "P", data: stave_price }, 
+        { name: "P", data: stave_price },
         { name: "T", data: stave_trend },
         { name: "U", data: stave_up1   },
         { name: "D", data: stave_dn1   },
@@ -203,7 +203,7 @@ module Stock
       engine      = _engin(@good_area, years)
       bolls_price, bolls_bolls, bolls_mup, bolls_mdn = _bolls(engine, years, stock)
       bolls_file  = [
-        { name: "P", data: bolls_price }, 
+        { name: "P", data: bolls_price },
         { name: "B", data: bolls_bolls },
         { name: "U", data: bolls_mup   },
         { name: "D", data: bolls_mdn   }
@@ -220,7 +220,7 @@ module Stock
       stave_bot   = _filter(table,  "bot",    stock )
 
       stave_data = [
-        { name: "P", data: stave_price }, 
+        { name: "P", data: stave_price },
         { name: "T", data: stave_trend },
         { name: "U", data: stave_up1   },
         { name: "D", data: stave_dn1   },
@@ -238,7 +238,7 @@ module Stock
       bolls_mdn   = _filter(table,  "mdn",    stock )
 
       bolls_data = [
-        { name: "P", data: bolls_price }, 
+        { name: "P", data: bolls_price },
         { name: "B", data: bolls_bolls },
         { name: "U", data: bolls_mup   },
         { name: "D", data: bolls_mdn   }
@@ -246,7 +246,6 @@ module Stock
 
       return bolls_data
     end
-
 
     def _stave(stocks, years, stock)
       stave_price   = _price(stocks, years, stock)
@@ -266,7 +265,7 @@ module Stock
 
       return stave_price, stave_trend, stave_up1, stave_dn1, stave_top, stave_bot
     end
-  
+
 
     def _bolls(stocks, years, stock)
       bolls_price   = _price(stocks, years, stock)
