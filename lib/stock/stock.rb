@@ -22,7 +22,9 @@ module Stock
               stock:      stock_loha.stock,
               area:       stock_loha.area,
               loha:       stock_loha.coef,
+              loha_anti:  stock_loha.anti,
               year:       stock_year.coef,
+              year_anti:  stock_year.anti,
               price:      stock_loha.price,
               good:       stock_loha.good,
               lohas:      stock_loha.stave,
@@ -42,9 +44,14 @@ module Stock
     def good_models
       good_stocks   = _good_stocks
       puts "Stock'in... #{@good_years} #{@good_area}"
+      good_index   = "sz399001"
+      if @good_area == "sh"
+        good_index = "sh000001"
+      end
+      good_index  = _good_data(good_index)
       good_stocks.with_progress do |good_stock|
         Progress.note   = good_stock.upcase
-        good_model      = _good_model(good_stock)
+        good_model      = _good_model(good_stock, good_index)
         next if           good_model.empty?
         @good_models.push good_model
       end
@@ -62,6 +69,7 @@ module Stock
           stock:        good_model[:stock],
           area:         good_model[:area],
           coef:         good_model[:coef],
+          anti:         good_model[:anti],
           inter:        good_model[:inter],
           price:        good_model[:price],
           good:         good_price,
@@ -236,7 +244,7 @@ module Stock
       good_data
     end
 
-    def _good_stock(good_file, good_index)
+    def _good_stock(good_file, good_index, good_price_)
       good_binary = good_file.read(32)
       good_string = good_binary.unpack("H*")[0]
       good_date   = good_string[0,8]
@@ -245,9 +253,11 @@ module Stock
       good_price  = good_string[32,8]
       good_price  = good_price[6..7]  + good_price[4..5]  + good_price[2..3]  + good_price[0..1]
       good_price  = good_price.to_i(16).to_f / STAVE
+      good_delta  = good_price - good_price_
       good_stock  = {
         date:       good_date.to_date,
         price:      good_price,
+        delta:      good_delta,
         index:      good_index
       }
       good_stock
@@ -257,22 +267,39 @@ module Stock
       good_file     = _good_file(good_stock)
       return [] if good_file.nil?
       good_file.pos = good_file.size - 1 * 32
-      good_stock    = _good_stock(good_file, -1)
-      return [] if good_stock[:price] > STAVE
+      if good_stock != "sz399001" and good_stock != "sh000001"
+        good_stock    = _good_stock(good_file, -1, 0)
+        return [] if good_stock[:price] > STAVE
+      end
       good_index    = 0
-      prev_stock    = {}
+      good_price_   = 0
       good_data     = []
       good_file.pos = good_file.size - @good_days * 32
       while !good_file.eof?
-        good_stock  = _good_stock(good_file, good_index)
+        good_stock  = _good_stock(good_file, good_index, good_price_)
         good_data.push good_stock
         good_index  += 1
+        good_price_  = good_stock[:price]
       end
       good_data
     end
 
-    def _good_model(good_stock)
+    def _good_model(good_stock, good_index)
       good_data   = _good_data(good_stock)
+      good_down   = 0
+      good_up     = 0
+      good_anti   = 0
+      if not good_index.empty?
+        good_data.each_with_index do |good_data_, good_index_|
+          if good_index[good_index_][:delta] < 0
+            good_down += 1
+            if good_data_[:delta] > 0
+              good_up += 1
+            end
+          end
+        end
+        good_anti =  good_up.to_f / good_down.to_f
+      end
       return {} if  good_data.empty?
       return {} if  good_data[-1][:price] > STAVE
       good_index  = good_data.pluck(:index)
@@ -287,6 +314,7 @@ module Stock
         stock:      good_stock,
         area:       @good_area,
         coef:       good_coef,
+        anti:       good_anti,
         inter:      good_inter,
         price:      good_last,
         date:       good_date
@@ -296,7 +324,7 @@ module Stock
 
     def _good_trend(good_stock)
       good_stave  = _good_stave(good_stock)
-      good_model  = _good_model(good_stock)
+      good_model  = _good_model(good_stock, [])
       good_stave.each_with_index do |good_data, good_index|
         good_price = good_stave[good_index][:price]
         good_price = good_model[:coef] * good_index + good_model[:inter]
@@ -324,7 +352,9 @@ module Stock
       good_files  = _good_files
       good_files.each do |good_file|
         good_stock = good_file[0,8]
-        good_stocks.push good_stock
+        if good_stock != "sz399001" and good_stock != "sh000001"
+          good_stocks.push good_stock
+        end
       end
       good_stocks
     end

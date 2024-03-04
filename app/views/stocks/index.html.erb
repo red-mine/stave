@@ -21,7 +21,9 @@
   <tr>
     <th>Stock/<a href="/<%= @another %>"><%= @area.upcase %></a></th>
     <th>Loh</th>
+    <th>Loh.anti</th>
     <th>One</th>
+    <th>One.anti</th>
     <th>Price</th>
     <th>b1</th>
     <th>s1</th>
@@ -42,7 +44,13 @@
       <%= stock.loha.round(2) %>
     </td>
     <td>
+      <%= stock.loha_anti.round(2) %>
+    </td>
+    <td>
       <%= stock.year.round(2) %>
+    </td>
+    <td>
+      <%= stock.year_anti.round(2) %>
     </td>
     <td><%= stock.price %></td>
     <td align=right><%= stock.boll1 %></td>

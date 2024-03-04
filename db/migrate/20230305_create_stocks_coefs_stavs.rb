@@ -4,7 +4,9 @@ class CreateStocksCoefsStavs < ActiveRecord::Migration[7.0]
       t.string  :stock
       t.string  :area
       t.float   :loha
+      t.float   :loha_anti
       t.float   :year
+      t.float   :year_anti
       t.float   :price
       t.boolean :good
       t.string  :lohas
