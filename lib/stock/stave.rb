@@ -193,7 +193,7 @@ module Stock
         { name: "T", data: stave_trend },
         { name: "U", data: stave_up1   },
         { name: "D", data: stave_dn1   },
-        { name: "T", data: stave_top   },
+        { name: "O", data: stave_top   },
         { name: "B", data: stave_bot   }
       ]
       return stave_file
@@ -224,7 +224,7 @@ module Stock
         { name: "T", data: stave_trend },
         { name: "U", data: stave_up1   },
         { name: "D", data: stave_dn1   },
-        { name: "T", data: stave_top   },
+        { name: "O", data: stave_top   },
         { name: "B", data: stave_bot   }
       ]
 
