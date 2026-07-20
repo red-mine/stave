@@ -165,7 +165,7 @@ module Stock
       good_stave      = "SEL7"  if  good_up1_up2    &&  good_mup_boll # 7. SELL
       good_stave      = "WAT8"  if  good_dn1_dn2    &&  good_mup_boll # 8. WAIT - boll dn ?
       good_stave      = "WAT9"  if  good_dn2_bot    &&  good_mdn_bot  # 9. WAIT - can not buy !
-      good_stave      = "CHP0"  if  good_dn2_bot    &&  good_mdn_bot  # 0. CHIP - BUY !
+      good_stave      = "CHP0"  if  good_dn2_bot    &&  good_mdn_boll # 0. CHIP - BUY ! (price recovered back into the channel)
       # boll
       good_boll       = +1 if good_mup_boll
       good_boll       = +2 if good_mup_top

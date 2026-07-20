@@ -62,29 +62,69 @@ long-term, low-maintenance investing (no daily monitoring needed), hence the
 ## Signal codes (`_good_price`) — current status
 
 `_good_price` combines "position vs. five-line stave" with "position vs. LOHAS channel"
-into a single code. **As currently written, only 6 of the 10 defined codes can ever be
-the final output**, because the assignments are sequential `if`s (not `elsif`), and three
-pairs/triples of codes share an identical condition — whichever is listed last always wins:
+into a single code. The assignments are sequential `if`s (not `elsif`), so whenever two
+codes shared an identical condition, whichever was listed last always won and the earlier
+one was permanently dead code:
 
 | Reachable | Dead (unreachable) | Shared condition |
 |---|---|---|
 | `SEL7` | `SEL3`, `SEL6` | `up1_up2 && mup_boll` |
 | `WAT8` | `BUY4` | `dn1_dn2 && mup_boll` |
-| `CHP0` | `WAT9` | `dn2_bot && mdn_bot` |
+| `CHP0` | ~~`WAT9`~~ (fixed, see below) | ~~`dn2_bot && mdn_bot`~~ |
 | `SAF1`, `SOX2`, `BUY5` | — | (unique conditions, unaffected) |
 
-Additionally, `_good_model` ([lib/stock/stock.rb](../lib/stock/stock.rb), `return {} if good_coef < 1.0/STAVE`)
+`_good_model` ([lib/stock/stock.rb](../lib/stock/stock.rb), `return {} if good_coef < 1.0/STAVE`)
 already filters out any stock with a non-positive/near-zero slope before it reaches
-`_good_price`, consistent with the strategy's "only trade confirmed uptrends" rule. This
-means the dead codes above (`SEL3`/`SEL6`/`BUY4`/`WAT9`) look like they were meant to
-handle a negative-slope case that structurally cannot occur at this call site.
+`_good_price`. Web research (see Sources below) confirms this matches 薛兆亨's actual
+methodology — the five-line method assumes a stock in a confirmed uptrend, and multiple
+independent sources describe negative slope as undermining the whole mean-reversion
+premise, with no indication that negative-slope stocks are meant to still generate
+distinct signals in this system. **So the upstream filter is correct by design, not a bug.**
 
-**Open question, pending verification against the original source before changing
-behavior:** whether `SEL6`/`WAT8`/`WAT9` were always meant to be unreachable (by design,
-since negative-slope stocks are filtered upstream — in which case the fix is deleting
-them and merging the `SEL3`/`SEL7` duplicate), or whether the upstream filter in
-`_good_model` was itself supposed to let negative-slope stocks through so these branches
-could actually fire.
+### Resolved: `WAT9` vs `CHP0`
+
+This was **not** a slope distinction — it's a LOHAS-channel-recovery distinction. Sourced
+directly from 薛兆亨/Tivo168's own case studies (CMoney) and a Smart自学网 explainer,
+which both state the rule verbatim and give dated examples (e.g. "2016/1/22 五線譜在
+TL-2SD，且樂活通道由跌破下沿回到正常區間" → buy):
+
+> 「若股價跌破樂活五線譜的悲觀區，且股價跌破樂活通道下沿時，先不要買進，等到股價回到
+> 樂活通道以後再買進。」
+
+i.e. still below the channel's lower edge → **wait** (don't catch the falling knife);
+channel has recovered back into normal range while price is still in the extreme
+pessimistic five-line zone → **buy**. Fixed in code:
+
+```ruby
+good_stave = "WAT9" if good_dn2_bot && good_mdn_bot   # unchanged: still below channel
+good_stave = "CHP0" if good_dn2_bot && good_mdn_boll  # fixed: was good_mdn_bot (dup of WAT9)
+```
+
+**Caveat:** every dated example in the sources describes a *breakout-then-reversion
+event* (price broke through the channel edge and has *since* returned to normal range) as
+the actual trigger — not merely "currently sitting in the normal range." `_good_price`
+only evaluates the current day's snapshot, with no memory of whether the channel was
+recently breached, so this fix is a reasonable static approximation of the real rule, not
+a fully faithful implementation of it. A fully faithful version would need to track the
+channel's recent state transition over time.
+
+### Still open: `SEL3`/`SEL6`/`SEL7` and `BUY4`/`WAT8`
+
+No source found gives an explicit rule distinguishing these. The sell-side examples
+follow the same breakout-then-reversion pattern (symmetric to the buy case), consistent
+with `SEL7`'s condition, but nothing explains why `SEL3`/`SEL6` exist as separate codes.
+Likewise nothing confirms what should distinguish `BUY4` ("boll up?") from `WAT8` ("boll
+dn?") beyond the comment text itself hinting `WAT8` should test a different channel
+condition than `mup_boll` — nothing found says which one. Likely the exact decision table
+lives only in 薛兆亨/Tivo168's paid CMoney tool, not in free public sources. Left
+untouched pending further verification.
+
+### Sources
+
+- [樂活五線譜結合樂活通道的實證 (CMoney)](https://cmnews.com.tw/article/xuezhaohengtivo168-b374d808-d8c8-11ef-9bed-da1b84cd5fce) — dated buy/sell case studies showing the channel-recovery trigger
+- [ETF投資術：先用樂活五線譜找買點 (Smart自学网)](https://smart.businessweekly.com.tw/Reading/IndepArticle.aspx?id=6001781) — states the "wait for channel recovery" rule verbatim
+- [薛兆亨&Tivo168 | 樂活五線譜 x 投資儀表板 (CMoney)](https://www.cmoney.tw/app/expert/tivostaff) — tool overview
+- [樂活五線譜-薛兆亨Tivo App (App Store)](https://apps.apple.com/tw/app/%E6%A8%82%E6%B4%BB%E4%BA%94%E7%B7%9A%E8%AD%9C-%E8%96%9B%E5%85%86%E4%BA%A8tivo/id1624433798) — confirms authorship/branding
 
 ## Known limitations
 
