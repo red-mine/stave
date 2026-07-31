@@ -4,7 +4,7 @@ class StocksController < ApplicationController
   # GET /stocks or /stocks.json
   def index
     stock   = params[:stock]
-    area    = unless params[:area].nil? then params[:area] else Stock::SZSTK end
+    area    = stock_area
     @stock  = stock
     @area   = area
     stave   = Stock::Stave.new(area, Stock::STAVE)
@@ -14,7 +14,7 @@ class StocksController < ApplicationController
   # GET /stocks/1 or /stocks/1.json
   def show
     stock   = params[:stock]
-    area    = unless params[:area].nil? then params[:area] else Stock::SZSTK end
+    area    = stock_area
     @stock  = stock
     @area   = area
     stave   = Stock::Stave.new(area, Stock::STAVE)
@@ -69,6 +69,14 @@ class StocksController < ApplicationController
   end
 
   private
+    def stock_area
+      params[:area].to_s.downcase.in?(supported_stock_areas) ? params[:area].downcase : Stock::SZSTK
+    end
+
+    def supported_stock_areas
+      [Stock::SZSTK, Stock::SHSTK, Stock::BJSTK]
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_stock
       @stock = Stock.find(params[:id])

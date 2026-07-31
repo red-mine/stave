@@ -2,15 +2,11 @@
 
 <table align=center border=1 cellspacing=0>
 
-  <% if @area == "sz" %>
-    <% @another = "sh" %>
-  <% else %>
-    <% @another = "sz" %>
-  <% end %>
+  <% @another = @area == Stock::SZSTK ? Stock::SHSTK : Stock::SZSTK %>
 
   <tr>
     <td colspan=10 align=center>
-        <%= form_tag("/#{@area}", method: "get") do %>
+        <%= form_tag(stocks_by_area_path(@area), method: "get") do %>
           <%= label_tag(:stock, "Stocks/#{@area.upcase}=") %>
           <%= text_field_tag(:stock) %>
           <%= submit_tag("Stave") %>
@@ -19,7 +15,7 @@
   </tr>
 
   <tr>
-    <th>Stock/<a href="/<%= @another %>"><%= @area.upcase %></a></th>
+    <th>Stock/<%= link_to @area.upcase, stocks_by_area_path(@another) %></th>
     <th>Loh</th>
     <th>One</th>
     <th>Price</th>
@@ -34,9 +30,7 @@
   <% @stocks_stavs.each do |stock| %>
   <tr>
     <td>
-      <a href="/stocks/<%= stock.stock %>">
-        <%= stock.stock.upcase %>
-      </a>
+      <%= link_to stock.stock.upcase, stock_analysis_path(stock.stock, area: @area) %>
     </td>
     <td>
       <%= stock.loha.round(2) %>
