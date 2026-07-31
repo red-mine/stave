@@ -297,10 +297,9 @@ module Stock
     def _good_trend(good_stock)
       good_stave  = _good_stave(good_stock)
       good_model  = _good_model(good_stock)
-      good_stave.each_with_index do |good_data, good_index|
-        good_price = good_stave[good_index][:price]
-        good_price = good_model[:coef] * good_index + good_model[:inter]
-        good_stave[good_index][:price] = good_price.round(2)
+      good_stave.each do |good_data|
+        good_price = good_model[:coef] * good_data[:index] + good_model[:inter]
+        good_data[:price] = good_price.round(2)
       end
       good_stave
     end
