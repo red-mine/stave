@@ -114,3 +114,7 @@ bundle exec rails test
 The tests cover market routing, configurable data paths, resumable imports,
 binary decoding, moving averages, regression alignment, stave deviation, trend
 eligibility, and every currently reachable signal code.
+
+GitHub Actions runs the test database setup, pending-migration check, complete
+test suite, schema consistency check, and whitespace validation on every push
+and pull request.
