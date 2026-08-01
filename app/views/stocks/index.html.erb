@@ -1,65 +1,78 @@
-<h1 align=center>Stock Stave</h1>
+<main class="app-shell">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">LOHAS market analysis</p>
+      <h1>Stock Stave</h1>
+      <p class="subtitle">Trend, channel, and signal analysis across China’s major exchanges.</p>
+    </div>
+    <nav class="market-tabs" aria-label="Stock market">
+      <%= market_navigation(@area) %>
+    </nav>
+  </header>
 
-<table align=center border=1 cellspacing=0>
+  <section class="toolbar" aria-label="Stock search">
+    <%= form_tag(stocks_by_area_path(@area), method: "get", class: "search-form") do %>
+      <div class="search-copy">
+        <%= label_tag(:stock, "Find a stock") %>
+        <span>Search by full code or a partial symbol</span>
+      </div>
+      <div class="search-controls">
+        <%= text_field_tag(:stock, @stock, placeholder: "e.g. #{@area}000001", maxlength: 8, autocomplete: "off") %>
+        <%= submit_tag("Search", class: "button button-primary") %>
+      </div>
+    <% end %>
+  </section>
 
-  <tr>
-    <td colspan=10 align=center>
-        <%= form_tag(stocks_by_area_path(@area), method: "get") do %>
-          <%= label_tag(:stock, "Stocks/#{@area.upcase}=") %>
-          <%= text_field_tag(:stock) %>
-          <%= submit_tag("Stave") %>
-        <% end %>
-    </td>
-  </tr>
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow"><%= @area.upcase %> market</p>
+        <h2>Current signals</h2>
+      </div>
+      <p class="as-of">Data date <strong><%= @stavs_date || "Unavailable" %></strong></p>
+    </div>
 
-  <tr>
-    <th>
-      Stock/
-      <% Stock::AREAS.each_with_index do |area, index| %>
-        <%= " / " unless index.zero? %>
-        <% if area == @area %>
-          <%= area.upcase %>
-        <% else %>
-          <%= link_to area.upcase, stocks_by_area_path(area) %>
-        <% end %>
-      <% end %>
-    </th>
-    <th>Loh</th>
-    <th>One</th>
-    <th>Price</th>
-    <th>b1</th>
-    <th>s1</th>
-    <th>b3</th>
-    <th>s3</th>
-    <th>Year</th>
-    <th>Loha</th>
-  </tr>
-
-  <% @stocks_stavs.each do |stock| %>
-  <tr>
-    <td>
-      <%= link_to stock.stock.upcase, stock_analysis_path(stock.stock, area: @area) %>
-    </td>
-    <td>
-      <%= stock.loha.round(2) %>
-    </td>
-    <td>
-      <%= stock.year.round(2) %>
-    </td>
-    <td><%= stock.price %></td>
-    <td align=right><%= stock.boll1 %></td>
-    <td align=right><%= stock.stav1 %></td>
-    <td align=right><%= stock.boll3 %></td>
-    <td align=right><%= stock.stav3 %></td>
-    <td><%= stock.years %></td>
-    <td>
-      <a href="/stave/stave.png">
-        <%= stock.lohas %>
-      </a>
-    </td>
-  </tr>
-  <% end %>
-
-</table>
-
-<h4 align=center><%= @stavs_date %></h4>
+    <% if @stocks_stavs.any? %>
+      <div class="table-scroll">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Stock</th>
+              <th>Long trend</th>
+              <th>1-year trend</th>
+              <th>Price</th>
+              <th>1Y channel</th>
+              <th>1Y stave</th>
+              <th>3.5Y channel</th>
+              <th>3.5Y stave</th>
+              <th>Year signal</th>
+              <th>LOHAS signal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @stocks_stavs.each do |stock| %>
+              <tr>
+                <td class="stock-code"><%= link_to stock.stock.upcase, stock_analysis_path(stock.stock, area: @area) %></td>
+                <td><%= formatted_number(stock.loha) %></td>
+                <td><%= formatted_number(stock.year) %></td>
+                <td class="price"><%= formatted_number(stock.price) %></td>
+                <td><%= stock.boll1 || "—" %></td>
+                <td><%= stock.stav1 || "—" %></td>
+                <td><%= stock.boll3 || "—" %></td>
+                <td><%= stock.stav3 || "—" %></td>
+                <td><%= signal_badge(stock.years) %></td>
+                <td><%= signal_badge(stock.lohas) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="empty-state">
+        <h3>No matching signals</h3>
+        <p>Try another stock code or clear the search to see all current results.</p>
+        <%= link_to "Clear search", stocks_by_area_path(@area), class: "button button-secondary" %>
+      </div>
+    <% end %>
+  </section>
+</main>

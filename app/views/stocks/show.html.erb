@@ -1,53 +1,46 @@
-<h1><%= @stock.upcase %></h1>
+<main class="app-shell">
+  <header class="detail-header">
+    <div>
+      <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area), class: "back-link" %>
+      <p class="eyebrow">Stock analysis</p>
+      <h1><%= @stock.upcase %></h1>
+    </div>
+    <nav class="market-tabs" aria-label="Stock market">
+      <%= market_navigation(@area) %>
+    </nav>
+  </header>
 
-<% if !@stave_lohas.nil? %>
+  <div class="chart-grid">
+    <section class="chart-card">
+      <div class="chart-heading">
+        <div><p class="eyebrow">Long horizon</p><h2>LOHAS stave</h2></div>
+        <span>3.5 years</span>
+      </div>
+      <%= line_chart @stave_lohas.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
+    </section>
 
-<h2>Stave Lohas</h2>
+    <section class="chart-card">
+      <div class="chart-heading">
+        <div><p class="eyebrow">Recent horizon</p><h2>Year stave</h2></div>
+        <span>1 year</span>
+      </div>
+      <%= line_chart @stave_years.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
+    </section>
 
-<%= line_chart @stave_lohas.map {
-  |stave| {
-    name: stave[:name], 
-    data: stave[:data]
-  }
-} %>
+    <section class="chart-card">
+      <div class="chart-heading">
+        <div><p class="eyebrow">Long horizon</p><h2>LOHAS channel</h2></div>
+        <span>3.5 years</span>
+      </div>
+      <%= line_chart @bolls_lohas.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
+    </section>
 
-<% end %>
-
-<% if !@stave_years.nil? %>
-
-<h2>Stave Years</h2>
-
-<%= line_chart @stave_years.map {
-  |stave| {
-    name: stave[:name], 
-    data: stave[:data]
-  }
-} %>
-
-<% end %>
-
-<% if !@bolls_lohas.nil? %>
-
-<h2>Bolls Lohas</h2>
-
-<%= line_chart @bolls_lohas.map {
-  |bolls| {
-    name: bolls[:name], 
-    data: bolls[:data]
-  }
-} %>
-
-<% end %>
-
-<% if !@bolls_years.nil? %>
-
-<h2>Bolls Years</h2>
-
-<%= line_chart @bolls_years.map {
-  |bolls| {
-    name: bolls[:name], 
-    data: bolls[:data]
-  }
-} %>
-
-<% end %>
+    <section class="chart-card">
+      <div class="chart-heading">
+        <div><p class="eyebrow">Recent horizon</p><h2>Year channel</h2></div>
+        <span>1 year</span>
+      </div>
+      <%= line_chart @bolls_years.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
+    </section>
+  </div>
+</main>

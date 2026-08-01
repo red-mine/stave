@@ -5,7 +5,7 @@ class StocksController < ApplicationController
   # GET /stocks or /stocks.json
   def index
     stock   = normalized_stock_query
-    return head :bad_request if params[:stock].present? && stock.nil?
+    return render(:bad_request, status: :bad_request) if params[:stock].present? && stock.nil?
 
     area    = stock_area
     @stock  = stock
@@ -17,13 +17,13 @@ class StocksController < ApplicationController
   # GET /stocks/1 or /stocks/1.json
   def show
     stock   = params[:stock].to_s.downcase
-    return head :not_found unless STOCK_ID_PATTERN.match?(stock)
+    return render(:not_found, status: :not_found) unless STOCK_ID_PATTERN.match?(stock)
 
     area    = stock_area
     @stock  = stock
     @area   = area
     stave   = Stock::Stave.new(area, Stock::STAVE)
-    return head :not_found unless stave.known_stock?(stock)
+    return render(:not_found, status: :not_found) unless stave.known_stock?(stock)
 
     @stave_lohas, @stave_years, @bolls_lohas, @bolls_years = stave.good_show(stock)
   end

@@ -28,6 +28,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal [Stock::SHSTK], areas
+    assert_select ".app-shell"
     assert_select "a[href='#{stocks_by_area_path(Stock::BJSTK)}']", text: "BJ"
   end
 
@@ -40,6 +41,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal [Stock::SHSTK], areas
+    assert_select ".chart-card", count: 4
   end
 
   test "stock analysis defaults invalid market input to Shenzhen" do
@@ -59,6 +61,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :not_found
+    assert_select "h1", text: "Stock not found"
   end
 
   test "returns not found when a stock is absent from the selected market" do
@@ -75,5 +78,6 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :bad_request
+    assert_select "h1", text: "Invalid search"
   end
 end
