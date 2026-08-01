@@ -4,8 +4,10 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   class FakeStave
     attr_reader :lookups
 
-    def initialize(known: true)
+    def initialize(known: true, stock_date: Date.new(2026, 7, 31), market_date: Date.new(2026, 7, 31))
       @known = known
+      @stock_date = stock_date
+      @market_date = market_date
       @lookups = []
     end
 
@@ -20,6 +22,10 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     def good_show(_stock)
       [[], [], [], []]
+    end
+
+    def data_dates(_stock)
+      [@stock_date, @market_date]
     end
   end
 
@@ -73,6 +79,21 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal ["sh600000"], stave.lookups
     assert_select "h1", text: "SH600000"
+  end
+
+  test "stock analysis identifies historical data using the stock's own date" do
+    stave = FakeStave.new(
+      stock_date: Date.new(2013, 3, 13),
+      market_date: Date.new(2026, 7, 31)
+    )
+
+    Stock::Stave.stub(:new, ->(*) { stave }) do
+      get stock_analysis_path("000522", area: Stock::SZSTK)
+    end
+
+    assert_response :success
+    assert_select ".data-freshness.is-historical", text: /2013-03-13/
+    assert_select ".data-freshness", text: /SZ market data continues through 2026-07-31/
   end
 
   test "stock analysis defaults invalid market input to Shenzhen" do
@@ -153,6 +174,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     payload = response.parsed_body
     assert_equal "sh600000", payload.fetch("stock")
     assert_equal Stock::SHSTK, payload.fetch("area")
+    assert_equal "2026-07-31", payload.fetch("data_date")
+    assert_equal "2026-07-31", payload.fetch("market_date")
+    assert_equal false, payload.fetch("historical")
     assert_equal %w[bolls_lohas bolls_years stave_lohas stave_years], payload.fetch("charts").keys.sort
   end
 

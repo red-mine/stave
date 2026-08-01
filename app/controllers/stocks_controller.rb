@@ -29,6 +29,8 @@ class StocksController < ApplicationController
     return render_not_found unless stave.known_stock?(stock)
 
     @stave_lohas, @stave_years, @bolls_lohas, @bolls_years = stave.good_show(stock)
+    @stock_date, @market_date = stave.data_dates(stock)
+    @historical_data = @stock_date.present? && @market_date.present? && @stock_date < @market_date
   end
 
   private

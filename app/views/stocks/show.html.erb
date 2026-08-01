@@ -10,6 +10,21 @@
     </nav>
   </header>
 
+  <section class="data-freshness <%= "is-historical" if @historical_data %>" aria-label="Data freshness">
+    <% if @historical_data %>
+      <div>
+        <p class="eyebrow">Historical data</p>
+        <p>This stock's data ends on <strong><%= @stock_date %></strong>.</p>
+      </div>
+      <p class="freshness-context"><%= @area.upcase %> market data continues through <strong><%= @market_date %></strong>.</p>
+    <% else %>
+      <div>
+        <p class="eyebrow">Data current through</p>
+        <p><strong><%= @stock_date || "Unavailable" %></strong></p>
+      </div>
+    <% end %>
+  </section>
+
   <div class="chart-grid">
     <section class="chart-card">
       <div class="chart-heading">

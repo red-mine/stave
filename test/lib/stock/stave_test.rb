@@ -1,6 +1,16 @@
 require "test_helper"
 
 class StaveDataTest < ActiveSupport::TestCase
+  test "data dates distinguish a historical stock from its current market" do
+    StocksCoefsStav.create!(stock: "sz000522", area: Stock::SZSTK, date: Date.new(2013, 3, 13))
+    StocksCoefsStav.create!(stock: "sz000001", area: Stock::SZSTK, date: Date.new(2026, 7, 31))
+    StocksCoefsStav.create!(stock: "sh600000", area: Stock::SHSTK, date: Date.new(2026, 8, 1))
+
+    dates = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).data_dates("sz000522")
+
+    assert_equal [Date.new(2013, 3, 13), Date.new(2026, 7, 31)], dates
+  end
+
   test "chart data is market-scoped and ordered chronologically" do
     stock = "shared001"
     StocksStaveYear.create!(stock: stock, area: Stock::SZSTK, years: "price", date: Date.new(2026, 7, 1), price: 12)

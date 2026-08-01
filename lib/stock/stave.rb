@@ -84,6 +84,14 @@ module Stock
       StocksCoefsStav.exists?(stock: good_stock, area: @good_area)
     end
 
+    def data_dates(good_stock)
+      market_stocks = StocksCoefsStav.where(area: @good_area)
+      [
+        market_stocks.where(stock: good_stock).maximum(:date),
+        market_stocks.maximum(:date)
+      ]
+    end
+
     def good_data(good_stock)
       stave_lohas = _stave_data(good_stock, StocksStaveLoha)
       stave_years = _stave_data(good_stock, StocksStaveYear)
