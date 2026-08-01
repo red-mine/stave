@@ -85,7 +85,7 @@ group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
   gem "bundler-audit", require: false
   gem "fiddle", require: false
-  gem "rdoc", "~> 7.2", require: false
+  gem "rdoc", "~> 8.0", require: false
 end
 
 group :development do
