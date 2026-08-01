@@ -110,8 +110,8 @@ module Stock
       else
         staves_area.where(staves_arel[:lohas].not_eq(""))
       end
+      stavs_date    = stocks_stavs.maximum(:date)
       stocks_stavs  = stocks_stavs.order(staves_arel[:price])
-      stavs_date    = stocks_stavs.pluck(staves_arel[:date])[-1]
       return stocks_stavs, stavs_date
     end
 
