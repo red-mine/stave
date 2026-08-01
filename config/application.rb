@@ -13,6 +13,10 @@ module StockApp
     # Use the defaults for the framework version this application runs on.
     config.load_defaults 8.1
 
+    # The application does not transform Active Storage images. Disabling the
+    # processor avoids requiring the optional image_processing dependency.
+    config.active_storage.variant_processor = :disabled
+
     # Custom directories with classes and modules you want to be autoloadable.
     # config.autoloader = :zeitwerk
 
