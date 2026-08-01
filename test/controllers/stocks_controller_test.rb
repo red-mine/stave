@@ -2,6 +2,14 @@ require "test_helper"
 
 class StocksControllerTest < ActionDispatch::IntegrationTest
   class FakeStave
+    def initialize(known: true)
+      @known = known
+    end
+
+    def known_stock?(_stock)
+      @known
+    end
+
     def good_index(_stock)
       [[], nil]
     end
@@ -43,5 +51,29 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal [Stock::SZSTK], areas
+  end
+
+  test "rejects malformed stock identifiers" do
+    Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
+      get stock_analysis_path("bad!")
+    end
+
+    assert_response :not_found
+  end
+
+  test "returns not found when a stock is absent from the selected market" do
+    Stock::Stave.stub(:new, ->(*) { FakeStave.new(known: false) }) do
+      get stock_analysis_path("600000", area: Stock::SHSTK)
+    end
+
+    assert_response :not_found
+  end
+
+  test "rejects malformed stock searches" do
+    Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
+      get stocks_by_area_path(Stock::SZSTK), params: { stock: "%" }
+    end
+
+    assert_response :bad_request
   end
 end

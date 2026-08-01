@@ -65,6 +65,10 @@ module Stock
       good_show
     end
 
+    def known_stock?(good_stock)
+      StocksCoefsStav.exists?(stock: good_stock, area: @good_area)
+    end
+
     def good_data(good_stock)
       stave_lohas = _stave_data(good_stock, StocksStaveLoha)
       stave_years = _stave_data(good_stock, StocksStaveYear)
