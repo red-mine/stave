@@ -216,6 +216,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".buy-panel", count: 1
     assert_select ".buy-card", count: 1, text: /SZ002653/
     assert_select ".buy-card", text: /BUY5 \+ BUY5/
+    assert_select ".candidate-score", text: %r{/100}
     assert_select ".risk-note", text: /not a guarantee/
   end
 

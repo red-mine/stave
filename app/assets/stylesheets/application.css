@@ -147,8 +147,14 @@ a { color: var(--teal-dark); }
 .buy-card-top span { padding: 4px 7px; border-radius: 999px; color: #0b684f; background: #dff5ec; font-size: 0.6rem; font-weight: 850; }
 .candidate-price { display: flex; align-items: baseline; gap: 8px; margin: 17px 0 5px; color: var(--ink); font-size: 1.25rem; font-weight: 800; }
 .candidate-price small { color: var(--muted); font-size: 0.66rem; font-weight: 650; text-transform: uppercase; }
-.candidate-reason, .no-candidates, .risk-note { color: var(--muted); font-size: 0.73rem; }
-.candidate-reason { margin: 0; }
+.candidate-score-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.candidate-score { display: flex; align-items: baseline; gap: 3px; margin: 0 0 5px; color: var(--positive); }
+.candidate-score strong { font-size: 1.15rem; }
+.candidate-score small { font-size: 0.62rem; font-weight: 750; }
+.candidate-reason, .candidate-invalidation, .candidate-open, .no-candidates, .risk-note { color: var(--muted); font-size: 0.73rem; }
+.candidate-reason { margin: 10px 0 0; color: #3b5360; font-weight: 700; }
+.candidate-invalidation { margin: 5px 0 12px; }
+.candidate-open { color: var(--teal-dark); font-weight: 800; }
 .no-candidates { margin: 20px 0 0; padding: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.75); }
 .risk-note { margin: 16px 0 0; }
 

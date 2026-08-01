@@ -29,7 +29,7 @@
         <div>
           <p class="eyebrow">Strongest model agreement</p>
           <h2 id="buy-candidates-title">Buy candidates</h2>
-          <p>Both the 1-year and 3.5-year models show BUY5. Check the live price and company news before acting.</p>
+          <p>Current buy-family signals ranked by agreement, trend direction, and channel position. Check the live price and company news before acting.</p>
         </div>
         <span class="model-date">Model date <strong><%= @stavs_date || "Unavailable" %></strong></span>
       </div>
@@ -40,10 +40,15 @@
             <%= link_to stock_analysis_path(candidate.stock, area: @area), class: "buy-card" do %>
               <div class="buy-card-top">
                 <strong><%= candidate.stock.upcase %></strong>
-                <span>BUY5 + BUY5</span>
+                <span><%= candidate.years %> + <%= candidate.lohas %></span>
               </div>
-              <p class="candidate-price"><small>Dataset price</small><%= formatted_number(candidate.price) %></p>
-              <p class="candidate-reason">Two horizons agree · Open analysis →</p>
+              <div class="candidate-score-row">
+                <p class="candidate-price"><small>Dataset price</small><%= formatted_number(candidate.price) %></p>
+                <p class="candidate-score"><strong><%= candidate.score %></strong><small>/100 · <%= candidate.confidence %></small></p>
+              </div>
+              <p class="candidate-reason"><%= candidate.reasons.first %></p>
+              <p class="candidate-invalidation">Recheck if the signal changes to wait or sell.</p>
+              <span class="candidate-open">Open analysis →</span>
             <% end %>
           <% end %>
         </div>
