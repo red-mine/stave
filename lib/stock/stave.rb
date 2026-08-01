@@ -184,6 +184,7 @@ module Stock
     def _filter(table, filter, stock)
       arel  = table.arel_table
       stave = table
+        .where(arel[:area].eq(@good_area))
         .where(arel[:stock].eq(stock))
         .where(arel[:years].eq(filter))
         .pluck(arel[:date], arel[:price])
