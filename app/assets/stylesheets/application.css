@@ -204,8 +204,24 @@ a { color: var(--teal-dark); }
   text-align: right;
 }
 .stock-table tbody tr:hover { background: #f8fbfc; }
+.stock-table tr.is-historical { background: #fffbf2; }
+.stock-table tr.is-historical:hover { background: #fff7e6; }
 .stock-code a { color: var(--navy); font-weight: 800; letter-spacing: 0.025em; text-decoration: none; }
 .stock-code a:hover { color: var(--teal); }
+.historical-label {
+  display: block;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #805817;
+  background: #f8e7bd;
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.historical-date { display: block; margin-top: 3px; color: #8a6d3d; font-size: 0.67rem; font-weight: 650; }
 .price { color: var(--ink) !important; font-weight: 750; }
 
 .signal-badge {

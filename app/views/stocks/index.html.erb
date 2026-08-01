@@ -51,8 +51,15 @@
           </thead>
           <tbody>
             <% @stocks_stavs.each do |stock| %>
-              <tr>
-                <td class="stock-code"><%= link_to stock.stock.upcase, stock_analysis_path(stock.stock, area: @area) %></td>
+              <% historical = stock.date.present? && @stavs_date.present? && stock.date < @stavs_date %>
+              <tr class="<%= "is-historical" if historical %>">
+                <td class="stock-code">
+                  <%= link_to stock.stock.upcase, stock_analysis_path(stock.stock, area: @area) %>
+                  <% if historical %>
+                    <span class="historical-label">Historical</span>
+                    <span class="historical-date">Ended <%= stock.date %></span>
+                  <% end %>
+                </td>
                 <td><%= formatted_number(stock.loha) %></td>
                 <td><%= formatted_number(stock.year) %></td>
                 <td class="price"><%= formatted_number(stock.price) %></td>

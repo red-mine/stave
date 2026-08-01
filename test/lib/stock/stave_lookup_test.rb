@@ -24,4 +24,20 @@ class StaveLookupTest < ActiveSupport::TestCase
     assert_equal %w[sh600001 sh600002], results.pluck(:stock)
     assert_equal Date.new(2026, 7, 31), date
   end
+
+  test "searched index retains the market date for freshness comparisons" do
+    StocksCoefsStav.create!(
+      stock: "sz000522", area: Stock::SZSTK, price: 10,
+      lohas: "BUY5", date: Date.new(2013, 3, 13)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz000001", area: Stock::SZSTK, price: 11,
+      lohas: "BUY5", date: Date.new(2026, 7, 31)
+    )
+
+    results, date = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).good_index("000522")
+
+    assert_equal ["sz000522"], results.pluck(:stock)
+    assert_equal Date.new(2026, 7, 31), date
+  end
 end

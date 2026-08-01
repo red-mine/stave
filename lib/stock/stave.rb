@@ -113,12 +113,12 @@ module Stock
     def good_index(good_stock)
       staves_arel   = StocksCoefsStav.arel_table
       staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
+      stavs_date    = staves_area.maximum(:date)
       stocks_stavs  = if !good_stock.nil? and !good_stock.empty?
         staves_area.where(staves_arel[:stock].matches_any(["%" + good_stock + "%"]))
       else
         staves_area.where(staves_arel[:lohas].not_eq(""))
       end
-      stavs_date    = stocks_stavs.maximum(:date)
       stocks_stavs  = stocks_stavs.order(staves_arel[:price])
       return stocks_stavs, stavs_date
     end

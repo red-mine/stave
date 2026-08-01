@@ -163,6 +163,27 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_equal stock_analysis_url("sh600000", area: Stock::SHSTK, format: :json), payload.first.fetch("url")
   end
 
+  test "market page labels stocks whose data ended before the market date" do
+    StocksCoefsStav.create!(
+      stock: "sz000522", area: Stock::SZSTK, price: 10,
+      lohas: "BUY5", date: Date.new(2013, 3, 13)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz000001", area: Stock::SZSTK, price: 11,
+      lohas: "BUY5", date: Date.new(2026, 7, 31)
+    )
+
+    get stocks_by_area_path(Stock::SZSTK)
+
+    assert_response :success
+    assert_select "tr.is-historical", count: 1 do
+      assert_select ".stock-code", text: /SZ000522/
+      assert_select ".historical-label", text: "Historical"
+      assert_select ".historical-date", text: "Ended 2013-03-13"
+    end
+    assert_select "tr:not(.is-historical) .stock-code", text: /SZ000001/
+  end
+
   test "stock analysis is available as JSON" do
     stave = FakeStave.new
 
