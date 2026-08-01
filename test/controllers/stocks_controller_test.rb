@@ -88,11 +88,12 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
   test "rejects malformed stock identifiers" do
     Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
-      get stock_analysis_path("bad!")
+      get stock_analysis_path("bad!", area: Stock::BJSTK)
     end
 
     assert_response :not_found
     assert_select "h1", text: "Stock not found"
+    assert_select "a[href='#{stocks_by_area_path(Stock::BJSTK)}']", text: "Return to market signals"
   end
 
   test "rejects alphabetic stock identifiers" do
@@ -113,11 +114,12 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
   test "rejects malformed stock searches" do
     Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
-      get stocks_by_area_path(Stock::SZSTK), params: { stock: "%" }
+      get stocks_by_area_path(Stock::SHSTK), params: { stock: "%" }
     end
 
     assert_response :bad_request
     assert_select "h1", text: "Invalid search"
+    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: "Return to market signals"
   end
 
   test "market signals are available as JSON" do

@@ -4,22 +4,24 @@ class StocksController < ApplicationController
 
   # GET /stocks or /stocks.json
   def index
+    area    = stock_area
+    @area   = area
     stock   = normalized_stock_query
     return render_bad_request if params[:stock].present? && stock.nil?
 
-    area    = stock_area
     @stock  = stock
-    @area   = area
     stave   = Stock::Stave.new(area, Stock::STAVE)
     @stocks_stavs, @stavs_date = stave.good_index(stock)
   end
 
   # GET /stocks/1 or /stocks/1.json
   def show
+    area     = stock_area
+    @area    = area
     stock_id = STOCK_ID_PATTERN.match(params[:stock].to_s.downcase)
     return render_not_found unless stock_id
 
-    area    = stock_id[:area] || stock_area
+    area    = stock_id[:area] || area
     stock   = "#{area}#{stock_id[:code]}"
     @stock  = stock
     @area   = area
