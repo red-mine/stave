@@ -41,12 +41,13 @@ task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
     abort "Missing TongdaXin data for: #{missing_paths.join(', ')} under #{Stock.data_root}"
   end
 
+  connection = ActiveRecord::Base.connection
   database = ActiveRecord::Base.connection_db_config.database
-  if database && File.file?(database)
+  if connection.adapter_name == "SQLite" && database && File.file?(database)
     backup_dir = Rails.root.join("tmp", "backups")
     FileUtils.mkdir_p(backup_dir)
-    backup = backup_dir.join("stock-#{Time.current.strftime('%Y%m%d-%H%M%S')}.sqlite3")
-    FileUtils.cp(database, backup)
+    backup = backup_dir.join("stock-#{Time.current.strftime('%Y%m%d-%H%M%S-%L')}.sqlite3")
+    Stock::DatabaseBackup.new(connection: connection).call(backup)
     puts "Database backup: #{backup}"
   end
 
