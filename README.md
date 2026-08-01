@@ -41,7 +41,14 @@ The environments use separate databases:
 
 ## Price data
 
-The calculation engine reads TongdaXin `.day` files from:
+Set `TDX_DATA_PATH` to the TongdaXin `vipdoc` directory. For example, in
+PowerShell:
+
+```powershell
+$env:TDX_DATA_PATH = "C:\new_tdx\vipdoc"
+```
+
+When the variable is not set, the calculation engine uses:
 
 - Windows: `C:/new_tdx/vipdoc/<area>/lday/`
 - Linux: `vipdoc/<area>/lday/`
@@ -51,7 +58,21 @@ window plus the 20-week channel.
 
 ## Generate analysis data
 
-Run the stages in order for each market:
+Refresh all three markets with one command:
+
+```powershell
+bundle exec rails refresh
+```
+
+The task validates every source directory before changing data, saves a
+timestamped database backup under `tmp/backups`, and safely resumes stocks that
+already have the latest source date. To refresh selected markets only:
+
+```powershell
+bundle exec rails "refresh[sz,sh]"
+```
+
+The individual stages remain available for diagnostics:
 
 ```powershell
 bundle exec rails "lohas[sz]"
@@ -59,8 +80,7 @@ bundle exec rails "years[sz]"
 bundle exec rails "stave[sz]"
 ```
 
-Repeat with `sh` or `bj` as required. The included `stocks.ps1` runs Shenzhen
-and Shanghai together, but it deletes and rebuilds `db/stock.sqlite3` first.
+Repeat with `sh` or `bj` as required.
 
 ## Run the web application
 
@@ -82,5 +102,6 @@ Remove-Item Env:RAILS_ENV
 bundle exec rails test
 ```
 
-The tests cover market routing, moving averages, regression alignment, stave
-deviation, trend eligibility, and every currently reachable signal code.
+The tests cover market routing, configurable data paths, resumable imports,
+binary decoding, moving averages, regression alignment, stave deviation, trend
+eligibility, and every currently reachable signal code.

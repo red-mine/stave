@@ -40,6 +40,30 @@ class StockCalculationTest < ActiveSupport::TestCase
     end
   end
 
+  class StockForResume < Stock::Stock
+    attr_reader :model_calls
+
+    def initialize
+      super(Stock::SZSTK, Stock::STAVE)
+      @model_calls = []
+    end
+
+    private
+
+    def _good_stocks
+      ["current", "pending"]
+    end
+
+    def _good_last_date(_stock)
+      Date.new(2026, 7, 31)
+    end
+
+    def _good_model(stock)
+      @model_calls << stock
+      { stock: stock, coef: 1.0 }
+    end
+  end
+
   test "moving average uses each complete window" do
     engine = StockWithData.new([])
 
@@ -74,6 +98,31 @@ class StockCalculationTest < ActiveSupport::TestCase
       assert_equal 10.01, data.first[:price]
       assert_equal start_date + Stock::STAVE * 2, data.last[:date]
     end
+  end
+
+  test "builds market paths below the configured TongdaXin root" do
+    engine = StockWithData.new([])
+
+    Stock.stub(:data_root, Pathname.new("C:/market-data/vipdoc")) do
+      expected = File.join("C:/market-data/vipdoc", Stock::SZSTK, "lday") + File::SEPARATOR
+
+      assert_equal expected, engine.send(:_good_base)
+    end
+  end
+
+  test "resumable model generation skips rows with the current source date" do
+    current_date = Date.new(2026, 7, 31)
+    relation = Minitest::Mock.new
+    relation.expect(:pluck, [["current", current_date]], [:stock, :date])
+    table = Minitest::Mock.new
+    table.expect(:where, relation, [], area: Stock::SZSTK, years: Stock::STAVE)
+    engine = StockForResume.new
+
+    engine.good_models(table)
+
+    assert_equal ["pending"], engine.model_calls
+    table.verify
+    relation.verify
   end
 
   test "positive linear prices produce an aligned regression trend" do

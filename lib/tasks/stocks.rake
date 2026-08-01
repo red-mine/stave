@@ -26,6 +26,46 @@ task :stave, [:area, :days] => :environment do |task, args|
   stave.good_result()
 end
 
+desc "Refresh analysis data for all markets (or a selected market list)"
+task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
+  supported_areas = [Stock::SZSTK, Stock::SHSTK, Stock::BJSTK]
+  areas = args.to_a.compact.map(&:strip).uniq
+  areas = supported_areas if areas.empty?
+  invalid_areas = areas - supported_areas
+  abort "Unsupported market(s): #{invalid_areas.join(', ')}" unless invalid_areas.empty?
+
+  missing_paths = areas.reject do |area|
+    File.directory?(File.join(Stock.data_root, area, "lday"))
+  end
+  unless missing_paths.empty?
+    abort "Missing TongdaXin data for: #{missing_paths.join(', ')} under #{Stock.data_root}"
+  end
+
+  database = ActiveRecord::Base.connection_db_config.database
+  if database && File.file?(database)
+    backup_dir = Rails.root.join("tmp", "backups")
+    FileUtils.mkdir_p(backup_dir)
+    backup = backup_dir.join("stock-#{Time.current.strftime('%Y%m%d-%H%M%S')}.sqlite3")
+    FileUtils.cp(database, backup)
+    puts "Database backup: #{backup}"
+  end
+
+  areas.each do |area|
+    puts "Refreshing #{area}..."
+    lohas = Stock::Stock.new(area, Stock::LOHAS)
+    lohas.good_models(StocksCoefsLoha)
+    lohas.good_staves(StocksCoefsLoha)
+
+    years = Stock::Stock.new(area, Stock::YEARS)
+    years.good_models(StocksCoefsYear)
+    years.good_staves(StocksCoefsYear)
+
+    Stock::Stock.new(area, Stock::STAVE).good_result
+    Stock::Stave.new(area, Stock::STAVE).good_result
+    puts "Finished #{area}."
+  end
+end
+
 desc "stock"
 task :stock => :environment do
   puts "stock"

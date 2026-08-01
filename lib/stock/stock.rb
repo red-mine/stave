@@ -419,11 +419,7 @@ module Stock
     end
 
     def _good_base
-      good_base   = "C:/new_tdx/vipdoc/" + @good_area + "/lday/"
-      if RUBY_PLATFORM == "x86_64-linux-gnu"
-        good_base   = "vipdoc/" + @good_area + "/lday/"
-      end
-      good_base
+      File.join(::Stock.data_root, @good_area, "lday") + File::SEPARATOR
     end
 
   end
