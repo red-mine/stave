@@ -19,8 +19,8 @@ class StocksController < ApplicationController
     stock_id = STOCK_ID_PATTERN.match(params[:stock].to_s.downcase)
     return render(:not_found, status: :not_found) unless stock_id
 
-    stock   = stock_id[:code]
     area    = stock_id[:area] || stock_area
+    stock   = "#{area}#{stock_id[:code]}"
     @stock  = stock
     @area   = area
     stave   = Stock::Stave.new(area, Stock::STAVE)

@@ -2,11 +2,15 @@ require "test_helper"
 
 class StocksControllerTest < ActionDispatch::IntegrationTest
   class FakeStave
+    attr_reader :lookups
+
     def initialize(known: true)
       @known = known
+      @lookups = []
     end
 
-    def known_stock?(_stock)
+    def known_stock?(stock)
+      @lookups << stock
       @known
     end
 
@@ -46,15 +50,29 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
   test "stock analysis accepts a market-prefixed identifier" do
     calls = []
+    stave = FakeStave.new
 
-    Stock::Stave.stub(:new, ->(area, _days) { calls << area; FakeStave.new }) do
+    Stock::Stave.stub(:new, ->(area, _days) { calls << area; stave }) do
       get stock_analysis_path("SH600000", area: Stock::SZSTK)
     end
 
     assert_response :success
     assert_equal [Stock::SHSTK], calls
-    assert_select "h1", text: "600000"
+    assert_equal ["sh600000"], stave.lookups
+    assert_select "h1", text: "SH600000"
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
+  end
+
+  test "stock analysis adds the selected market to an unprefixed identifier" do
+    stave = FakeStave.new
+
+    Stock::Stave.stub(:new, ->(*) { stave }) do
+      get stock_analysis_path("600000", area: Stock::SHSTK)
+    end
+
+    assert_response :success
+    assert_equal ["sh600000"], stave.lookups
+    assert_select "h1", text: "SH600000"
   end
 
   test "stock analysis defaults invalid market input to Shenzhen" do
