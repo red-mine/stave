@@ -254,6 +254,9 @@ a { color: var(--teal-dark); }
 .guide-explainer div { display: grid; gap: 4px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.86); }
 .guide-explainer strong { color: var(--navy); }
 .guide-explainer span { color: var(--muted); font-size: 0.8rem; }
+.original-guide-link { margin: -4px 0 20px; }
+.original-guide-link a { color: var(--teal-dark); font-size: 0.82rem; font-weight: 750; text-decoration: none; }
+.original-guide-link a:hover { text-decoration: underline; }
 .guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .guide-card { padding: 20px; border: 1px solid var(--line); border-left-width: 5px; border-radius: 18px; background: rgba(255, 255, 255, 0.95); box-shadow: var(--shadow); }
 .guide-card-positive { border-left-color: var(--positive); }
