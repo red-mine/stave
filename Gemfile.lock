@@ -121,6 +121,7 @@ GEM
     faraday-net_http (3.4.4)
       net-http (~> 0.5)
     ffi (1.16.3)
+    fiddle (1.1.8)
     globalid (1.4.0)
       activesupport (>= 6.1)
     groupdate (6.4.0)
@@ -299,6 +300,7 @@ DEPENDENCIES
   chartkick
   debug
   eps
+  fiddle
   groupdate
   importmap-rails
   jbuilder
