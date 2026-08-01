@@ -210,14 +210,12 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", text: "Signal guide"
-    assert_select ".guide-card", count: 7
+    assert_select ".guide-card", count: 10
     assert_select "a[href='/stave/stave.png?v=4']", text: /restored original illustrated guide/
     assert_select ".example-item", count: 10
-    assert_select ".example-item", text: /Legacy buy became wait/
-    assert_select ".legacy-code", text: "was SEL3"
-    assert_select ".legacy-code", text: "was BUY4"
-    assert_select ".legacy-code", text: "was SEL6"
-    %w[SAF1 BUY5 CHP0 SOX2 SEL7 WAT8 WAT9].each do |code|
+    assert_select ".example-item", text: /Buy while the channel holds/
+    assert_select ".legacy-code", count: 0
+    %w[SAF1 SOX2 SEL3 BUY4 BUY5 SEL6 SEL7 WAT8 WAT9 CHP0].each do |code|
       assert_select ".guide-card", text: /#{code}/
     end
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/

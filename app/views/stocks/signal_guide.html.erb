@@ -1,19 +1,22 @@
 <% signals = [
   { code: "SAF1", action: "Buy zone", tone: "positive", stave: "Between -2SD and -1SD", channel: "Lower half, still inside", stave_pos: "low", channel_pos: "lower", summary: "Depressed relative to trend without breaking below the channel." },
-  { code: "BUY5", action: "Positive buy", tone: "positive", stave: "Trend to +1SD", channel: "Upper half, still inside", stave_pos: "upper", channel_pos: "upper", summary: "Constructive upward movement that is not yet highly extended." },
-  { code: "CHP0", action: "Cheap recovery", tone: "positive", stave: "Below -2SD", channel: "Recovered into lower half", stave_pos: "deep", channel_pos: "lower", summary: "A higher-risk rebound after an unusually deep decline." },
   { code: "SOX2", action: "Strong rise - hold", tone: "strong", stave: "+1SD to +2SD", channel: "Above upper boundary", stave_pos: "high", channel_pos: "above", summary: "Strong momentum, but already elevated; avoid chasing blindly." },
-  { code: "SEL7", action: "Sell zone", tone: "negative", stave: "+1SD to +2SD", channel: "Upper half, back inside", stave_pos: "high", channel_pos: "upper", summary: "An extended price has returned inside the channel; consider reducing." },
-  { code: "WAT8", action: "Wait", tone: "neutral", stave: "Between -2SD and -1SD", channel: "Upper half", stave_pos: "low", channel_pos: "upper", summary: "The stave and channel disagree, so wait for clearer confirmation." },
-  { code: "WAT9", action: "Avoid buying", tone: "negative", stave: "Below -2SD", channel: "Below lower boundary", stave_pos: "deep", channel_pos: "below", summary: "Weak on both measures and at the greatest breakdown risk." }
+  { code: "SEL3", action: "Sell", tone: "negative", stave: "Returned below +2SD", channel: "Returned below upper boundary", stave_pos: "high", channel_pos: "upper", summary: "Price crossed downward into both the stave and channel after an overbought move." },
+  { code: "BUY4", action: "Buy zone", tone: "positive", stave: "Between -2SD and -1SD", channel: "Upper half, still inside", stave_pos: "low", channel_pos: "upper", summary: "A depressed stave position remains inside the channel without broad moving-average weakness." },
+  { code: "BUY5", action: "Positive buy", tone: "positive", stave: "Trend to +1SD", channel: "Upper half, still inside", stave_pos: "upper", channel_pos: "upper", summary: "Constructive upward movement that is not yet highly extended." },
+  { code: "SEL6", action: "Partial sell", tone: "negative", stave: "+1SD to +2SD", channel: "Crossed back inside", stave_pos: "high", channel_pos: "upper", summary: "Price crossed downward through the channel's upper boundary while remaining elevated in the stave." },
+  { code: "SEL7", action: "Sell zone", tone: "negative", stave: "+1SD to +2SD", channel: "Upper half, inside", stave_pos: "high", channel_pos: "upper", summary: "An extended price remains in the upper sell zone after an overbought move." },
+  { code: "WAT8", action: "Wait", tone: "neutral", stave: "Between -2SD and -1SD", channel: "Upper half", stave_pos: "low", channel_pos: "upper", summary: "The 5-, 10-, 20-, and 40-day averages are all lower than one month ago, so wait instead of using BUY4." },
+  { code: "WAT9", action: "Avoid buying", tone: "negative", stave: "Below -2SD", channel: "Below lower boundary", stave_pos: "deep", channel_pos: "below", summary: "Weak on both measures and at the greatest breakdown risk." },
+  { code: "CHP0", action: "Cheap recovery", tone: "positive", stave: "Below -2SD", channel: "Recovered into lower half", stave_pos: "deep", channel_pos: "lower", summary: "A higher-risk rebound after an unusually deep decline." },
 ] %>
 <% original_examples = [
   { number: 1, code: "SAF1", title: "Buy after returning inside", text: "Price reaches the relatively pessimistic stave zone, then returns inside the lower channel." },
   { number: 2, code: "SOX2", title: "Strong rise - continue holding", text: "Price reaches the optimistic stave zone and breaks above the channel. The original guide says not to sell or short it yet." },
-  { number: 3, code: "SEL7", legacy: "SEL3", title: "Sell after an overbought return", text: "Price falls from above the optimistic line and returns inside the channel." },
-  { number: 4, code: "WAT8", legacy: "BUY4", title: "Legacy buy became wait", text: "The original prose says buy, but its programmed rule was identical to example 8. The active model conservatively classifies both as WAT8." },
+  { number: 3, code: "SEL3", title: "Sell after an overbought return", text: "Price falls from above the optimistic line and returns inside the channel." },
+  { number: 4, code: "BUY4", title: "Buy while the channel holds", text: "Price reaches the pessimistic area without breaking the channel, and broad short-term averages are not all falling." },
   { number: 5, code: "BUY5", title: "Buy or add", text: "A constructive price position inside the channel supports adding to a position." },
-  { number: 6, code: "SEL7", legacy: "SEL6", title: "Sell part of the position", text: "Price reaches the relatively optimistic zone and returns from above the channel into it." },
+  { number: 6, code: "SEL6", title: "Sell part of the position", text: "Price reaches the relatively optimistic zone and returns from above the channel into it." },
   { number: 7, code: "SEL7", title: "Sell after the strong rise", text: "After an overbought move, price falls below the optimistic line and returns inside the channel." },
   { number: 8, code: "WAT8", title: "Wait for confirmation", text: "The price appears buyable, but falling short-term moving averages warn that it may break below the channel." },
   { number: 9, code: "WAT9", title: "Do not buy", text: "Price breaks below the lower channel boundary, confirming continued weakness." },
@@ -61,7 +64,7 @@
     <div class="examples-heading">
       <p class="eyebrow">From the restored illustration</p>
       <h2 id="original-examples-title">The original 10 examples</h2>
-      <p>Several original labels used identical programmed conditions. The active model merges those duplicates into one visible signal.</p>
+      <p>The engine now distinguishes all ten cases using downward boundary crossings and a four-average trend check.</p>
     </div>
     <ol class="examples-list">
       <% original_examples.each do |example| %>
@@ -70,7 +73,6 @@
           <div>
             <header>
               <%= signal_badge(example[:code]) %>
-              <% if example[:legacy] %><span class="legacy-code">was <%= example[:legacy] %></span><% end %>
               <strong><%= example[:title] %></strong>
             </header>
             <p><%= example[:text] %></p>

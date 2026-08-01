@@ -145,39 +145,23 @@ module Stock
       good_last       = good_model[:price]
       good_data       = _good_data(good_stock)
       good_prices     = good_data.pluck(:price)
-      good_boll       = good_prices.last(STAVE).sum.fdiv(STAVE).round(2)
-
-      # Preserve the legacy Bollinger alignment while calculating only its
-      # final value instead of rebuilding the complete series three times.
-      good_averages   = _good_move(good_prices, STAVE)
-      good_distances  = good_averages.each_with_index.map do |good_average, good_index|
-        (good_prices[good_index] - good_average) ** 2
+      current_bands   = _good_signal_bands(good_prices, good_model)
+      previous        = if good_prices.length > STAVE
+        { price: good_prices[-2] }.merge(
+          _good_signal_bands(good_prices[0...-1], good_model)
+        )
       end
-      good_deviation  = Math.sqrt(good_distances.last(STAVE).sum.fdiv(STAVE)).round(2)
-      good_mup        = (good_boll + good_deviation * 2).round(2)
-      good_mdn        = (good_boll - good_deviation * 2).round(2)
-
-      good_last_index = good_prices.length - 1
-      good_trend      = (good_model[:coef] * good_last_index + good_model[:inter]).round(2)
-      good_residuals  = good_prices.each_with_index.drop(STAVE - 1).map do |good_price, good_index|
-        good_expected = good_model[:coef] * (good_index + STAVE - 1) + good_model[:inter]
-        (good_price - good_expected.round(2)) ** 2
-      end
-      good_sqrt       = Math.sqrt(good_residuals.sum.fdiv(good_residuals.length))
-      good_up1        = (good_trend + good_sqrt).round(2)
-      good_dn1        = (good_trend - good_sqrt).round(2)
-      good_up2        = (good_trend + good_sqrt * 2).round(2)
-      good_dn2        = (good_trend - good_sqrt * 2).round(2)
 
       _good_signal(
         good_last,
-        boll: good_boll, mup: good_mup, mdn: good_mdn,
-        trend: good_trend, up1: good_up1, dn1: good_dn1,
-        up2: good_up2, dn2: good_dn2
+        **current_bands,
+        previous: previous,
+        falling_averages: _falling_averages?(good_prices)
       )
     end
 
-    def _good_signal(good_last, boll:, mup:, mdn:, trend:, up1:, dn1:, up2:, dn2:)
+    def _good_signal(good_last, boll:, mup:, mdn:, trend:, up1:, dn1:, up2:, dn2:,
+                     previous: nil, falling_averages: false)
       # price
       good_price      = good_last > trend && good_last > boll
       # trend
@@ -192,16 +176,27 @@ module Stock
       good_mup_top    = good_last > mup
       good_mdn_boll   = good_last > mdn && good_last < boll
       good_mdn_bot    = good_last < mdn
+      # direction
+      crossed_stave_top = previous && previous[:price] > previous[:up2] && good_last < up2
+      crossed_channel_top = previous && previous[:price] > previous[:mup] && good_last < mup
       # stave
       good_stave      = "SAF1"  if  good_dn1_dn2    &&  good_mdn_boll # 1. SAFE - BUY !
       good_stave      = "SOX2"  if  good_up1_up2    &&  good_mup_top  # 2. SOAR - KEEP !!!
       good_stave      = "BUY5"  if  good_up1_trend  &&  good_mup_boll # 5. BUY  - more - positive ?
-      good_stave      = "SEL7"  if  good_up1_up2    &&  good_mup_boll # 7. SELL
-      good_stave      = "WAT8"  if  good_dn1_dn2    &&  good_mup_boll # 8. WAIT - boll dn ?
+      if good_up1_up2 && good_mup_boll
+        good_stave = if crossed_stave_top && crossed_channel_top
+          "SEL3" # 3. Fell back inside both upper boundaries - sell
+        elsif crossed_channel_top
+          "SEL6" # 6. Fell back inside the channel - sell part
+        else
+          "SEL7" # 7. Extended sell zone / stave-top return
+        end
+      end
+      if good_dn1_dn2 && good_mup_boll
+        good_stave = falling_averages ? "WAT8" : "BUY4"
+      end
       good_stave      = "WAT9"  if  good_dn2_bot    &&  good_mdn_bot  # 9. WAIT - can not buy !
       good_stave      = "CHP0"  if  good_dn2_bot    &&  good_mdn_boll # 0. CHIP - BUY ! (price recovered back into the channel)
-      # SEL3 and SEL6 duplicated SEL7's condition; BUY4 duplicated WAT8's.
-      # Their intended distinctions remain unknown, so the effective outputs are explicit here.
       # boll
       good_boll       = boll
       good_boll       = +1   if good_mup_boll
@@ -216,6 +211,48 @@ module Stock
       good_stav       = -2 if good_dn1_dn2
       good_stav       = -3 if good_dn2_bot
       return          good_price, good_stave, good_boll, good_stav
+    end
+
+    def _good_signal_bands(good_prices, good_model)
+      good_boll       = good_prices.last(STAVE).sum.fdiv(STAVE).round(2)
+
+      # Preserve the legacy Bollinger alignment while calculating only its
+      # final value instead of rebuilding the complete series three times.
+      good_averages   = _good_move(good_prices, STAVE)
+      good_distances  = good_averages.each_with_index.map do |good_average, good_index|
+        (good_prices[good_index] - good_average) ** 2
+      end
+      good_deviation  = Math.sqrt(good_distances.last(STAVE).sum.fdiv(STAVE)).round(2)
+
+      good_last_index = good_prices.length - 1
+      good_trend      = (good_model[:coef] * good_last_index + good_model[:inter]).round(2)
+      good_residuals  = good_prices.each_with_index.drop(STAVE - 1).map do |good_price, good_index|
+        good_expected = good_model[:coef] * (good_index + STAVE - 1) + good_model[:inter]
+        (good_price - good_expected.round(2)) ** 2
+      end
+      good_sqrt       = Math.sqrt(good_residuals.sum.fdiv(good_residuals.length))
+
+      {
+        boll: good_boll,
+        mup: (good_boll + good_deviation * 2).round(2),
+        mdn: (good_boll - good_deviation * 2).round(2),
+        trend: good_trend,
+        up1: (good_trend + good_sqrt).round(2),
+        dn1: (good_trend - good_sqrt).round(2),
+        up2: (good_trend + good_sqrt * 2).round(2),
+        dn2: (good_trend - good_sqrt * 2).round(2)
+      }
+    end
+
+    def _falling_averages?(good_prices)
+      lookback = 20
+      [5, 10, 20, 40].all? do |window|
+        next false if good_prices.length < window + lookback
+
+        current = good_prices.last(window).sum.fdiv(window)
+        previous = good_prices[0...-lookback].last(window).sum.fdiv(window)
+        current < previous
+      end
     end
 
     def _good_move(good_price, good_days)

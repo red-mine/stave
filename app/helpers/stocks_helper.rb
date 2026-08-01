@@ -2,7 +2,10 @@ module StocksHelper
   SIGNAL_DETAILS = {
     "SAF1" => "Safe buy zone",
     "SOX2" => "Strong rise",
+    "SEL3" => "Sell after both upper boundaries are crossed downward",
+    "BUY4" => "Buy zone without falling moving-average confirmation",
     "BUY5" => "Positive buy zone",
+    "SEL6" => "Partial sell after returning inside the channel",
     "SEL7" => "Sell zone",
     "WAT8" => "Wait for confirmation",
     "WAT9" => "Avoid buying",
