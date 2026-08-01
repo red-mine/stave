@@ -23,6 +23,37 @@
     <% end %>
   </section>
 
+  <% unless @stock %>
+    <section class="buy-panel" aria-labelledby="buy-candidates-title">
+      <div class="buy-heading">
+        <div>
+          <p class="eyebrow">Strongest model agreement</p>
+          <h2 id="buy-candidates-title">Buy candidates</h2>
+          <p>Both the 1-year and 3.5-year models show BUY5. Check the live price and company news before acting.</p>
+        </div>
+        <span class="model-date">Model date <strong><%= @stavs_date || "Unavailable" %></strong></span>
+      </div>
+
+      <% if @buy_candidates.any? %>
+        <div class="buy-grid">
+          <% @buy_candidates.each do |candidate| %>
+            <%= link_to stock_analysis_path(candidate.stock, area: @area), class: "buy-card" do %>
+              <div class="buy-card-top">
+                <strong><%= candidate.stock.upcase %></strong>
+                <span>BUY5 + BUY5</span>
+              </div>
+              <p class="candidate-price"><small>Dataset price</small><%= formatted_number(candidate.price) %></p>
+              <p class="candidate-reason">Two horizons agree · Open analysis →</p>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="no-candidates">No strongest-agreement candidates in this market today. Do not force a trade.</p>
+      <% end %>
+      <p class="risk-note">Model shortlist only—not a guarantee or personalized financial advice.</p>
+    </section>
+  <% end %>
+
   <section class="panel">
     <div class="panel-heading">
       <div>

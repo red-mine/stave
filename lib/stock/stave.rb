@@ -1,5 +1,11 @@
 module Stock
   class Stave
+    A_SHARE_CODE_PATTERNS = {
+      "sz" => %w[sz00____ sz30____],
+      "sh" => %w[sh60____ sh68____],
+      "bj" => %w[bj43____ bj83____ bj87____ bj88____ bj92____]
+    }.freeze
+
     STAVE_SERIES_NAMES = {
       price: "收盘价",
       trend: "趋势线",
@@ -121,6 +127,21 @@ module Stock
       end
       stocks_stavs  = stocks_stavs.order(staves_arel[:price])
       return stocks_stavs, stavs_date
+    end
+
+    def strongest_buy_candidates(limit: 6)
+      market = StocksCoefsStav.where(area: @good_area)
+      market_date = market.maximum(:date)
+      return [] unless market_date
+
+      market
+        .where(date: market_date, years: "BUY5", lohas: "BUY5")
+        .where(
+          A_SHARE_CODE_PATTERNS.fetch(@good_area).map { "stock LIKE ?" }.join(" OR "),
+          *A_SHARE_CODE_PATTERNS.fetch(@good_area)
+        )
+        .order(year: :desc, loha: :desc)
+        .limit(limit)
     end
 
     private

@@ -20,6 +20,10 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       [[], nil]
     end
 
+    def strongest_buy_candidates(limit: 6)
+      []
+    end
+
     def good_show(_stock)
       [[], [], [], []]
     end
@@ -186,6 +190,40 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       assert_select ".historical-date", text: "Ended 2013-03-13"
     end
     assert_select "tr:not(.is-historical) .stock-code", text: /SZ000001/
+  end
+
+  test "market page highlights only current BUY5 agreement candidates" do
+    StocksCoefsStav.create!(
+      stock: "sz002653", area: Stock::SZSTK, price: 62.38,
+      years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 31)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz000001", area: Stock::SZSTK, price: 11,
+      years: "SAF1", lohas: "BUY5", date: Date.new(2026, 7, 31)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz000002", area: Stock::SZSTK, price: 10,
+      years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 30)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz880016", area: Stock::SZSTK, price: 89,
+      years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 31)
+    )
+
+    get stocks_by_area_path(Stock::SZSTK)
+
+    assert_response :success
+    assert_select ".buy-panel", count: 1
+    assert_select ".buy-card", count: 1, text: /SZ002653/
+    assert_select ".buy-card", text: /BUY5 \+ BUY5/
+    assert_select ".risk-note", text: /not a guarantee/
+  end
+
+  test "search results hide the market-wide buy shortlist" do
+    get stocks_by_area_path(Stock::SZSTK), params: { stock: "002653" }
+
+    assert_response :success
+    assert_select ".buy-panel", count: 0
   end
 
   test "stock analysis is available as JSON" do
