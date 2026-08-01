@@ -212,6 +212,11 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Signal guide"
     assert_select ".guide-card", count: 7
     assert_select "a[href='/stave/stave.png?v=4']", text: /restored original illustrated guide/
+    assert_select ".example-item", count: 10
+    assert_select ".example-item", text: /Legacy buy became wait/
+    assert_select ".legacy-code", text: "was SEL3"
+    assert_select ".legacy-code", text: "was BUY4"
+    assert_select ".legacy-code", text: "was SEL6"
     %w[SAF1 BUY5 CHP0 SOX2 SEL7 WAT8 WAT9].each do |code|
       assert_select ".guide-card", text: /#{code}/
     end

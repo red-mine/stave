@@ -7,6 +7,18 @@
   { code: "WAT8", action: "Wait", tone: "neutral", stave: "Between -2SD and -1SD", channel: "Upper half", stave_pos: "low", channel_pos: "upper", summary: "The stave and channel disagree, so wait for clearer confirmation." },
   { code: "WAT9", action: "Avoid buying", tone: "negative", stave: "Below -2SD", channel: "Below lower boundary", stave_pos: "deep", channel_pos: "below", summary: "Weak on both measures and at the greatest breakdown risk." }
 ] %>
+<% original_examples = [
+  { number: 1, code: "SAF1", title: "Buy after returning inside", text: "Price reaches the relatively pessimistic stave zone, then returns inside the lower channel." },
+  { number: 2, code: "SOX2", title: "Strong rise - continue holding", text: "Price reaches the optimistic stave zone and breaks above the channel. The original guide says not to sell or short it yet." },
+  { number: 3, code: "SEL7", legacy: "SEL3", title: "Sell after an overbought return", text: "Price falls from above the optimistic line and returns inside the channel." },
+  { number: 4, code: "WAT8", legacy: "BUY4", title: "Legacy buy became wait", text: "The original prose says buy, but its programmed rule was identical to example 8. The active model conservatively classifies both as WAT8." },
+  { number: 5, code: "BUY5", title: "Buy or add", text: "A constructive price position inside the channel supports adding to a position." },
+  { number: 6, code: "SEL7", legacy: "SEL6", title: "Sell part of the position", text: "Price reaches the relatively optimistic zone and returns from above the channel into it." },
+  { number: 7, code: "SEL7", title: "Sell after the strong rise", text: "After an overbought move, price falls below the optimistic line and returns inside the channel." },
+  { number: 8, code: "WAT8", title: "Wait for confirmation", text: "The price appears buyable, but falling short-term moving averages warn that it may break below the channel." },
+  { number: 9, code: "WAT9", title: "Do not buy", text: "Price breaks below the lower channel boundary, confirming continued weakness." },
+  { number: 10, code: "CHP0", title: "Cheap-zone recovery buy", text: "Price remains in the deeply cheap stave zone but has just returned inside the lower channel." }
+] %>
 
 <main class="app-shell guide-page">
   <header class="guide-header">
@@ -44,6 +56,29 @@
       </article>
     <% end %>
   </div>
+
+  <section class="original-examples" aria-labelledby="original-examples-title">
+    <div class="examples-heading">
+      <p class="eyebrow">From the restored illustration</p>
+      <h2 id="original-examples-title">The original 10 examples</h2>
+      <p>Several original labels used identical programmed conditions. The active model merges those duplicates into one visible signal.</p>
+    </div>
+    <ol class="examples-list">
+      <% original_examples.each do |example| %>
+        <li class="example-item">
+          <span class="example-number"><%= example[:number] %></span>
+          <div>
+            <header>
+              <%= signal_badge(example[:code]) %>
+              <% if example[:legacy] %><span class="legacy-code">was <%= example[:legacy] %></span><% end %>
+              <strong><%= example[:title] %></strong>
+            </header>
+            <p><%= example[:text] %></p>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  </section>
 
   <p class="guide-note">These are mechanical price-position signals, not guarantees or personalized investment advice.</p>
 </main>

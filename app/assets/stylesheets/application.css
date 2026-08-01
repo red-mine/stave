@@ -276,6 +276,16 @@ a { color: var(--teal-dark); }
 .position-low, .position-lower { left: 28%; }
 .position-upper { left: 70%; }
 .position-high, .position-above { left: 91%; }
+.original-examples { margin-top: 30px; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow); }
+.examples-heading h2 { margin: 0; color: var(--navy); font-size: 1.45rem; }
+.examples-heading > p:last-child { margin: 8px 0 0; color: var(--muted); font-size: 0.84rem; line-height: 1.5; }
+.examples-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; margin: 22px 0 0; padding: 0; list-style: none; }
+.example-item { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 16px 0; border-top: 1px solid #edf0f3; }
+.example-number { display: grid; width: 32px; height: 32px; border-radius: 50%; color: white; background: var(--navy); font-size: 0.78rem; font-weight: 850; place-items: center; }
+.example-item header { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.example-item header > strong { width: 100%; margin-top: 3px; color: var(--navy); font-size: 0.9rem; }
+.example-item p { margin: 6px 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
+.legacy-code { color: #8a6d3d; font-size: 0.67rem; font-weight: 750; }
 .guide-note { margin: 24px 0 0; color: var(--muted); font-size: 0.78rem; text-align: center; }
 
 .empty-state { padding: 72px 24px; text-align: center; }
@@ -321,6 +331,7 @@ a { color: var(--teal-dark); }
   .app-header, .detail-header { align-items: flex-start; flex-direction: column; }
   .chart-grid { grid-template-columns: 1fr; }
   .guide-grid { grid-template-columns: 1fr; }
+  .examples-list { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -333,6 +344,7 @@ a { color: var(--teal-dark); }
   .panel-heading { gap: 10px; }
   .panel-meta { justify-items: start; }
   .guide-explainer { grid-template-columns: 1fr; }
+  .original-examples { padding: 18px; }
   .stock-table th:first-child,
   .stock-table td:first-child { padding-left: 18px; }
   .stock-table th,
