@@ -3,7 +3,7 @@ task :lohas, [:area, :days] => :environment do |task, args|
   area = unless args.area.nil? then args.area else Stock::SZSTK end
   days = unless args.days.nil? then args.days else Stock::LOHAS end
   stock = Stock::Stock.new(area, days)
-  stock.good_models()
+  stock.good_models(StocksCoefsLoha)
   stock.good_staves(StocksCoefsLoha)
 end
 
@@ -12,7 +12,7 @@ task :years, [:area, :days] => :environment do |task, args|
   area = unless args.area.nil? then args.area else Stock::SZSTK end
   days = unless args.days.nil? then args.days else Stock::YEARS end
   stock = Stock::Stock.new(area, days)
-  stock.good_models()
+  stock.good_models(StocksCoefsYear)
   stock.good_staves(StocksCoefsYear)
 end
 

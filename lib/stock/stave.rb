@@ -13,6 +13,10 @@ module Stock
       staves_area.with_progress do |stock_stav|
         good_stock  = stock_stav.stock
         Progress.note = good_stock.upcase
+        ActiveRecord::Base.transaction do
+          [StocksStaveLoha, StocksStaveYear, StocksBollsLoha, StocksBollsYear].each do |good_table|
+            good_table.where(stock: good_stock, area: @good_area).delete_all
+          end
         loha_engine = _engin(@good_area, LOHAS)
         year_engine = _engin(@good_area, YEARS)
         lohas_price, lohas_trend, lohas_up1, lohas_dn1, lohas_top, lohas_bot = _stave(loha_engine, LOHAS, good_stock)
@@ -39,20 +43,21 @@ module Stock
         good_staves(StocksBollsYear, years_bolls, good_stock, "bolls" )
         good_staves(StocksBollsYear, years_mup,   good_stock, "mup"   )
         good_staves(StocksBollsYear, years_mdn,   good_stock, "mdn"   )
+        end
       end
     end
 
     def good_staves(good_table, good_stave, good_stock, good_years)
-      good_stave.each do |good_stave_|
-        good_staves = good_table.new(
+      good_rows = good_stave.map do |good_stave_|
+        {
           stock:    good_stock,
           area:     @good_area,
           price:    good_stave_[1].round(2),
           date:     good_stave_[0],
           years:    good_years
-        )
-        good_staves.save
+        }
       end
+      good_table.insert_all(good_rows) unless good_rows.empty?
     end
 
     def good_show(good_stock)
