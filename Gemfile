@@ -6,7 +6,7 @@ source "https://mirrors.cloud.tencent.com/rubygems/"
 
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.2.1"
+ruby "3.4.10"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.2.3", ">= 7.2.3.2"

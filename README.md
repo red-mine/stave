@@ -10,18 +10,18 @@ signal definitions, and known limitations.
 
 ## Requirements
 
-- Ruby 3.2.1
+- Ruby 3.4.10
 - Bundler 2.5.3
 - RubyInstaller's MSYS2 development kit on Windows
 - SQLite 3 (provided by the bundled Windows gem)
 - TongdaXin daily price files for real stock calculations
 
-On Windows, install the `Ruby+Devkit 3.2.1-1 (x64)` RubyInstaller package. If
+On Windows, install the `Ruby+Devkit 3.4.10-1 (x64)` RubyInstaller package. If
 native gems fail because `yaml.h` is missing, run this from an administrator
 PowerShell:
 
 ```powershell
-C:\Ruby32-x64\bin\ridk.cmd exec pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-libyaml
+C:\Ruby34-x64\bin\ridk.cmd exec pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-libyaml
 ```
 
 ## Setup
