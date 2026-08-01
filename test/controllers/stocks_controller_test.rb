@@ -176,6 +176,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     get stocks_by_area_path(Stock::SZSTK)
 
     assert_response :success
+    assert_equal ["Stock", "Year signal", "LOHAS signal"], css_select(".stock-table th").first(3).map { |header| header.text.strip }
     assert_select "tr.is-historical", count: 1 do
       assert_select ".stock-code", text: /SZ000522/
       assert_select ".historical-label", text: "Historical"

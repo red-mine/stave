@@ -38,6 +38,8 @@
           <thead>
             <tr>
               <th>Stock</th>
+              <th>Year signal</th>
+              <th>LOHAS signal</th>
               <th>Long trend</th>
               <th>1-year trend</th>
               <th>Price</th>
@@ -45,8 +47,6 @@
               <th>1Y stave</th>
               <th>3.5Y channel</th>
               <th>3.5Y stave</th>
-              <th>Year signal</th>
-              <th>LOHAS signal</th>
             </tr>
           </thead>
           <tbody>
@@ -60,6 +60,8 @@
                     <span class="historical-date">Ended <%= stock.date %></span>
                   <% end %>
                 </td>
+                <td class="signal-cell"><%= signal_badge(stock.years) %></td>
+                <td class="signal-cell"><%= signal_badge(stock.lohas) %></td>
                 <td><%= formatted_number(stock.loha) %></td>
                 <td><%= formatted_number(stock.year) %></td>
                 <td class="price"><%= formatted_number(stock.price) %></td>
@@ -67,8 +69,6 @@
                 <td><%= stock.stav1 || "—" %></td>
                 <td><%= stock.boll3 || "—" %></td>
                 <td><%= stock.stav3 || "—" %></td>
-                <td><%= signal_badge(stock.years) %></td>
-                <td><%= signal_badge(stock.lohas) %></td>
               </tr>
             <% end %>
           </tbody>
