@@ -29,7 +29,10 @@
         <p class="eyebrow"><%= @area.upcase %> market</p>
         <h2>Current signals</h2>
       </div>
-      <p class="as-of">Data date <strong><%= @stavs_date || "Unavailable" %></strong></p>
+      <div class="panel-meta">
+        <p class="as-of">Data date <strong><%= @stavs_date || "Unavailable" %></strong></p>
+        <%= link_to "Open signal guide ↗", "/stave/stave.png", class: "guide-link", target: "_blank", rel: "noopener" %>
+      </div>
     </div>
 
     <% if @stocks_stavs.any? %>
@@ -60,8 +63,8 @@
                     <span class="historical-date">Ended <%= stock.date %></span>
                   <% end %>
                 </td>
-                <td class="signal-cell"><%= signal_badge(stock.years) %></td>
-                <td class="signal-cell"><%= signal_badge(stock.lohas) %></td>
+                <td class="signal-cell"><%= linked_signal_badge(stock.years) %></td>
+                <td class="signal-cell"><%= linked_signal_badge(stock.lohas) %></td>
                 <td><%= formatted_number(stock.loha) %></td>
                 <td><%= formatted_number(stock.year) %></td>
                 <td class="price"><%= formatted_number(stock.price) %></td>

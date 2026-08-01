@@ -34,6 +34,18 @@ module StocksHelper
     )
   end
 
+  def linked_signal_badge(code)
+    label = code.presence || "No signal"
+    link_to(
+      signal_badge(code),
+      "/stave/stave.png",
+      class: "signal-guide-link",
+      target: "_blank",
+      rel: "noopener",
+      aria: { label: "Open signal guide for #{label}" }
+    )
+  end
+
   def formatted_number(value)
     value.nil? ? "—" : number_with_precision(value, precision: 2, strip_insignificant_zeros: true)
   end
