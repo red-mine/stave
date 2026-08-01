@@ -36,6 +36,9 @@ jobs:
       - name: Audit Ruby dependencies
         run: bundle exec bundler-audit check --update
 
+      - name: Scan Rails application security
+        run: bundle exec brakeman --no-pager --no-color --quiet
+
       - name: Run tests
         run: bundle exec rails test
 
