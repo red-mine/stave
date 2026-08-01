@@ -1,5 +1,20 @@
 module Stock
   class Stave
+    STAVE_SERIES_NAMES = {
+      price: "收盘价",
+      trend: "趋势线",
+      up1: "+1SD",
+      dn1: "-1SD",
+      top: "乐观线 (+2SD)",
+      bot: "悲观线 (-2SD)"
+    }.freeze
+
+    BOLLS_SERIES_NAMES = {
+      price: "收盘价",
+      bolls: "通道中轨",
+      mup: "通道上轨",
+      mdn: "通道下轨"
+    }.freeze
 
     def initialize(good_area, good_years)
       @good_area    = good_area
@@ -200,12 +215,12 @@ module Stock
       engine      = _engin(@good_area, years)
       stave_price, stave_trend, stave_up1, stave_dn1, stave_top, stave_bot = _stave(engine, years, stock)
       stave_file  = [
-        { name: "P", data: stave_price },
-        { name: "T", data: stave_trend },
-        { name: "U", data: stave_up1   },
-        { name: "D", data: stave_dn1   },
-        { name: "O", data: stave_top   },
-        { name: "B", data: stave_bot   }
+        { name: STAVE_SERIES_NAMES[:price], data: stave_price },
+        { name: STAVE_SERIES_NAMES[:trend], data: stave_trend },
+        { name: STAVE_SERIES_NAMES[:up1],   data: stave_up1   },
+        { name: STAVE_SERIES_NAMES[:dn1],   data: stave_dn1   },
+        { name: STAVE_SERIES_NAMES[:top],   data: stave_top   },
+        { name: STAVE_SERIES_NAMES[:bot],   data: stave_bot   }
       ]
       return stave_file
     end
@@ -214,10 +229,10 @@ module Stock
       engine      = _engin(@good_area, years)
       bolls_price, bolls_bolls, bolls_mup, bolls_mdn = _bolls(engine, years, stock)
       bolls_file  = [
-        { name: "P", data: bolls_price },
-        { name: "B", data: bolls_bolls },
-        { name: "U", data: bolls_mup   },
-        { name: "D", data: bolls_mdn   }
+        { name: BOLLS_SERIES_NAMES[:price], data: bolls_price },
+        { name: BOLLS_SERIES_NAMES[:bolls], data: bolls_bolls },
+        { name: BOLLS_SERIES_NAMES[:mup],   data: bolls_mup   },
+        { name: BOLLS_SERIES_NAMES[:mdn],   data: bolls_mdn   }
       ]
       return bolls_file
     end
@@ -231,12 +246,12 @@ module Stock
       stave_bot   = _filter(table,  "bot",    stock )
 
       stave_data = [
-        { name: "P", data: stave_price },
-        { name: "T", data: stave_trend },
-        { name: "U", data: stave_up1   },
-        { name: "D", data: stave_dn1   },
-        { name: "O", data: stave_top   },
-        { name: "B", data: stave_bot   }
+        { name: STAVE_SERIES_NAMES[:price], data: stave_price },
+        { name: STAVE_SERIES_NAMES[:trend], data: stave_trend },
+        { name: STAVE_SERIES_NAMES[:up1],   data: stave_up1   },
+        { name: STAVE_SERIES_NAMES[:dn1],   data: stave_dn1   },
+        { name: STAVE_SERIES_NAMES[:top],   data: stave_top   },
+        { name: STAVE_SERIES_NAMES[:bot],   data: stave_bot   }
       ]
 
       return stave_data
@@ -249,10 +264,10 @@ module Stock
       bolls_mdn   = _filter(table,  "mdn",    stock )
 
       bolls_data = [
-        { name: "P", data: bolls_price },
-        { name: "B", data: bolls_bolls },
-        { name: "U", data: bolls_mup   },
-        { name: "D", data: bolls_mdn   }
+        { name: BOLLS_SERIES_NAMES[:price], data: bolls_price },
+        { name: BOLLS_SERIES_NAMES[:bolls], data: bolls_bolls },
+        { name: BOLLS_SERIES_NAMES[:mup],   data: bolls_mup   },
+        { name: BOLLS_SERIES_NAMES[:mdn],   data: bolls_mdn   }
       ]
 
       return bolls_data

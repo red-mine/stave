@@ -131,18 +131,7 @@ untouched pending further verification.
 Ways the current implementation falls short of the strategy as described, beyond the
 signal-code bug above:
 
-1. **Chart legend label collision.** In `_stave_data` ([lib/stock/stave.rb](../lib/stock/stave.rb)),
-   both the trend line (趋势线) and the +2SD "top" band (乐观线) are labeled `"T"` in the
-   chart series fed to Chartkick:
-   ```ruby
-   { name: "T", data: stave_trend },  # 趋势线
-   ...
-   { name: "T", data: stave_top   },  # 乐观线 (+2SD) — same label
-   ```
-   The chart legend can't visually distinguish these two of the five lines. Purely a
-   display issue — the underlying data/computation is correct.
-
-2. **No fundamentals screen.** The strategy explicitly requires the underlying company to
+1. **No fundamentals screen.** The strategy explicitly requires the underlying company to
    be fundamentally sound ("股票背后的公司必须为良好体质的公司") — mean reversion is
    assumed to fail otherwise. The app has no fundamentals data source or company-quality
    check anywhere; it applies the statistical method to any stock that has enough price
@@ -150,7 +139,7 @@ signal-code bug above:
    documented strategy and the implementation, since the strategy's own stated failure
    mode (deteriorating company fundamentals) isn't guarded against at all.
 
-3. **No grid-trading execution.** The strategy mentions treating the four bands between
+2. **No grid-trading execution.** The strategy mentions treating the four bands between
    the five lines as grid-trading zones for capital allocation. The app is a
    classification/charting tool only — no position sizing or execution logic exists. This
    is likely acceptable as scope (decision support vs. auto-trading), not a bug, but is
