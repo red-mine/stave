@@ -60,6 +60,7 @@ module Stock
         good_staves(StocksBollsYear, years_mdn,   good_stock, "mdn"   )
         end
       end
+      SignalSnapshot.capture!(@good_area)
     end
 
     def good_staves(good_table, good_stave, good_stock, good_years)
