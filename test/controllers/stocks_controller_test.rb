@@ -177,8 +177,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal ["Stock", "Year signal", "LOHAS signal"], css_select(".stock-table th").first(3).map { |header| header.text.strip }
-    assert_select "a.guide-link[href='/stave/stave.png']", text: /Open signal guide/
-    assert_select "a.signal-guide-link[href='/stave/stave.png']", count: 4
+    assert_select "a.guide-link[href='#{StocksHelper::SIGNAL_GUIDE_PATH}']", text: /Open signal guide/
+    assert_select "a.signal-guide-link[href='#{StocksHelper::SIGNAL_GUIDE_PATH}']", count: 4
     assert_select "tr.is-historical", count: 1 do
       assert_select ".stock-code", text: /SZ000522/
       assert_select ".historical-label", text: "Historical"
