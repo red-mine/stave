@@ -31,7 +31,10 @@ jobs:
         run: bundle exec rails db:prepare
 
       - name: Check pending migrations
-        run: bundle exec rails runner 'ActiveRecord::Migration.check_pending!'
+        run: bundle exec rails runner 'abort "Pending migrations" if ActiveRecord::Base.connection_pool.migration_context.needs_migration?'
+
+      - name: Audit Ruby dependencies
+        run: bundle exec bundler-audit check --update
 
       - name: Run tests
         run: bundle exec rails test
