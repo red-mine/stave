@@ -88,11 +88,3 @@ task :stock => :environment do
   puts "#{Stock::VERSION}"
   puts "#{RUBY_PLATFORM}"
 end
-
-desc "openai"
-task :openai => :environment do
-  OpenAI.configure do |config|
-    config.access_token = ENV.fetch('OPENAI_ACCESS_TOKEN')
-  end
-  client = OpenAI::Client.new
-end

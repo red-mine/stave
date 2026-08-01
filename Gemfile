@@ -48,8 +48,6 @@ gem "progress"
 
 gem "os"
 
-gem "ruby-openai"
-
 #gem "sprockets-rails"
 
 gem "nokogiri", ">= 1.19.4"
