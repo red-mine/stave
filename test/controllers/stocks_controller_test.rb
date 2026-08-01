@@ -119,4 +119,52 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
     assert_select "h1", text: "Invalid search"
   end
+
+  test "market signals are available as JSON" do
+    signal = StocksCoefsStav.create!(
+      stock: "sh600000",
+      area: Stock::SHSTK,
+      loha: 1.2,
+      year: 0.8,
+      price: 12.34,
+      lohas: "BUY5",
+      date: Date.new(2026, 7, 31)
+    )
+
+    get stocks_by_area_path(Stock::SHSTK, format: :json)
+
+    assert_response :success
+    payload = response.parsed_body
+    assert_equal ["sh600000"], payload.pluck("stock")
+    assert_equal signal.price, payload.first.fetch("price")
+    assert_equal stock_analysis_url("sh600000", area: Stock::SHSTK, format: :json), payload.first.fetch("url")
+  end
+
+  test "stock analysis is available as JSON" do
+    stave = FakeStave.new
+
+    Stock::Stave.stub(:new, ->(*) { stave }) do
+      get stock_analysis_path("600000", area: Stock::SHSTK, format: :json)
+    end
+
+    assert_response :success
+    payload = response.parsed_body
+    assert_equal "sh600000", payload.fetch("stock")
+    assert_equal Stock::SHSTK, payload.fetch("area")
+    assert_equal %w[bolls_lohas bolls_years stave_lohas stave_years], payload.fetch("charts").keys.sort
+  end
+
+  test "JSON errors use a structured response" do
+    Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
+      get stock_analysis_path("bad!", format: :json)
+
+      assert_response :not_found
+      assert_equal({ "error" => "Stock not found" }, response.parsed_body)
+
+      get stocks_by_area_path(Stock::SZSTK, format: :json), params: { stock: "%" }
+    end
+
+    assert_response :bad_request
+    assert_equal({ "error" => "Invalid stock search" }, response.parsed_body)
+  end
 end
