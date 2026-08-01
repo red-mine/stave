@@ -74,7 +74,7 @@ class StocksController < ApplicationController
     end
 
     def supported_stock_areas
-      [Stock::SZSTK, Stock::SHSTK, Stock::BJSTK]
+      Stock::AREAS
     end
 
     # Use callbacks to share common setup or constraints between actions.

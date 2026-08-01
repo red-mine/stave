@@ -28,7 +28,7 @@ end
 
 desc "Refresh analysis data for all markets (or a selected market list)"
 task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
-  supported_areas = [Stock::SZSTK, Stock::SHSTK, Stock::BJSTK]
+  supported_areas = Stock::AREAS
   areas = args.to_a.compact.map(&:strip).uniq
   areas = supported_areas if areas.empty?
   invalid_areas = areas - supported_areas

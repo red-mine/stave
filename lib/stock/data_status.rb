@@ -20,7 +20,7 @@ module Stock
       @data_root = Pathname.new(data_root)
     end
 
-    def call(areas = [SZSTK, SHSTK, BJSTK])
+    def call(areas = AREAS)
       areas.to_h do |area|
         source_date = latest_source_date(area)
         tables = TABLES.to_h { |table| [table, table_status(table, area)] }

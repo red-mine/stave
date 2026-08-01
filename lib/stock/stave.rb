@@ -187,6 +187,7 @@ module Stock
         .where(arel[:area].eq(@good_area))
         .where(arel[:stock].eq(stock))
         .where(arel[:years].eq(filter))
+        .order(arel[:date])
         .pluck(arel[:date], arel[:price])
       stave
     end

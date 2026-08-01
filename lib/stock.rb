@@ -10,6 +10,7 @@ module Stock
   SZSTK = "sz"
   SHSTK = "sh"
   BJSTK = "bj"
+  AREAS = [SZSTK, SHSTK, BJSTK].freeze
   WEEKS = 5
   YEARS = 250
   STAVE = 20  * WEEKS

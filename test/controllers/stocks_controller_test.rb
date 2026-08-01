@@ -20,6 +20,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal [Stock::SHSTK], areas
+    assert_select "a[href='#{stocks_by_area_path(Stock::BJSTK)}']", text: "BJ"
   end
 
   test "stock analysis preserves its market query parameter" do

@@ -2,8 +2,6 @@
 
 <table align=center border=1 cellspacing=0>
 
-  <% @another = @area == Stock::SZSTK ? Stock::SHSTK : Stock::SZSTK %>
-
   <tr>
     <td colspan=10 align=center>
         <%= form_tag(stocks_by_area_path(@area), method: "get") do %>
@@ -15,7 +13,17 @@
   </tr>
 
   <tr>
-    <th>Stock/<%= link_to @area.upcase, stocks_by_area_path(@another) %></th>
+    <th>
+      Stock/
+      <% Stock::AREAS.each_with_index do |area, index| %>
+        <%= " / " unless index.zero? %>
+        <% if area == @area %>
+          <%= area.upcase %>
+        <% else %>
+          <%= link_to area.upcase, stocks_by_area_path(area) %>
+        <% end %>
+      <% end %>
+    </th>
     <th>Loh</th>
     <th>One</th>
     <th>Price</th>
