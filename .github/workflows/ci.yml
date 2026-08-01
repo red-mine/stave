@@ -33,6 +33,9 @@ jobs:
       - name: Check pending migrations
         run: bundle exec rails runner 'abort "Pending migrations" if ActiveRecord::Base.connection_pool.migration_context.needs_migration?'
 
+      - name: Check application autoloading
+        run: bundle exec rails zeitwerk:check
+
       - name: Audit Ruby dependencies
         run: bundle exec bundler-audit check --update
 
