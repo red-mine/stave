@@ -72,6 +72,15 @@ already have the latest source date. To refresh selected markets only:
 bundle exec rails "refresh[sz,sh]"
 ```
 
+Verify source freshness, imported dates, row counts, and chart coverage:
+
+```powershell
+bundle exec rails data_status
+```
+
+The status task exits unsuccessfully when any market stage is missing or stale,
+so it can also be used by scheduled jobs and CI.
+
 The individual stages remain available for diagnostics:
 
 ```powershell

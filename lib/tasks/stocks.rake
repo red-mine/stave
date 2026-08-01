@@ -66,6 +66,22 @@ task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
   end
 end
 
+desc "Report TongdaXin source and generated-data health"
+task data_status: :environment do
+  checker = Stock::DataStatus.new
+  report = checker.call
+
+  report.each do |area, market|
+    state = market[:healthy] ? "OK" : "INCOMPLETE"
+    puts "#{area.upcase}: #{state} source=#{market[:source_date] || 'missing'}"
+    market[:tables].each do |table, status|
+      puts "  #{table}: rows=#{status[:rows]} stocks=#{status[:stocks]} latest=#{status[:date] || 'missing'}"
+    end
+  end
+
+  abort "Stock data is incomplete" unless checker.healthy?(report)
+end
+
 desc "stock"
 task :stock => :environment do
   puts "stock"

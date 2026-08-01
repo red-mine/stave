@@ -1,6 +1,7 @@
 require_relative "stock/version"
 require_relative "stock/railtie"
 require_relative "stock/core_ext"
+require_relative "stock/data_status"
 require_relative "stock/stave"
 require_relative "stock/stock"
 require "pathname"
