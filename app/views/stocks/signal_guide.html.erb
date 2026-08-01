@@ -1,0 +1,47 @@
+<% signals = [
+  { code: "SAF1", action: "Buy zone", tone: "positive", stave: "Between -2SD and -1SD", channel: "Lower half, still inside", stave_pos: "low", channel_pos: "lower", summary: "Depressed relative to trend without breaking below the channel." },
+  { code: "BUY5", action: "Positive buy", tone: "positive", stave: "Trend to +1SD", channel: "Upper half, still inside", stave_pos: "upper", channel_pos: "upper", summary: "Constructive upward movement that is not yet highly extended." },
+  { code: "CHP0", action: "Cheap recovery", tone: "positive", stave: "Below -2SD", channel: "Recovered into lower half", stave_pos: "deep", channel_pos: "lower", summary: "A higher-risk rebound after an unusually deep decline." },
+  { code: "SOX2", action: "Strong rise - hold", tone: "strong", stave: "+1SD to +2SD", channel: "Above upper boundary", stave_pos: "high", channel_pos: "above", summary: "Strong momentum, but already elevated; avoid chasing blindly." },
+  { code: "SEL7", action: "Sell zone", tone: "negative", stave: "+1SD to +2SD", channel: "Upper half, back inside", stave_pos: "high", channel_pos: "upper", summary: "An extended price has returned inside the channel; consider reducing." },
+  { code: "WAT8", action: "Wait", tone: "neutral", stave: "Between -2SD and -1SD", channel: "Upper half", stave_pos: "low", channel_pos: "upper", summary: "The stave and channel disagree, so wait for clearer confirmation." },
+  { code: "WAT9", action: "Avoid buying", tone: "negative", stave: "Below -2SD", channel: "Below lower boundary", stave_pos: "deep", channel_pos: "below", summary: "Weak on both measures and at the greatest breakdown risk." }
+] %>
+
+<main class="app-shell guide-page">
+  <header class="guide-header">
+    <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area), class: "back-link" %>
+    <p class="eyebrow">Stock Stave</p>
+    <h1>Signal guide</h1>
+    <p class="subtitle">Each signal combines the price's position in the stave trend bands with its position in the LOHAS channel.</p>
+  </header>
+
+  <section class="guide-explainer" aria-label="How to read the guide">
+    <div><strong>Stave</strong><span>-2SD · -1SD · Trend · +1SD · +2SD</span></div>
+    <div><strong>Channel</strong><span>Lower boundary · Middle · Upper boundary</span></div>
+  </section>
+
+  <div class="guide-grid">
+    <% signals.each do |signal| %>
+      <article class="guide-card guide-card-<%= signal[:tone] %>">
+        <header>
+          <%= signal_badge(signal[:code]) %>
+          <strong><%= signal[:action] %></strong>
+        </header>
+        <p><%= signal[:summary] %></p>
+        <div class="position-row">
+          <span>Stave</span>
+          <div class="position-track" aria-hidden="true"><i class="position-marker position-<%= signal[:stave_pos] %>"></i></div>
+          <small><%= signal[:stave] %></small>
+        </div>
+        <div class="position-row">
+          <span>Channel</span>
+          <div class="position-track channel-track" aria-hidden="true"><i class="position-marker position-<%= signal[:channel_pos] %>"></i></div>
+          <small><%= signal[:channel] %></small>
+        </div>
+      </article>
+    <% end %>
+  </div>
+
+  <p class="guide-note">These are mechanical price-position signals, not guarantees or personalized investment advice.</p>
+</main>

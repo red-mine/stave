@@ -14,6 +14,10 @@ class StocksController < ApplicationController
     @stocks_stavs, @stavs_date = stave.good_index(stock)
   end
 
+  def signal_guide
+    @area = stock_area
+  end
+
   # GET /stocks/1 or /stocks/1.json
   def show
     area     = stock_area

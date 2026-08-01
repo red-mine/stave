@@ -1,6 +1,4 @@
 module StocksHelper
-  SIGNAL_GUIDE_PATH = "/stave/stave.png?v=2"
-
   SIGNAL_DETAILS = {
     "SAF1" => "Safe buy zone",
     "SOX2" => "Strong rise",
@@ -40,10 +38,8 @@ module StocksHelper
     label = code.presence || "No signal"
     link_to(
       signal_badge(code),
-      SIGNAL_GUIDE_PATH,
+      signal_guide_path(area: @area),
       class: "signal-guide-link",
-      target: "_blank",
-      rel: "noopener",
       aria: { label: "Open signal guide for #{label}" }
     )
   end

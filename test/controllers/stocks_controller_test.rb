@@ -177,8 +177,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal ["Stock", "Year signal", "LOHAS signal"], css_select(".stock-table th").first(3).map { |header| header.text.strip }
-    assert_select "a.guide-link[href='#{StocksHelper::SIGNAL_GUIDE_PATH}']", text: /Open signal guide/
-    assert_select "a.signal-guide-link[href='#{StocksHelper::SIGNAL_GUIDE_PATH}']", count: 4
+    guide_path = signal_guide_path(area: Stock::SZSTK)
+    assert_select "a.guide-link[href='#{guide_path}']", text: /Open signal guide/
+    assert_select "a.signal-guide-link[href='#{guide_path}']", count: 4
     assert_select "tr.is-historical", count: 1 do
       assert_select ".stock-code", text: /SZ000522/
       assert_select ".historical-label", text: "Historical"
@@ -202,6 +203,18 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "2026-07-31", payload.fetch("market_date")
     assert_equal false, payload.fetch("historical")
     assert_equal %w[bolls_lohas bolls_years stave_lohas stave_years], payload.fetch("charts").keys.sort
+  end
+
+  test "signal guide explains every active signal on a mobile-friendly page" do
+    get signal_guide_path(area: Stock::SHSTK)
+
+    assert_response :success
+    assert_select "h1", text: "Signal guide"
+    assert_select ".guide-card", count: 7
+    %w[SAF1 BUY5 CHP0 SOX2 SEL7 WAT8 WAT9].each do |code|
+      assert_select ".guide-card", text: /#{code}/
+    end
+    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
   end
 
   test "JSON errors use a structured response" do
