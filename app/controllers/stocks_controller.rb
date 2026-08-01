@@ -1,5 +1,5 @@
 class StocksController < ApplicationController
-  STOCK_ID_PATTERN = /\A(?:sz|sh|bj)?[a-z0-9]{6}\z/
+  STOCK_ID_PATTERN = /\A(?:(?<area>sz|sh|bj))?(?<code>\d{6})\z/
   STOCK_QUERY_PATTERN = /\A[a-z0-9]{1,8}\z/
 
   # GET /stocks or /stocks.json
@@ -16,10 +16,11 @@ class StocksController < ApplicationController
 
   # GET /stocks/1 or /stocks/1.json
   def show
-    stock   = params[:stock].to_s.downcase
-    return render(:not_found, status: :not_found) unless STOCK_ID_PATTERN.match?(stock)
+    stock_id = STOCK_ID_PATTERN.match(params[:stock].to_s.downcase)
+    return render(:not_found, status: :not_found) unless stock_id
 
-    area    = stock_area
+    stock   = stock_id[:code]
+    area    = stock_id[:area] || stock_area
     @stock  = stock
     @area   = area
     stave   = Stock::Stave.new(area, Stock::STAVE)

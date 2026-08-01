@@ -44,6 +44,19 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".chart-card", count: 4
   end
 
+  test "stock analysis accepts a market-prefixed identifier" do
+    calls = []
+
+    Stock::Stave.stub(:new, ->(area, _days) { calls << area; FakeStave.new }) do
+      get stock_analysis_path("SH600000", area: Stock::SZSTK)
+    end
+
+    assert_response :success
+    assert_equal [Stock::SHSTK], calls
+    assert_select "h1", text: "600000"
+    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
+  end
+
   test "stock analysis defaults invalid market input to Shenzhen" do
     areas = []
 
@@ -62,6 +75,14 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
     assert_select "h1", text: "Stock not found"
+  end
+
+  test "rejects alphabetic stock identifiers" do
+    Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
+      get stock_analysis_path("shabcdef")
+    end
+
+    assert_response :not_found
   end
 
   test "returns not found when a stock is absent from the selected market" do
