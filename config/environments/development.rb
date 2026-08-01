@@ -63,6 +63,18 @@ Rails.application.configure do
   # Suppress logger output for asset requests.
   config.assets.quiet = true
 
+  # Let parallel development processes use separate Sprockets caches. Windows
+  # cannot atomically replace a cache file while another process has it open.
+  if ENV["ASSET_CACHE_PATH"].present?
+    config.assets.configure do |environment|
+      environment.cache = Sprockets::Cache::FileStore.new(
+        ENV.fetch("ASSET_CACHE_PATH"),
+        config.assets.cache_limit,
+        environment.logger
+      )
+    end
+  end
+
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 
