@@ -59,4 +59,10 @@ module StocksHelper
 
     { label: "Needs update", tone: "stale" }
   end
+
+  def refresh_finished_date(value)
+    Time.iso8601(value).in_time_zone("Asia/Shanghai").to_date
+  rescue ArgumentError, TypeError
+    nil
+  end
 end

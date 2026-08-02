@@ -46,6 +46,17 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{stocks_by_area_path(Stock::BJSTK)}']", text: "BJ"
   end
 
+  test "market page displays the last successful daily refresh" do
+    status = { state: "succeeded", finished_at: "2026-08-01T17:30:00Z" }
+
+    Stock::RefreshRun.stub(:new, -> { Struct.new(:status).new(status) }) do
+      get stocks_by_area_path("sz")
+    end
+
+    assert_response :success
+    assert_select ".refresh-status", text: /Daily refresh verified 2026-08-02/
+  end
+
   test "stock analysis preserves its market query parameter" do
     areas = []
 

@@ -8,4 +8,10 @@ class StocksHelperTest < ActionView::TestCase
       assert_equal({ label: "Unavailable", tone: "unknown" }, data_recency(nil))
     end
   end
+
+  test "shows refresh dates in the Shanghai calendar day and tolerates invalid input" do
+    assert_equal Date.new(2026, 8, 2), refresh_finished_date("2026-08-01T17:30:00Z")
+    assert_nil refresh_finished_date("not-a-time")
+    assert_nil refresh_finished_date(nil)
+  end
 end

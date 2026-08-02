@@ -13,6 +13,7 @@ class StocksController < ApplicationController
     stave   = Stock::Stave.new(area, Stock::STAVE)
     @stocks_stavs, @stavs_date = stave.good_index(stock)
     @buy_candidates = stock ? [] : stave.strongest_buy_candidates
+    @refresh_status = Stock::RefreshRun.new.status
   end
 
   def signal_guide

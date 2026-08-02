@@ -70,7 +70,10 @@ backup before recalculation, refreshes only new or incomplete markets, saves a
 daily signal snapshot, and verifies the generated data before succeeding. The
 signal snapshot is recorded after every run, including runs that skip
 recalculation. Run `bundle exec rails snapshot_status` to inspect accumulated
-signal history.
+signal history. Use `bundle exec rails refresh_plan` first when you only want to
+preview which markets need work. Daily refreshes are locked so two copies cannot
+modify the database concurrently, and the front page reports the last run as
+running, successful, or failed.
 
 
 Refresh all three markets with one command:

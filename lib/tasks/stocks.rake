@@ -88,25 +88,44 @@ end
 
 desc "Refresh only markets with new or incomplete data, then verify and snapshot them"
 task daily_refresh: :environment do
+  begin
+    Stock::RefreshRun.new.call do
+      checker = Stock::DataStatus.new
+      report = checker.call
+      areas = checker.refresh_areas(report)
+
+      if areas.empty?
+        latest = report.values.filter_map { |market| market[:source_date] }.max
+        puts "No refresh needed. All markets are healthy through #{latest || 'an unavailable date'}."
+      else
+        puts "Markets requiring refresh: #{areas.map(&:upcase).join(', ')}"
+        Rake::Task[:refresh].reenable
+        Rake::Task[:refresh].invoke(*areas)
+
+        verified = checker.call
+        abort "Refresh finished but generated data remains incomplete" unless checker.healthy?(verified)
+      end
+
+      Stock::AREAS.each { |area| Stock::SignalSnapshot.capture!(area) }
+      counts = StockSignalSnapshot.group(:area).count
+      puts "Daily refresh complete. Snapshot rows: #{counts.sort.to_h.inspect}"
+    end
+  rescue Stock::RefreshRun::AlreadyRunning => error
+    abort error.message
+  end
+end
+
+desc "Preview which markets daily_refresh would recalculate without changing data"
+task refresh_plan: :environment do
   checker = Stock::DataStatus.new
   report = checker.call
   areas = checker.refresh_areas(report)
 
-  if areas.empty?
-    latest = report.values.filter_map { |market| market[:source_date] }.max
-    puts "No refresh needed. All markets are healthy through #{latest || 'an unavailable date'}."
-  else
-    puts "Markets requiring refresh: #{areas.map(&:upcase).join(', ')}"
-    Rake::Task[:refresh].reenable
-    Rake::Task[:refresh].invoke(*areas)
-
-    verified = checker.call
-    abort "Refresh finished but generated data remains incomplete" unless checker.healthy?(verified)
+  report.each do |area, market|
+    state = market[:healthy] ? "healthy" : "needs refresh"
+    puts "#{area.upcase}: #{state} source=#{market[:source_date] || 'missing'}"
   end
-
-  Stock::AREAS.each { |area| Stock::SignalSnapshot.capture!(area) }
-  counts = StockSignalSnapshot.group(:area).count
-  puts "Daily refresh complete. Snapshot rows: #{counts.sort.to_h.inspect}"
+  puts areas.empty? ? "No database changes are needed." : "Would refresh: #{areas.map(&:upcase).join(', ')}"
 end
 
 desc "Report saved daily signal-history coverage"
