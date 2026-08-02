@@ -35,6 +35,21 @@ class DataStatusTest < ActiveSupport::TestCase
     assert_equal [Stock::SHSTK, Stock::BJSTK], checker.refresh_areas(report)
   end
 
+  test "reports progress around each market inspection" do
+    events = []
+    checker = Stock::DataStatus.new(progress: ->(area, state) { events << [area, state] })
+    checker.stub(:latest_source_date, nil) do
+      checker.stub(:table_status, { rows: 0, stocks: 0, date: nil }) do
+        checker.call([Stock::SZSTK, Stock::BJSTK])
+      end
+    end
+
+    assert_equal [
+      [Stock::SZSTK, :started], [Stock::SZSTK, :finished],
+      [Stock::BJSTK, :started], [Stock::BJSTK, :finished]
+    ], events
+  end
+
   private
 
   def market_status(source_date:, chart_stocks:)

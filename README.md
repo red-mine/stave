@@ -75,6 +75,18 @@ preview which markets need work. Daily refreshes are locked so two copies cannot
 modify the database concurrently, and the front page reports the last run as
 running, successful, or failed.
 
+### Schedule the Windows refresh
+
+Install a daily Windows task (20:30 local time by default) from PowerShell:
+
+```powershell
+pwsh -File bin\install-daily-refresh-task.ps1
+```
+
+The task runs against the isolated UI database at `tmp/ui-stock.sqlite3`, uses
+the Ruby 3.4 executable explicitly, starts missed runs when the computer becomes
+available, and refuses overlapping executions. Its latest output is saved to
+`log/daily-refresh/latest.log`. Choose a different time with `-At HH:mm`.
 
 Refresh all three markets with one command:
 

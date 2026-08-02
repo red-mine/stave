@@ -15,17 +15,20 @@ module Stock
 
     TABLES = (COEFFICIENT_TABLES + SERIES_TABLES).freeze
 
-    def initialize(connection: ActiveRecord::Base.connection, data_root: ::Stock.data_root)
+    def initialize(connection: ActiveRecord::Base.connection, data_root: ::Stock.data_root, progress: nil)
       @connection = connection
       @data_root = Pathname.new(data_root)
+      @progress = progress
     end
 
     def call(areas = AREAS)
       areas.to_h do |area|
+        @progress&.call(area, :started)
         source_date = latest_source_date(area)
         tables = TABLES.to_h { |table| [table, table_status(table, area)] }
         status = { source_date: source_date, tables: tables }
         status[:healthy] = healthy_market?(status)
+        @progress&.call(area, :finished)
         [area, status]
       end
     end

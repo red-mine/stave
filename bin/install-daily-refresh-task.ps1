@@ -1,0 +1,33 @@
+param(
+  [string]$TaskName = "Stock Stave Daily Refresh",
+  [string]$At = "20:30"
+)
+
+$ErrorActionPreference = "Stop"
+$runner = Join-Path $PSScriptRoot "daily-refresh.ps1"
+$time = [DateTime]::ParseExact($At, "HH:mm", [Globalization.CultureInfo]::InvariantCulture)
+$pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
+
+$action = New-ScheduledTaskAction `
+  -Execute $pwsh `
+  -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$runner`""
+$trigger = New-ScheduledTaskTrigger -Daily -At $time
+$settings = New-ScheduledTaskSettingsSet `
+  -StartWhenAvailable `
+  -MultipleInstances IgnoreNew `
+  -ExecutionTimeLimit (New-TimeSpan -Hours 4)
+$principal = New-ScheduledTaskPrincipal `
+  -UserId $env:USERNAME `
+  -LogonType Interactive `
+  -RunLevel Limited
+
+Register-ScheduledTask `
+  -TaskName $TaskName `
+  -Action $action `
+  -Trigger $trigger `
+  -Settings $settings `
+  -Principal $principal `
+  -Description "Refresh Stock Stave data and record signal snapshots every evening." `
+  -Force | Out-Null
+
+Get-ScheduledTask -TaskName $TaskName | Get-ScheduledTaskInfo

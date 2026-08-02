@@ -89,8 +89,13 @@ end
 desc "Refresh only markets with new or incomplete data, then verify and snapshot them"
 task daily_refresh: :environment do
   begin
+    $stdout.sync = true
     Stock::RefreshRun.new.call do
-      checker = Stock::DataStatus.new
+      progress = lambda do |area, state|
+        message = state == :started ? "Checking #{area.upcase} market data..." : "Finished checking #{area.upcase}."
+        puts message
+      end
+      checker = Stock::DataStatus.new(progress: progress)
       report = checker.call
       areas = checker.refresh_areas(report)
 
