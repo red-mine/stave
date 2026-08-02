@@ -280,6 +280,37 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".buy-panel", count: 0
   end
 
+  test "market action filters use conservative signal groups" do
+    {
+      "sz000001" => ["BUY5", "SAF1"],
+      "sz000002" => ["BUY5", "SEL7"],
+      "sz000003" => ["WAT9", "BUY5"]
+    }.each do |stock, (years, lohas)|
+      StocksCoefsStav.create!(
+        stock: stock, area: Stock::SZSTK, price: 10,
+        years: years, lohas: lohas, date: Date.new(2026, 7, 31)
+      )
+    end
+
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "buy" }
+    assert_response :success
+    assert_select ".stock-code", count: 1, text: /SZ000001/
+    assert_select ".signal-filter.is-active", text: "Buy agreement"
+
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "sell" }
+    assert_select ".stock-code", count: 1, text: /SZ000002/
+
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "watch" }
+    assert_select ".stock-code", count: 1, text: /SZ000003/
+  end
+
+  test "invalid action filters safely default to all" do
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "unknown" }
+
+    assert_response :success
+    assert_select ".signal-filter.is-active", text: "All"
+  end
+
   test "stock analysis is available as JSON" do
     stave = FakeStave.new
 

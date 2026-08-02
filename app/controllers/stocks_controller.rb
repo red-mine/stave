@@ -1,6 +1,9 @@
 class StocksController < ApplicationController
   STOCK_ID_PATTERN = /\A(?:(?<area>sz|sh|bj))?(?<code>\d{6})\z/
   STOCK_QUERY_PATTERN = /\A[a-z0-9]{1,8}\z/
+  SIGNAL_FILTERS = %w[all buy sell watch].freeze
+  BUY_SIGNALS = %w[SAF1 BUY4 BUY5 CHP0].freeze
+  SELL_SIGNALS = %w[SEL3 SEL6 SEL7].freeze
 
   # GET /stocks or /stocks.json
   def index
@@ -12,6 +15,8 @@ class StocksController < ApplicationController
     @stock  = stock
     stave   = Stock::Stave.new(area, Stock::STAVE)
     @stocks_stavs, @stavs_date = stave.good_index(stock)
+    @signal_filter = normalized_signal_filter
+    @stocks_stavs = filtered_signals(@stocks_stavs, @signal_filter) unless stock
     @buy_candidates = stock ? [] : stave.strongest_buy_candidates
     @refresh_status = Stock::RefreshRun.new.status
     @refresh_schedule = Stock::RefreshSchedule.new.status
@@ -87,5 +92,25 @@ class StocksController < ApplicationController
       stock = params[:stock].to_s.strip.downcase
       return nil if stock.empty?
       return stock if STOCK_QUERY_PATTERN.match?(stock)
+    end
+
+    def normalized_signal_filter
+      params[:signal].to_s.in?(SIGNAL_FILTERS) ? params[:signal].to_s : "all"
+    end
+
+    def filtered_signals(scope, filter)
+      case filter
+      when "buy"
+        scope.where(years: BUY_SIGNALS, lohas: BUY_SIGNALS)
+      when "sell"
+        scope.where(years: SELL_SIGNALS).or(scope.where(lohas: SELL_SIGNALS))
+      when "watch"
+        scope
+          .where.not(years: SELL_SIGNALS)
+          .where.not(lohas: SELL_SIGNALS)
+          .where.not(years: BUY_SIGNALS, lohas: BUY_SIGNALS)
+      else
+        scope
+      end
     end
   end

@@ -97,6 +97,14 @@
       </div>
     </div>
 
+    <% unless @stock %>
+      <nav class="signal-filters" aria-label="Filter signals">
+        <% { "all" => "All", "buy" => "Buy agreement", "sell" => "Sell alert", "watch" => "Watch" }.each do |value, label| %>
+          <%= link_to label, stocks_by_area_path(@area, signal: value), class: ["signal-filter", ("is-active" if @signal_filter == value)], aria: { current: ("page" if @signal_filter == value) } %>
+        <% end %>
+      </nav>
+    <% end %>
+
     <% if @stocks_stavs.any? %>
       <p class="mobile-table-note">Tap a stock for price, trend, channel, and chart details.</p>
       <div class="table-scroll">
@@ -142,9 +150,9 @@
       </div>
     <% else %>
       <div class="empty-state">
-        <h3>No matching signals</h3>
-        <p>Try another stock code or clear the search to see all current results.</p>
-        <%= link_to "Clear search", stocks_by_area_path(@area), class: "button button-secondary" %>
+        <h3><%= @stock ? "No matching signals" : "No signals in this group" %></h3>
+        <p><%= @stock ? "Try another stock code or clear the search to see all current results." : "Choose another filter or wait for the next daily refresh." %></p>
+        <%= link_to(@stock ? "Clear search" : "Show all", stocks_by_area_path(@area), class: "button button-secondary") %>
       </div>
     <% end %>
   </section>

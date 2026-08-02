@@ -263,6 +263,11 @@ a { color: var(--teal-dark); }
 .guide-link { color: var(--teal-dark); font-size: 0.76rem; font-weight: 750; text-decoration: none; }
 .guide-link:hover { text-decoration: underline; }
 
+.signal-filters { display: flex; gap: 7px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: #fbfcfd; overflow-x: auto; }
+.signal-filter { flex: none; padding: 7px 11px; border-radius: 999px; color: var(--muted); font-size: 0.7rem; font-weight: 800; text-decoration: none; }
+.signal-filter:hover { color: var(--teal-dark); background: #edf5f5; }
+.signal-filter.is-active { color: white; background: var(--navy); }
+
 .table-scroll { overflow-x: auto; }
 .mobile-table-note { display: none; }
 .stock-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
