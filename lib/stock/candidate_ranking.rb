@@ -30,10 +30,12 @@ module Stock
         .where(date: market_date, years: BUY_SIGNALS, lohas: BUY_SIGNALS)
         .where(a_share_condition, *A_SHARE_CODE_PATTERNS.fetch(@area))
 
-      records.map { |record| evaluate(record) }
+      candidates = records.map { |record| evaluate(record) }
         .sort_by { |candidate| [-candidate.score, candidate.stock] }
         .first(limit)
-        .map { |candidate| add_history_state(candidate) }
+
+      previous_by_stock = previous_snapshots(candidates, before: market_date)
+      candidates.map { |candidate| add_history_state(candidate, previous_by_stock[candidate.stock]) }
     end
 
     private
@@ -68,13 +70,7 @@ module Stock
       Candidate.new(record:, score:, confidence: confidence_for(score), reasons: reasons.first(3), history_state: nil)
     end
 
-    def add_history_state(candidate)
-      previous = StockSignalSnapshot
-        .where(area: @area, stock: candidate.stock)
-        .where(signal_date: ...candidate.date)
-        .order(signal_date: :desc)
-        .first
-
+    def add_history_state(candidate, previous)
       state = if previous.nil?
         "First recorded"
       elsif previous.year_signal.in?(BUY_SIGNALS) && previous.lohas_signal.in?(BUY_SIGNALS)
@@ -84,6 +80,19 @@ module Stock
       end
 
       Candidate.new(**candidate.to_h, history_state: state)
+    end
+
+    def previous_snapshots(candidates, before:)
+      stocks = candidates.map(&:stock)
+      return {} if stocks.empty?
+
+      StockSignalSnapshot
+        .where(area: @area, stock: stocks)
+        .where(signal_date: ...before)
+        .order(signal_date: :desc)
+        .to_a
+        .group_by(&:stock)
+        .transform_values(&:first)
     end
 
     def balanced_positive_trends?(record)

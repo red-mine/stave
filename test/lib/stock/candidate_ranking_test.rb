@@ -32,6 +32,16 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
     assert_equal "Still active", candidates.find { |candidate| candidate.stock == "sz000002" }.history_state
   end
 
+  test "uses each candidate's latest prior observation" do
+    create_candidate(stock: "sz000001", years: "BUY5", lohas: "BUY5")
+    create_snapshot(stock: "sz000001", years: "WAT9", lohas: "WAT9", date: Date.new(2026, 7, 29))
+    create_snapshot(stock: "sz000001", years: "SAF1", lohas: "BUY4", date: Date.new(2026, 7, 30))
+
+    candidate = Stock::CandidateRanking.new(Stock::SZSTK).call.first
+
+    assert_equal "Still active", candidate.history_state
+  end
+
   test "limits the ranked result" do
     3.times { |index| create_candidate(stock: "sz00000#{index}", years: "BUY5", lohas: "BUY5") }
 
@@ -47,9 +57,9 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
     }.merge(attributes))
   end
 
-  def create_snapshot(stock:, years:, lohas:)
+  def create_snapshot(stock:, years:, lohas:, date: Date.new(2026, 7, 30))
     StockSignalSnapshot.create!(
-      stock: stock, area: stock.first(2), signal_date: Date.new(2026, 7, 30),
+      stock: stock, area: stock.first(2), signal_date: date,
       price: 49, year_signal: years, lohas_signal: lohas
     )
   end
