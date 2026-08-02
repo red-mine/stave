@@ -5,10 +5,12 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
   setup do
     Rails.application.load_tasks unless Rake::Task.task_defined?("daily_refresh")
     Rake::Task["daily_refresh"].reenable
+    @refresh_directory = Dir.mktmpdir("daily-refresh-test")
   end
 
   teardown do
     Rake::Task["daily_refresh"].reenable
+    FileUtils.remove_entry(@refresh_directory) if File.exist?(@refresh_directory)
   end
 
   test "records snapshots for every market even when none need refreshing" do
@@ -19,7 +21,7 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
 
       Stock::DataStatus.stub(:new, ->(*) { checker }) do
         Stock::SignalSnapshot.stub(:capture!, ->(area) { captured << area; 0 }) do
-          Rake::Task["daily_refresh"].invoke
+          invoke_daily_refresh
         end
       end
 
@@ -50,13 +52,25 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
       Stock::DataStatus.stub(:new, ->(*) { checker }) do
         Stock::SignalSnapshot.stub(:capture!, 0) do
           Rake::Task[:refresh].stub(:invoke, ->(*areas) { refreshed.concat(areas) }) do
-            Rake::Task["daily_refresh"].invoke
+            invoke_daily_refresh
           end
         end
       end
 
       assert_equal [Stock::SHSTK], refreshed
       assert_equal 2, call_count
+    end
+  end
+
+  private
+
+  def invoke_daily_refresh
+    refresh_run = Stock::RefreshRun.new(
+      lock_path: File.join(@refresh_directory, "refresh.lock"),
+      status_path: File.join(@refresh_directory, "status.json")
+    )
+    Stock::RefreshRun.stub(:new, ->(*) { refresh_run }) do
+      Rake::Task["daily_refresh"].invoke
     end
   end
 end
