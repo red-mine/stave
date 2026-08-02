@@ -181,8 +181,9 @@ binary decoding, moving averages, regression alignment, stave deviation, trend
 eligibility, and every currently reachable signal code.
 
 GitHub Actions runs the test database setup, pending-migration check, complete
-test suite, Zeitwerk autoload check, bundler-audit, Brakeman, schema
-consistency check, and whitespace validation on every push and pull request.
+test suite, Zeitwerk autoload check, PowerShell automation syntax check,
+bundler-audit, Brakeman, schema consistency check, and whitespace validation on
+every push and pull request.
 
 ## Troubleshooting
 

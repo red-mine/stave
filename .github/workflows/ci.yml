@@ -36,6 +36,10 @@ jobs:
       - name: Check application autoloading
         run: bundle exec rails zeitwerk:check
 
+      - name: Check PowerShell automation syntax
+        shell: pwsh
+        run: ./bin/check-powershell-syntax.ps1
+
       - name: Audit Ruby dependencies
         run: bundle exec bundler-audit check --update
 
