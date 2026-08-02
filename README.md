@@ -80,7 +80,8 @@ bundle exec rails refresh
 ```
 
 The task validates every source directory before changing data, saves a
-timestamped database backup under `tmp/backups`, and safely resumes stocks that
+timestamped database backup under `tmp/backups` (keeping the newest 7 by
+default, overridable with `STOCK_BACKUP_KEEP`), and safely resumes stocks that
 already have the latest source date. To refresh selected markets only:
 
 ```powershell

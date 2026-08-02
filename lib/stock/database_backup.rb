@@ -4,8 +4,23 @@ require "sqlite3"
 
 module Stock
   class DatabaseBackup
+    STOCK_BACKUP_PATTERN = /\Astock-\d{8}-\d{6}-\d{3}\.sqlite3\z/
+
     def initialize(connection: ActiveRecord::Base.connection)
       @connection = connection
+    end
+
+    def self.prune(directory, keep: 7)
+      keep = [keep.to_i, 1].max
+      directory = Pathname.new(directory)
+      return 0 unless directory.directory?
+
+      backups = directory.children
+        .select { |path| path.file? && STOCK_BACKUP_PATTERN.match?(path.basename.to_s) }
+        .sort
+      stale = backups[0...-keep] || []
+      stale.each(&:delete)
+      stale.size
     end
 
     def call(destination)

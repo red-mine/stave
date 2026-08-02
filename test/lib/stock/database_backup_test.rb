@@ -36,4 +36,21 @@ class DatabaseBackupTest < ActiveSupport::TestCase
       assert_equal "existing backup", File.binread(backup_path)
     end
   end
+
+  test "prunes only auto-generated backups beyond the retention limit" do
+    Dir.mktmpdir do |directory|
+      (1..9).each do |index|
+        name = format("stock-20260801-%06d-001.sqlite3", index)
+        File.binwrite(File.join(directory, name), "backup #{index}")
+      end
+      File.binwrite(File.join(directory, "ui-before-manual.sqlite3"), "manual backup")
+
+      pruned = Stock::DatabaseBackup.prune(directory, keep: 7)
+
+      assert_equal 2, pruned
+      remaining = Dir.glob(File.join(directory, "stock-*.sqlite3")).sort
+      assert_equal 7, remaining.length
+      assert File.file?(File.join(directory, "ui-before-manual.sqlite3"))
+    end
+  end
 end

@@ -49,6 +49,9 @@ task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
     backup = backup_dir.join("stock-#{Time.current.strftime('%Y%m%d-%H%M%S-%L')}.sqlite3")
     Stock::DatabaseBackup.new(connection: connection).call(backup)
     puts "Database backup: #{backup}"
+    keep = ENV.fetch("STOCK_BACKUP_KEEP", "7").to_i
+    pruned = Stock::DatabaseBackup.prune(backup_dir, keep: keep)
+    puts "Pruned #{pruned} old backup(s); keeping the newest #{[keep, 1].max}" if pruned.positive?
   end
 
   areas.each do |area|
