@@ -324,6 +324,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".buy-panel", count: 0
+    assert_select "a.clear-search[href='#{stocks_by_area_path(Stock::SZSTK)}']", text: "Clear search"
+    assert_select ".search-summary", text: /result.*matching “002653”/
   end
 
   test "market action filters use conservative signal groups" do

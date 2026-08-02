@@ -19,6 +19,9 @@
       <div class="search-controls">
         <%= text_field_tag(:stock, @stock, placeholder: "e.g. #{@area}000001", maxlength: 8, autocomplete: "off", autocapitalize: "none", spellcheck: false, inputmode: "search", enterkeyhint: "search", aria: { describedby: "stock-search-help" }) %>
         <%= submit_tag("Search", class: "button button-primary") %>
+        <% if @stock %>
+          <%= link_to "Clear search", stocks_by_area_path(@area), class: "button button-secondary clear-search" %>
+        <% end %>
       </div>
     <% end %>
   </section>
@@ -100,6 +103,9 @@
       <div>
         <p class="eyebrow"><%= @area.upcase %> market</p>
         <h2>Current signals</h2>
+        <% if @stock %>
+          <p class="search-summary"><strong><%= @result_count %></strong> result<%= "s" unless @result_count == 1 %> matching “<%= @stock.upcase %>”</p>
+        <% end %>
       </div>
       <div class="panel-meta">
         <p class="as-of">Data date <strong><%= @stavs_date || "Unavailable" %></strong></p>

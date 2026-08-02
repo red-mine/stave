@@ -265,6 +265,8 @@ a { color: var(--teal-dark); }
 .panel { overflow: hidden; border-radius: 20px; }
 .panel-heading { padding: 24px 26px; border-bottom: 1px solid var(--line); }
 .panel-heading h2, .chart-heading h2 { margin: 0; color: var(--navy); font-size: 1.35rem; }
+.search-summary { margin: 7px 0 0; color: var(--muted); font-size: 0.76rem; }
+.search-summary strong { color: var(--ink); }
 .panel-meta { display: grid; justify-items: end; gap: 6px; }
 .as-of { margin: 0; color: var(--muted); font-size: 0.86rem; }
 .as-of strong { color: var(--ink); }

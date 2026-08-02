@@ -19,6 +19,7 @@ class StocksController < ApplicationController
       @stocks_stavs = filtered_signals(@stocks_stavs, @signal_filter)
     end
     @buy_candidates = stock ? [] : stave.strongest_buy_candidates
+    @result_count = @stocks_stavs.count if stock
     @refresh_status = Stock::RefreshRun.new.status
     @refresh_schedule = Stock::RefreshSchedule.new.status
   end
