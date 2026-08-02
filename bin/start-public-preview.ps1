@@ -147,6 +147,7 @@ $status = @{
   rails_pid = ($listener | Select-Object -First 1).OwningProcess
   tunnel_pid = $tunnel.Id
   database = $database
+  port = $Port
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
 Write-Output ([pscustomobject]$status)

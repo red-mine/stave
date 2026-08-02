@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $repository = Split-Path -Parent $PSScriptRoot
 $statusScript = Join-Path $PSScriptRoot "public-preview-status.ps1"
 $startScript = Join-Path $PSScriptRoot "start-public-preview.ps1"
+$statusPath = Join-Path $repository "tmp\public-preview.json"
 $logDirectory = Join-Path $repository "log\public-preview"
 $logFile = Join-Path $logDirectory "monitor.log"
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
@@ -59,7 +60,12 @@ if (Test-PreviewHealth) {
 
 Write-MonitorLog "Preview failed twice; starting verified recovery."
 try {
-  & $startScript | Tee-Object -FilePath $logFile -Append
+  $previewPort = 3000
+  if (Test-Path -LiteralPath $statusPath -PathType Leaf) {
+    $savedStatus = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+    if ($savedStatus.port) { $previewPort = [int]$savedStatus.port }
+  }
+  & $startScript -Port $previewPort | Tee-Object -FilePath $logFile -Append
   if (-not (Test-PreviewHealth)) {
     throw "Recovered preview did not pass its health check"
   }

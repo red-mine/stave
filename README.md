@@ -156,7 +156,8 @@ pwsh -File bin\start-public-preview.ps1
 
 The command stops only verified Stock Stave Rails and Cloudflare processes,
 uses `tmp/ui-stock.sqlite3`, checks both local and public HTTP responses, and
-writes the current URL and process IDs to `tmp/public-preview.json`. Quick
+writes the current URL, port, and process IDs to `tmp/public-preview.json`. Status
+checks and recovery reuse that recorded port. Quick
 Tunnel URLs are temporary and may change when this command is run again. The
 startup is atomically locked, so a scheduled recovery cannot race a manual
 publish restart. It retries all-market tunnel readiness for up to 90 seconds and

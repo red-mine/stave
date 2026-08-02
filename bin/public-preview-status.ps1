@@ -16,7 +16,8 @@ if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
 }
 
 $status = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
-$listener = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue |
+$port = if ($status.port) { [int]$status.port } else { 3000 }
+$listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
   Select-Object -First 1
 $railsPid = if ($listener) { $listener.OwningProcess } else { $status.rails_pid }
 $rails = Get-Process -Id $railsPid -ErrorAction SilentlyContinue
@@ -28,7 +29,7 @@ $localStatuses = [ordered]@{}
 $publicStatuses = [ordered]@{}
 foreach ($area in $areas) {
   $localStatuses[$area] = try {
-    (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:3000/$area" -TimeoutSec 15).StatusCode
+    (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$port/$area" -TimeoutSec 15).StatusCode
   } catch {
     0
   }
@@ -43,6 +44,7 @@ $marketsHealthy = @($areas | Where-Object { $localStatuses[$_] -ne 200 -or $publ
 $report = [pscustomobject]@{
   Url = $status.url
   StartedAt = $status.started_at
+  Port = $port
   RailsPid = $railsPid
   RecordedRailsPid = $status.rails_pid
   RailsRunning = $rails -and $rails.ProcessName -eq "ruby"
