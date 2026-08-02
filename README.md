@@ -131,5 +131,16 @@ binary decoding, moving averages, regression alignment, stave deviation, trend
 eligibility, and every currently reachable signal code.
 
 GitHub Actions runs the test database setup, pending-migration check, complete
-test suite, schema consistency check, and whitespace validation on every push
-and pull request.
+test suite, Zeitwerk autoload check, bundler-audit, Brakeman, schema
+consistency check, and whitespace validation on every push and pull request.
+
+## Troubleshooting
+
+- **Dev-server restarts on Windows:** Puma's in-place restart, triggered by
+  touching `tmp/restart.txt`, fails on this setup with
+  `Errno::ENOENT - bin/rails` because the server is launched through
+  `bundle.bat`. Restart the server manually instead of touching `restart.txt`.
+- **Multiple Ruby installs:** The project requires Ruby 3.4.10 (see
+  `.ruby-version`). If `ruby -v` reports an older version while
+  `bundle exec rails` runs 3.4.x, put `C:\Ruby34-x64\bin` ahead of the older
+  Ruby's `bin` directory on `PATH`.
