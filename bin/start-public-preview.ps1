@@ -17,6 +17,33 @@ $tunnelError = Join-Path $repository "tmp\cloudflared-err.log"
 $serverOut = Join-Path $repository "tmp\public-preview-server-out.log"
 $serverError = Join-Path $repository "tmp\public-preview-server-err.log"
 $statusPath = Join-Path $repository "tmp\public-preview.json"
+$startLockPath = Join-Path $repository "tmp\public-preview-start.lock"
+
+function New-PreviewStartLock {
+  try {
+    return [System.IO.File]::Open(
+      $startLockPath,
+      [System.IO.FileMode]::CreateNew,
+      [System.IO.FileAccess]::Write,
+      [System.IO.FileShare]::None
+    )
+  } catch [System.IO.IOException] {
+    $existingLock = Get-Item -LiteralPath $startLockPath -ErrorAction SilentlyContinue
+    if ($existingLock -and ((Get-Date) - $existingLock.LastWriteTime).TotalMinutes -gt 5) {
+      Remove-Item -LiteralPath $startLockPath -Force
+      return [System.IO.File]::Open(
+        $startLockPath,
+        [System.IO.FileMode]::CreateNew,
+        [System.IO.FileAccess]::Write,
+        [System.IO.FileShare]::None
+      )
+    }
+    throw "A public preview start is already running"
+  }
+}
+
+$startLock = New-PreviewStartLock
+try {
 
 foreach ($file in @($RubyPath, $database, $cloudflared)) {
   if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
@@ -101,3 +128,7 @@ $status = @{
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
 Write-Output ([pscustomobject]$status)
+} finally {
+  $startLock.Dispose()
+  Remove-Item -LiteralPath $startLockPath -Force -ErrorAction SilentlyContinue
+}

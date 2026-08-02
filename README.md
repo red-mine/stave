@@ -154,6 +154,8 @@ The command stops only verified Stock Stave Rails and Cloudflare processes,
 uses `tmp/ui-stock.sqlite3`, checks both local and public HTTP responses, and
 writes the current URL and process IDs to `tmp/public-preview.json`. Quick
 Tunnel URLs are temporary and may change when this command is run again. The
+startup is atomically locked, so a scheduled recovery cannot race a manual
+publish restart. The
 managed preview uses an in-memory asset cache to avoid Windows file-rename
 collisions during concurrent asset compilation. It also suppresses detailed
 development exception pages so local paths and source snippets are not exposed

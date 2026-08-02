@@ -53,9 +53,13 @@ if (Test-PreviewHealth) {
 }
 
 Write-MonitorLog "Preview failed twice; starting verified recovery."
-& $startScript | Tee-Object -FilePath $logFile -Append
-if ($LASTEXITCODE -ne 0) {
-  Write-MonitorLog "Preview recovery failed with exit code $LASTEXITCODE."
-  exit $LASTEXITCODE
+try {
+  & $startScript | Tee-Object -FilePath $logFile -Append
+  if (-not (Test-PreviewHealth)) {
+    throw "Recovered preview did not pass its health check"
+  }
+} catch {
+  Write-MonitorLog "Preview recovery failed: $($_.Exception.Message)"
+  exit 1
 }
 Write-MonitorLog "Preview recovery succeeded."
