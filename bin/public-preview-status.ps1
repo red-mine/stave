@@ -22,16 +22,22 @@ $rails = Get-Process -Id $railsPid -ErrorAction SilentlyContinue
 $tunnel = Get-Process -Id $status.tunnel_pid -ErrorAction SilentlyContinue
 $database = Get-Item -LiteralPath $status.database -ErrorAction SilentlyContinue
 
-$localStatus = try {
-  (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:3000/sz" -TimeoutSec 30).StatusCode
-} catch {
-  0
+$areas = @("sz", "sh", "bj")
+$localStatuses = [ordered]@{}
+$publicStatuses = [ordered]@{}
+foreach ($area in $areas) {
+  $localStatuses[$area] = try {
+    (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:3000/$area" -TimeoutSec 15).StatusCode
+  } catch {
+    0
+  }
+  $publicStatuses[$area] = try {
+    (Invoke-WebRequest -UseBasicParsing -Uri "$($status.url)/$area" -TimeoutSec 15).StatusCode
+  } catch {
+    0
+  }
 }
-$publicStatus = try {
-  (Invoke-WebRequest -UseBasicParsing -Uri "$($status.url)/sz" -TimeoutSec 30).StatusCode
-} catch {
-  0
-}
+$marketsHealthy = @($areas | Where-Object { $localStatuses[$_] -ne 200 -or $publicStatuses[$_] -ne 200 }).Count -eq 0
 
 $report = [pscustomobject]@{
   Url = $status.url
@@ -41,10 +47,10 @@ $report = [pscustomobject]@{
   RailsRunning = $rails -and $rails.ProcessName -eq "ruby"
   TunnelPid = $status.tunnel_pid
   TunnelRunning = $tunnel -and $tunnel.ProcessName -eq "cloudflared"
-  LocalStatus = $localStatus
-  PublicStatus = $publicStatus
+  LocalMarkets = ($areas | ForEach-Object { "$_=$($localStatuses[$_])" }) -join ", "
+  PublicMarkets = ($areas | ForEach-Object { "$_=$($publicStatuses[$_])" }) -join ", "
   DatabaseBytes = $database.Length
-  Healthy = $rails -and $tunnel -and $localStatus -eq 200 -and $publicStatus -eq 200
+  Healthy = $rails -and $tunnel -and $marketsHealthy
 }
 $report
 if (-not $report.Healthy) { exit 1 }

@@ -172,8 +172,9 @@ restarting either process:
 pwsh -File bin\public-preview-status.ps1
 ```
 
-The status command exits unsuccessfully if Rails, the tunnel, or either HTTP
-endpoint is unavailable, making it suitable for monitoring.
+The status command checks both local and public responses for SZ, SH, and BJ. It
+exits unsuccessfully if Rails, the tunnel, or any market endpoint is unavailable,
+making it suitable for monitoring.
 
 Install a self-healing check every 30 minutes with:
 

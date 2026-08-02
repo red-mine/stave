@@ -113,10 +113,24 @@ if (-not $listener) {
   throw "Rails did not listen on port $Port within 120 seconds"
 }
 
-$localResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/sz" -TimeoutSec 60
-$publicResponse = Invoke-WebRequest -UseBasicParsing -Uri "$publicUrl/sz" -TimeoutSec 60
-if ($localResponse.StatusCode -ne 200 -or $publicResponse.StatusCode -ne 200) {
-  throw "Preview health check failed (local=$($localResponse.StatusCode), public=$($publicResponse.StatusCode))"
+$areas = @("sz", "sh", "bj")
+$failedChecks = foreach ($area in $areas) {
+  $localCode = try {
+    (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/$area" -TimeoutSec 30).StatusCode
+  } catch {
+    0
+  }
+  $publicCode = try {
+    (Invoke-WebRequest -UseBasicParsing -Uri "$publicUrl/$area" -TimeoutSec 30).StatusCode
+  } catch {
+    0
+  }
+  if ($localCode -ne 200 -or $publicCode -ne 200) {
+    "$area(local=$localCode, public=$publicCode)"
+  }
+}
+if ($failedChecks) {
+  throw "Preview market health check failed: $($failedChecks -join '; ')"
 }
 
 $status = @{
