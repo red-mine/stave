@@ -15,8 +15,9 @@ Rails.application.configure do
   # Do not eager load code on boot.
   config.eager_load = false
 
-  # Show full error reports.
-  config.consider_all_requests_local = true
+  # Keep local development diagnostics, but do not expose source paths and
+  # exception traces through the managed public preview tunnel.
+  config.consider_all_requests_local = ENV["PUBLIC_PREVIEW"].blank?
 
   # Enable server timing
   config.server_timing = true

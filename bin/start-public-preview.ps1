@@ -69,6 +69,7 @@ $publicHost = ([Uri]$publicUrl).Host
 $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
 $env:STOCK_DATABASE = $database
 $env:PUBLIC_TUNNEL_HOST = $publicHost
+$env:PUBLIC_PREVIEW = "1"
 $env:ASSET_CACHE_PATH = "memory"
 $server = Start-Process -FilePath $RubyPath `
   -ArgumentList "bin/rails", "server", "-p", $Port, "-b", "127.0.0.1" `

@@ -151,7 +151,9 @@ uses `tmp/ui-stock.sqlite3`, checks both local and public HTTP responses, and
 writes the current URL and process IDs to `tmp/public-preview.json`. Quick
 Tunnel URLs are temporary and may change when this command is run again. The
 managed preview uses an in-memory asset cache to avoid Windows file-rename
-collisions during concurrent asset compilation.
+collisions during concurrent asset compilation. It also suppresses detailed
+development exception pages so local paths and source snippets are not exposed
+through the public tunnel.
 
 Inspect the current URL and verify both local and public health without
 restarting either process:
