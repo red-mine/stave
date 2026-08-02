@@ -263,6 +263,25 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
   end
 
+  test "signal history reports evidence coverage without premature performance claims" do
+    2.times do |index|
+      StockSignalSnapshot.create!(
+        stock: "sz00000#{index}", area: Stock::SZSTK,
+        signal_date: Date.new(2026, 7, 31), price: 10 + index
+      )
+    end
+
+    get signal_history_path(area: Stock::SZSTK)
+
+    assert_response :success
+    assert_select "h1", text: "Signal history"
+    assert_select ".history-card", count: 3
+    assert_select ".history-card", text: /SZ.*Trading dates.*1.*Snapshot rows.*2/m
+    assert_select ".history-state.is-collecting", count: 3
+    assert_select ".history-note", text: /sample size, average return, win rate, and drawdown/
+    assert_select "a[href='#{stocks_by_area_path(Stock::SZSTK)}']", text: /Back to SZ signals/
+  end
+
   test "JSON errors use a structured response" do
     Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
       get stock_analysis_path("bad!", format: :json)

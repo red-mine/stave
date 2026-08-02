@@ -67,7 +67,7 @@
       <% else %>
         <p class="no-candidates">No strongest-agreement candidates in this market today. Do not force a trade.</p>
       <% end %>
-      <p class="risk-note">Agreement score ≠ expected return. Model shortlist only—not a guarantee or personalized financial advice.</p>
+      <p class="risk-note">Agreement score ≠ expected return. Model shortlist only—not a guarantee or personalized financial advice. <%= link_to "View signal history →", signal_history_path(area: @area) %></p>
     </section>
   <% end %>
 

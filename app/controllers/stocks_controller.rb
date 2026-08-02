@@ -19,6 +19,22 @@ class StocksController < ApplicationController
     @area = stock_area
   end
 
+  def signal_history
+    @area = stock_area
+    @history = Stock::AREAS.to_h do |area|
+      snapshots = StockSignalSnapshot.where(area: area)
+      dates = snapshots.distinct.count(:signal_date)
+      [area, {
+        rows: snapshots.count,
+        stocks: snapshots.distinct.count(:stock),
+        dates: dates,
+        first_date: snapshots.minimum(:signal_date),
+        latest_date: snapshots.maximum(:signal_date),
+        ready: dates >= 20
+      }]
+    end
+  end
+
   # GET /stocks/1 or /stocks/1.json
   def show
     area     = stock_area

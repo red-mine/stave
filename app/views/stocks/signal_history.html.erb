@@ -1,0 +1,36 @@
+<main class="app-shell history-page">
+  <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area), class: "back-link" %>
+
+  <header class="guide-header">
+    <p class="eyebrow">Measured evidence</p>
+    <h1>Signal history</h1>
+    <p class="subtitle">Daily snapshots preserve what the model actually knew at the time. This prevents future performance reports from accidentally using information from the future.</p>
+  </header>
+
+  <section class="history-grid" aria-label="Snapshot coverage by market">
+    <% @history.each do |area, status| %>
+      <article class="history-card">
+        <div class="history-card-heading">
+          <strong><%= area.upcase %></strong>
+          <span class="history-state <%= status[:ready] ? "is-ready" : "is-collecting" %>"><%= status[:ready] ? "Ready to measure" : "Collecting" %></span>
+        </div>
+        <dl>
+          <div><dt>Trading dates</dt><dd><%= status[:dates] %></dd></div>
+          <div><dt>Snapshot rows</dt><dd><%= status[:rows] %></dd></div>
+          <div><dt>Stocks covered</dt><dd><%= status[:stocks] %></dd></div>
+          <div><dt>Latest date</dt><dd><%= status[:latest_date] || "None yet" %></dd></div>
+        </dl>
+        <% if status[:ready] %>
+          <p>There is enough initial history to begin short-horizon outcome reporting.</p>
+        <% else %>
+          <p><strong><%= 20 - status[:dates] %></strong> more trading-date snapshots are needed before showing an initial win-rate report.</p>
+        <% end %>
+      </article>
+    <% end %>
+  </section>
+
+  <section class="history-note">
+    <h2>Why wait?</h2>
+    <p>A single successful stock does not prove that a signal works. The system will wait for at least 20 trading dates, then report sample size, average return, win rate, and drawdown together—not just the best outcomes.</p>
+  </section>
+</main>

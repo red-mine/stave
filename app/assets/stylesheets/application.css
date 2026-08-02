@@ -165,6 +165,26 @@ a { color: var(--teal-dark); }
 .candidate-open { color: var(--teal-dark); font-weight: 800; }
 .no-candidates { margin: 20px 0 0; padding: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.75); }
 .risk-note { margin: 16px 0 0; }
+.risk-note a { font-weight: 750; text-decoration: none; }
+.risk-note a:hover { text-decoration: underline; }
+
+.history-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.history-card, .history-note { border: 1px solid var(--line); border-radius: 20px; background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow); }
+.history-card { padding: 22px; }
+.history-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-card-heading > strong { color: var(--navy); font-size: 1.15rem; letter-spacing: 0.08em; }
+.history-state { padding: 5px 8px; border-radius: 999px; font-size: 0.6rem; font-weight: 850; text-transform: uppercase; }
+.history-state.is-collecting { color: #805817; background: #f8e7bd; }
+.history-state.is-ready { color: #0b684f; background: #dff5ec; }
+.history-card dl { display: grid; gap: 0; margin: 18px 0; }
+.history-card dl div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid #edf0f3; }
+.history-card dt { color: var(--muted); font-size: 0.76rem; }
+.history-card dd { margin: 0; color: var(--ink); font-size: 0.8rem; font-weight: 800; }
+.history-card > p { margin: 0; color: var(--muted); font-size: 0.78rem; line-height: 1.55; }
+.history-card > p strong { color: var(--ink); }
+.history-note { margin-top: 18px; padding: 22px; }
+.history-note h2 { margin: 0 0 7px; color: var(--navy); font-size: 1.15rem; }
+.history-note p { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.6; }
 
 .search-form,
 .search-controls,
@@ -373,6 +393,7 @@ a { color: var(--teal-dark); }
   .guide-grid { grid-template-columns: 1fr; }
   .examples-list { grid-template-columns: 1fr; }
   .buy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .history-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
