@@ -23,6 +23,8 @@ $railsPid = if ($listener) { $listener.OwningProcess } else { $status.rails_pid 
 $rails = Get-Process -Id $railsPid -ErrorAction SilentlyContinue
 $tunnel = Get-Process -Id $status.tunnel_pid -ErrorAction SilentlyContinue
 $database = Get-Item -LiteralPath $status.database -ErrorAction SilentlyContinue
+$isolatedDatabase = [System.IO.Path]::GetFullPath((Join-Path $repository "tmp\ui-stock.sqlite3"))
+$databaseIsIsolated = $database -and $database.FullName -eq $isolatedDatabase
 
 $areas = @("sz", "sh", "bj")
 $localStatuses = [ordered]@{}
@@ -52,8 +54,9 @@ $report = [pscustomobject]@{
   TunnelRunning = $tunnel -and $tunnel.ProcessName -eq "cloudflared"
   LocalMarkets = ($areas | ForEach-Object { "$_=$($localStatuses[$_])" }) -join ", "
   PublicMarkets = ($areas | ForEach-Object { "$_=$($publicStatuses[$_])" }) -join ", "
+  IsolatedDatabase = $databaseIsIsolated
   DatabaseBytes = $database.Length
-  Healthy = $rails -and $tunnel -and $marketsHealthy
+  Healthy = $rails -and $tunnel -and $marketsHealthy -and $databaseIsIsolated
 }
 $report
 if (-not $report.Healthy -and -not $ReturnOnly) { exit 1 }

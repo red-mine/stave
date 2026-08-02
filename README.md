@@ -167,6 +167,10 @@ collisions during concurrent asset compilation. It also suppresses detailed
 development exception pages so local paths and source snippets are not exposed
 through the public tunnel.
 
+The public-preview command rejects every other database path, including the
+tracked `db/stock.sqlite3`; health monitoring also treats a non-isolated recorded
+database as unhealthy.
+
 Inspect the current URL and verify both local and public health without
 restarting either process:
 

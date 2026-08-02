@@ -11,6 +11,7 @@ $database = if ($DatabasePath) {
 } else {
   Join-Path $repository "tmp\ui-stock.sqlite3"
 }
+$isolatedDatabase = [System.IO.Path]::GetFullPath((Join-Path $repository "tmp\ui-stock.sqlite3"))
 $cloudflared = Join-Path $repository "tmp\cloudflared\cloudflared.exe"
 $tunnelOut = Join-Path $repository "tmp\cloudflared-out.log"
 $tunnelError = Join-Path $repository "tmp\cloudflared-err.log"
@@ -46,6 +47,10 @@ $startLock = New-PreviewStartLock
 $tunnel = $null
 $server = $null
 try {
+
+if ([System.IO.Path]::GetFullPath($database) -ne $isolatedDatabase) {
+  throw "Public preview must use the isolated database: $isolatedDatabase"
+}
 
 foreach ($file in @($RubyPath, $database, $cloudflared)) {
   if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
