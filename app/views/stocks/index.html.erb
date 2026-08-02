@@ -14,10 +14,10 @@
     <%= form_tag(stocks_by_area_path(@area), method: "get", class: "search-form") do %>
       <div class="search-copy">
         <%= label_tag(:stock, "Find a stock") %>
-        <span>Search by full code or a partial symbol</span>
+        <span id="stock-search-help">Search by full code or a partial symbol</span>
       </div>
       <div class="search-controls">
-        <%= text_field_tag(:stock, @stock, placeholder: "e.g. #{@area}000001", maxlength: 8, autocomplete: "off") %>
+        <%= text_field_tag(:stock, @stock, placeholder: "e.g. #{@area}000001", maxlength: 8, autocomplete: "off", autocapitalize: "none", spellcheck: false, inputmode: "search", enterkeyhint: "search", aria: { describedby: "stock-search-help" }) %>
         <%= submit_tag("Search", class: "button button-primary") %>
       </div>
     <% end %>

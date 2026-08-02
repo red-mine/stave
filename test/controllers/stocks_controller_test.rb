@@ -44,6 +44,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_equal [Stock::SHSTK], areas
     assert_select ".app-shell"
     assert_select "a[href='#{stocks_by_area_path(Stock::BJSTK)}']", text: "BJ"
+    assert_select "#stock-search-help", text: /full code or a partial symbol/
+    assert_select "input#stock[inputmode='search'][enterkeyhint='search'][autocapitalize='none'][aria-describedby='stock-search-help']"
   end
 
   test "market page displays the last successful daily refresh" do
