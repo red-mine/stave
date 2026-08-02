@@ -41,7 +41,7 @@
       <% if @buy_candidates.any? %>
         <div class="buy-grid">
           <% @buy_candidates.each do |candidate| %>
-            <%= link_to stock_analysis_path(candidate.stock, area: @area), class: "buy-card" do %>
+            <article class="buy-card">
               <div class="buy-card-top">
                 <strong><%= candidate.stock.upcase %></strong>
                 <span><%= candidate.years %> + <%= candidate.lohas %></span>
@@ -60,8 +60,8 @@
                   <% end %>
                 </ul>
               </details>
-              <span class="candidate-open">Open analysis →</span>
-            <% end %>
+              <%= link_to "Open analysis →", stock_analysis_path(candidate.stock, area: @area), class: "candidate-open" %>
+            </article>
           <% end %>
         </div>
       <% else %>

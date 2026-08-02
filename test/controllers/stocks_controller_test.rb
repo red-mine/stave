@@ -219,6 +219,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".candidate-score", text: %r{/100}
     assert_select ".candidate-score", text: /agreement/
     assert_select ".candidate-details", count: 2, text: /Why this score?/
+    assert_select "article.buy-card", count: 2
+    assert_select ".candidate-details a", count: 0
+    assert_select "a.candidate-open[href='#{stock_analysis_path("sz002653", area: Stock::SZSTK)}']", text: /Open analysis/
     assert_select ".data-status-recent", text: "Recent"
     assert_select ".risk-note", text: /not a guarantee/
   end
