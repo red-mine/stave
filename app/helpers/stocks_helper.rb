@@ -50,12 +50,14 @@ module StocksHelper
     end
   end
 
-  def linked_signal_badge(code)
+  def linked_signal_badge(code, return_filter: nil)
     label = code.presence || "No signal"
     anchor = "signal-#{code.downcase}" if code.present?
+    guide_options = { area: @area, anchor: anchor }
+    guide_options[:return_signal] = return_filter if return_filter.present? && return_filter != "all"
     link_to(
       signal_badge(code),
-      signal_guide_path(area: @area, anchor: anchor),
+      signal_guide_path(**guide_options),
       class: "signal-guide-link",
       aria: { label: "Open signal guide for #{label}" }
     )

@@ -167,8 +167,8 @@
                     <span class="historical-date">Ended <%= stock.date %></span>
                   <% end %>
                 </td>
-                <td class="signal-cell"><%= linked_signal_badge(stock.years) %></td>
-                <td class="signal-cell"><%= linked_signal_badge(stock.lohas) %></td>
+                <td class="signal-cell"><%= linked_signal_badge(stock.years, return_filter: @signal_filter) %></td>
+                <td class="signal-cell"><%= linked_signal_badge(stock.lohas, return_filter: @signal_filter) %></td>
                 <td class="metric-column"><%= formatted_number(stock.loha) %></td>
                 <td class="metric-column"><%= formatted_number(stock.year) %></td>
                 <td class="price metric-column"><%= formatted_number(stock.price) %></td>

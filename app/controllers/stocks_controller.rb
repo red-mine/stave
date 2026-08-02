@@ -33,6 +33,8 @@ class StocksController < ApplicationController
 
   def signal_guide
     @area = stock_area
+    requested_filter = params[:return_signal].to_s
+    @return_signal_filter = requested_filter if requested_filter.in?(SIGNAL_FILTERS) && requested_filter != "all"
   end
 
   def signal_history

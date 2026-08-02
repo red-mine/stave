@@ -459,6 +459,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     %w[all buy sell watch].each do |filter|
       assert_select "a.signal-filter[href='#{stocks_by_area_path(Stock::SZSTK, signal: filter, anchor: "current-signals")}']", count: 1
     end
+    assert_select "a.signal-guide-link[href='#{signal_guide_path(area: Stock::SZSTK, return_signal: "buy", anchor: "signal-buy5")}']", count: 1
+    assert_select "a.signal-guide-link[href='#{signal_guide_path(area: Stock::SZSTK, return_signal: "buy", anchor: "signal-saf1")}']", count: 1
 
     get stocks_by_area_path(Stock::SZSTK), params: { signal: "sell" }
     assert_select ".stock-code", count: 1, text: /SZ000002/
@@ -531,6 +533,13 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       assert_select ".guide-card#signal-#{code.downcase}", text: /#{code}/
     end
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK, anchor: "current-signals")}']", text: /Back to SH signals/
+  end
+
+  test "signal guide returns to the originating signal filter" do
+    get signal_guide_path(area: Stock::SZSTK, return_signal: "sell", anchor: "signal-sel7")
+
+    assert_response :success
+    assert_select "a.back-link[href='#{stocks_by_area_path(Stock::SZSTK, signal: "sell", anchor: "current-signals")}']"
   end
 
   test "signal history reports evidence coverage without premature performance claims" do
