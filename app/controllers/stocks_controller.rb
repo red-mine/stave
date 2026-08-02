@@ -52,6 +52,8 @@ class StocksController < ApplicationController
     render json: {
       status: report[:ready] ? "ready" : "incomplete",
       environment: Rails.env,
+      date: report[:date],
+      dates_aligned: report[:dates_aligned],
       markets: report[:markets]
     }, status: report[:ready] ? :ok : :service_unavailable
   end

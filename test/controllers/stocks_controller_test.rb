@@ -35,8 +35,10 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
   test "preview health returns structured market readiness" do
     report = {
-      ready: true,
-      markets: Stock::AREAS.to_h { |area| [area, { ready: true, date: Date.new(2026, 7, 31), rows: 2 }] }
+      ready: true, date: Date.new(2026, 7, 31), dates_aligned: true,
+      markets: Stock::AREAS.to_h do |area|
+        [area, { ready: true, date: Date.new(2026, 7, 31), rows: 2, snapshot_date: Date.new(2026, 7, 31), snapshot_rows: 2 }]
+      end
     }
 
     Stock::PreviewHealth.stub(:new, -> { Struct.new(:call).new(report) }) do
@@ -47,6 +49,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     body = response.parsed_body
     assert_equal "ready", body["status"]
     assert_equal Rails.env, body["environment"]
+    assert_equal "2026-07-31", body["date"]
+    assert_equal true, body["dates_aligned"]
     assert_equal 2, body.dig("markets", "sz", "rows")
   end
 

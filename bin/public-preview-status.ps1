@@ -40,15 +40,16 @@ function Get-ApplicationHealth([string]$Uri) {
     $body = $response.Content | ConvertFrom-Json
     $details = foreach ($area in $areas) {
       $market = $body.markets.PSObject.Properties[$area].Value
-      "$area=$($market.date)/$($market.rows)"
+      "$area=$($market.date)/$($market.rows)/$($market.snapshot_rows)"
     }
     $marketsReady = @($areas | Where-Object {
       $market = $body.markets.PSObject.Properties[$_].Value
-      -not $market -or -not $market.ready -or -not $market.date -or [int]$market.rows -le 0
+      -not $market -or -not $market.ready -or -not $market.date -or [int]$market.rows -le 0 -or
+        $market.snapshot_date -ne $market.date -or [int]$market.snapshot_rows -ne [int]$market.rows
     }).Count -eq 0
     return [pscustomobject]@{
       Code = $response.StatusCode
-      Ready = $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $marketsReady
+      Ready = $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $body.dates_aligned -and $marketsReady
       Markets = $details -join ", "
     }
   } catch {
