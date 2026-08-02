@@ -299,7 +299,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     get stocks_by_area_path(Stock::SZSTK), params: { signal: "buy" }
     assert_response :success
     assert_select ".stock-code", count: 1, text: /SZ000001/
-    assert_select ".signal-filter.is-active", text: "Buy agreement"
+    assert_select ".signal-filter.is-active", text: /Buy agreement.*1/m
+    assert_select ".signal-filter", count: 4
+    assert_select ".signal-filter", text: /All.*3/m
 
     get stocks_by_area_path(Stock::SZSTK), params: { signal: "sell" }
     assert_select ".stock-code", count: 1, text: /SZ000002/
@@ -312,7 +314,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     get stocks_by_area_path(Stock::SZSTK), params: { signal: "unknown" }
 
     assert_response :success
-    assert_select ".signal-filter.is-active", text: "All"
+    assert_select ".signal-filter.is-active", text: /All.*0/m
   end
 
   test "stock analysis is available as JSON" do

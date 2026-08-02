@@ -16,7 +16,10 @@ class StocksController < ApplicationController
     stave   = Stock::Stave.new(area, Stock::STAVE)
     @stocks_stavs, @stavs_date = stave.good_index(stock)
     @signal_filter = normalized_signal_filter
-    @stocks_stavs = filtered_signals(@stocks_stavs, @signal_filter) unless stock
+    unless stock
+      @signal_counts = signal_group_counts(@stocks_stavs)
+      @stocks_stavs = filtered_signals(@stocks_stavs, @signal_filter)
+    end
     @buy_candidates = stock ? [] : stave.strongest_buy_candidates
     @refresh_status = Stock::RefreshRun.new.status
     @refresh_schedule = Stock::RefreshSchedule.new.status
@@ -99,6 +102,11 @@ class StocksController < ApplicationController
     end
 
     def filtered_signals(scope, filter)
+      unless scope.respond_to?(:where)
+        return scope if filter == "all"
+        return scope.select { |record| signal_group(record) == filter }
+      end
+
       case filter
       when "buy"
         scope.where(years: BUY_SIGNALS, lohas: BUY_SIGNALS)
@@ -111,6 +119,20 @@ class StocksController < ApplicationController
           .where.not(years: BUY_SIGNALS, lohas: BUY_SIGNALS)
       else
         scope
+      end
+    end
+
+    def signal_group(record)
+      signals = [record.years, record.lohas]
+      return "sell" if signals.any? { |signal| signal.in?(SELL_SIGNALS) }
+      return "buy" if signals.all? { |signal| signal.in?(BUY_SIGNALS) }
+
+      "watch"
+    end
+
+    def signal_group_counts(scope)
+      %w[all buy sell watch].to_h do |filter|
+        [filter, filtered_signals(scope, filter).count]
       end
     end
   end

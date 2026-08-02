@@ -264,7 +264,9 @@ a { color: var(--teal-dark); }
 .guide-link:hover { text-decoration: underline; }
 
 .signal-filters { display: flex; gap: 7px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: #fbfcfd; overflow-x: auto; }
-.signal-filter { flex: none; padding: 7px 11px; border-radius: 999px; color: var(--muted); font-size: 0.7rem; font-weight: 800; text-decoration: none; }
+.signal-filter { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 7px 11px; border-radius: 999px; color: var(--muted); font-size: 0.7rem; font-weight: 800; text-decoration: none; }
+.signal-filter strong { min-width: 19px; padding: 2px 5px; border-radius: 999px; color: inherit; background: rgba(104, 115, 134, 0.12); font-size: 0.61rem; text-align: center; }
+.signal-filter.is-active strong { background: rgba(255, 255, 255, 0.2); }
 .signal-filter:hover { color: var(--teal-dark); background: #edf5f5; }
 .signal-filter.is-active { color: white; background: var(--navy); }
 
