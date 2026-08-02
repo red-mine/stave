@@ -188,6 +188,18 @@ a { color: var(--teal-dark); }
 .history-note { margin-top: 18px; padding: 22px; }
 .history-note h2 { margin: 0 0 7px; color: var(--navy); font-size: 1.15rem; }
 .history-note p { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.6; }
+.performance-panel { margin-top: 18px; padding: 22px; border: 1px solid #bfe4dc; border-radius: 20px; background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow); }
+.performance-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.performance-heading h2 { margin: 0; color: var(--navy); font-size: 1.3rem; }
+.performance-heading > span { color: var(--muted); font-size: 0.72rem; }
+.performance-warning { margin: 10px 0 18px; color: var(--muted); font-size: 0.75rem; line-height: 1.5; }
+.performance-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.performance-card { padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.performance-card > strong { color: var(--navy); }
+.performance-card dl { margin: 12px 0 0; }
+.performance-card dl div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid #edf0f3; }
+.performance-card dt { color: var(--muted); font-size: 0.7rem; }
+.performance-card dd { margin: 0; color: var(--ink); font-size: 0.74rem; font-weight: 800; }
 
 .search-form,
 .search-controls,
@@ -397,6 +409,7 @@ a { color: var(--teal-dark); }
   .examples-list { grid-template-columns: 1fr; }
   .buy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .history-grid { grid-template-columns: 1fr; }
+  .performance-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {

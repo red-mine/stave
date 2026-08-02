@@ -22,6 +22,7 @@ class StocksController < ApplicationController
 
   def signal_history
     @area = stock_area
+    @performance = Stock::SignalPerformance.new(@area).call
     @history = Stock::AREAS.to_h do |area|
       snapshots = StockSignalSnapshot.where(area: area)
       dates = snapshots.distinct.count(:signal_date)

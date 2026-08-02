@@ -29,6 +29,32 @@
     <% end %>
   </section>
 
+  <% if @performance.ready && @performance.cohorts.any? %>
+    <section class="performance-panel" aria-labelledby="performance-title">
+      <div class="performance-heading">
+        <div>
+          <p class="eyebrow">Observed outcomes</p>
+          <h2 id="performance-title"><%= @performance.horizon %>-day signal performance</h2>
+        </div>
+        <span><%= @performance.dates %> trading dates recorded</span>
+      </div>
+      <p class="performance-warning">Historical observations are evidence, not a forecast. Overlapping holding periods are included, and transaction costs are not yet deducted.</p>
+      <div class="performance-grid">
+        <% @performance.cohorts.each do |cohort| %>
+          <article class="performance-card">
+            <strong><%= cohort.year_signal %> + <%= cohort.lohas_signal %></strong>
+            <dl>
+              <div><dt>Observations</dt><dd><%= cohort.sample_size %></dd></div>
+              <div><dt>Win rate</dt><dd><%= cohort.win_rate %>%</dd></div>
+              <div><dt>Average return</dt><dd><%= cohort.average_return %>%</dd></div>
+              <div><dt>Average drawdown</dt><dd><%= cohort.average_drawdown %>%</dd></div>
+            </dl>
+          </article>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
   <section class="history-note">
     <h2>Why wait?</h2>
     <p>A single successful stock does not prove that a signal works. The system will wait for at least 20 trading dates, then report sample size, average return, win rate, and drawdown together—not just the best outcomes.</p>

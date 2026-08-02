@@ -292,8 +292,26 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".history-card", count: 3
     assert_select ".history-card", text: /SZ.*Trading dates.*1.*Snapshot rows.*2/m
     assert_select ".history-state.is-collecting", count: 3
+    assert_select ".performance-panel", count: 0
     assert_select ".history-note", text: /sample size, average return, win rate, and drawdown/
     assert_select "a[href='#{stocks_by_area_path(Stock::SZSTK)}']", text: /Back to SZ signals/
+  end
+
+  test "signal history displays qualified forward performance with warnings" do
+    cohort = Stock::SignalPerformance::Cohort.new(
+      year_signal: "BUY5", lohas_signal: "BUY5", sample_size: 75,
+      win_rate: 60.0, average_return: 1.2, average_drawdown: -2.1
+    )
+    report = Stock::SignalPerformance::Report.new(ready: true, dates: 20, horizon: 5, cohorts: [cohort])
+
+    Stock::SignalPerformance.stub(:new, ->(*) { Struct.new(:call).new(report) }) do
+      get signal_history_path(area: Stock::SZSTK)
+    end
+
+    assert_response :success
+    assert_select ".performance-panel", count: 1
+    assert_select ".performance-card", text: /BUY5 \+ BUY5.*75.*60.0%.*1.2%.*-2.1%/m
+    assert_select ".performance-warning", text: /not a forecast.*transaction costs are not yet deducted/
   end
 
   test "JSON errors use a structured response" do
