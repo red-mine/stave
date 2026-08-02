@@ -52,6 +52,7 @@ class StocksController < ApplicationController
     render json: {
       status: report[:ready] ? "ready" : "incomplete",
       environment: Rails.env,
+      log_level: Logger::SEV_LABEL[Rails.logger.level].downcase,
       date: report[:date],
       dates_aligned: report[:dates_aligned],
       markets: report[:markets]

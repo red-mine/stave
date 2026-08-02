@@ -58,8 +58,12 @@ Rails.application.configure do
   # Raise an error on page load if there are pending migrations.
   config.active_record.migration_error = :page_load
 
+  # Keep normal development diagnostics while allowing the managed public
+  # preview to suppress routine request and SQL noise.
+  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "debug").to_sym
+
   # Highlight code that triggered database queries in logs.
-  config.active_record.verbose_query_logs = true
+  config.active_record.verbose_query_logs = config.log_level == :debug
 
   # Suppress logger output for asset requests.
   config.assets.quiet = true

@@ -104,6 +104,7 @@ $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
 $env:STOCK_DATABASE = $database
 $env:RAILS_ENV = "development"
 $env:RACK_ENV = "development"
+$env:RAILS_LOG_LEVEL = "warn"
 $env:PUBLIC_TUNNEL_HOST = $publicHost
 $env:PUBLIC_PREVIEW = "1"
 $env:ASSET_CACHE_PATH = "memory"
@@ -132,7 +133,7 @@ function Test-ApplicationHealth([string]$Uri) {
       -not $market -or -not $market.ready -or -not $market.date -or [int]$market.rows -le 0 -or
         $market.snapshot_date -ne $market.date -or [int]$market.snapshot_rows -ne [int]$market.rows
     }).Count -eq 0
-    return $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $body.dates_aligned -and $marketsReady
+    return $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $body.log_level -eq "warn" -and $body.dates_aligned -and $marketsReady
   } catch {
     return $false
   }
@@ -177,6 +178,7 @@ $status = @{
   database = $database
   port = $Port
   environment = "development"
+  log_level = "warn"
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
 Write-Output ([pscustomobject]$status)

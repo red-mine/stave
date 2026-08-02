@@ -49,6 +49,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     body = response.parsed_body
     assert_equal "ready", body["status"]
     assert_equal Rails.env, body["environment"]
+    assert_equal Logger::SEV_LABEL[Rails.logger.level].downcase, body["log_level"]
     assert_equal "2026-07-31", body["date"]
     assert_equal true, body["dates_aligned"]
     assert_equal 2, body.dig("markets", "sz", "rows")
