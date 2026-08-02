@@ -31,7 +31,9 @@
       <div>
         <p class="eyebrow">Latest recorded decision</p>
         <h2 id="current-decision-title"><%= Stock::SignalFamily.label(@current_decision) %></h2>
+        <p class="decision-reason"><%= Stock::SignalFamily.explanation(@current_decision) %> This is model context, not personalized financial advice.</p>
         <p>Recorded <strong><%= current_signal.date %></strong> at dataset price <strong><%= formatted_number(current_signal.price) %></strong>.</p>
+        <%= link_to "Understand these signals →", signal_guide_path(area: @area), class: "guide-link decision-guide" %>
       </div>
       <div class="decision-signals">
         <div><small>Year</small><%= signal_badge(current_signal.year_signal) %></div>

@@ -16,5 +16,13 @@ module Stock
     def label(family)
       { "buy" => "Buy agreement", "sell" => "Sell alert", "watch" => "Watch" }.fetch(family)
     end
+
+    def explanation(family)
+      {
+        "buy" => "Both recorded horizons are in the buy family.",
+        "sell" => "At least one recorded horizon is in the sell family.",
+        "watch" => "There is no two-horizon buy agreement and no sell alert."
+      }.fetch(family)
+    end
   end
 end

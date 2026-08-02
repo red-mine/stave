@@ -409,6 +409,8 @@ a { color: var(--teal-dark); }
 .current-decision.decision-watch { border-left-color: #8a94a5; }
 .current-decision h2 { margin: 0; color: var(--navy); font-size: 1.45rem; }
 .current-decision p:not(.eyebrow) { margin: 6px 0 0; color: var(--muted); font-size: 0.78rem; }
+.current-decision .decision-reason { max-width: 620px; color: #3b5360; line-height: 1.5; }
+.decision-guide { display: inline-block; margin-top: 9px; }
 .decision-signals { display: flex; gap: 15px; }
 .decision-signals > div { display: grid; justify-items: center; gap: 5px; }
 .decision-signals small { color: var(--muted); font-size: 0.63rem; font-weight: 750; text-transform: uppercase; }

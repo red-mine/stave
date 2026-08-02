@@ -12,5 +12,8 @@ class StockSignalFamilyTest < ActiveSupport::TestCase
     assert_equal "Buy agreement", Stock::SignalFamily.label("buy")
     assert_equal "Sell alert", Stock::SignalFamily.label("sell")
     assert_equal "Watch", Stock::SignalFamily.label("watch")
+    assert_match(/Both recorded horizons/, Stock::SignalFamily.explanation("buy"))
+    assert_match(/At least one recorded horizon/, Stock::SignalFamily.explanation("sell"))
+    assert_match(/no two-horizon buy agreement/, Stock::SignalFamily.explanation("watch"))
   end
 end
