@@ -362,7 +362,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".stock-code a[aria-label='Open SZ000001 analysis'] .stock-open-arrow", text: "→"
     guide_path = signal_guide_path(area: Stock::SZSTK)
     assert_select "a.guide-link[href='#{guide_path}']", text: /Open signal guide/
-    assert_select "a.signal-guide-link[href='#{guide_path}']", count: 4
+    assert_select "a.signal-guide-link[href='#{guide_path}']", count: 2
+    assert_select "a.signal-guide-link[href='#{guide_path}#signal-buy5']", count: 2
     assert_select "tr.is-historical", count: 1 do
       assert_select ".stock-code", text: /SZ000522/
       assert_select ".historical-label", text: "Historical"
@@ -507,7 +508,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".example-item", text: /Buy while the channel holds/
     assert_select ".legacy-code", count: 0
     %w[SAF1 SOX2 SEL3 BUY4 BUY5 SEL6 SEL7 WAT8 WAT9 CHP0].each do |code|
-      assert_select ".guide-card", text: /#{code}/
+      assert_select ".guide-card#signal-#{code.downcase}", text: /#{code}/
     end
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
   end

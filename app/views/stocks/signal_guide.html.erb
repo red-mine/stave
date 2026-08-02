@@ -40,7 +40,7 @@
 
   <div class="guide-grid">
     <% signals.each do |signal| %>
-      <article class="guide-card guide-card-<%= signal[:tone] %>">
+      <article id="signal-<%= signal[:code].downcase %>" class="guide-card guide-card-<%= signal[:tone] %>">
         <header>
           <%= signal_badge(signal[:code]) %>
           <strong><%= signal[:action] %></strong>

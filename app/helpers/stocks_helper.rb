@@ -52,9 +52,10 @@ module StocksHelper
 
   def linked_signal_badge(code)
     label = code.presence || "No signal"
+    anchor = "signal-#{code.downcase}" if code.present?
     link_to(
       signal_badge(code),
-      signal_guide_path(area: @area),
+      signal_guide_path(area: @area, anchor: anchor),
       class: "signal-guide-link",
       aria: { label: "Open signal guide for #{label}" }
     )
