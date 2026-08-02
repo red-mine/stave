@@ -400,6 +400,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".signal-filter.is-active", text: /Buy agreement.*1/m
     assert_select ".signal-filter", count: 4
     assert_select ".signal-filter", text: /All.*3/m
+    %w[all buy sell watch].each do |filter|
+      assert_select "a.signal-filter[href='#{stocks_by_area_path(Stock::SZSTK, signal: filter, anchor: "current-signals")}']", count: 1
+    end
 
     get stocks_by_area_path(Stock::SZSTK), params: { signal: "sell" }
     assert_select ".stock-code", count: 1, text: /SZ000002/

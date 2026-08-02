@@ -121,7 +121,7 @@
     <% unless @stock %>
       <nav class="signal-filters" aria-label="Filter signals">
         <% { "all" => "All", "buy" => "Buy agreement", "sell" => "Sell alert", "watch" => "Watch" }.each do |value, label| %>
-          <%= link_to stocks_by_area_path(@area, signal: value), class: ["signal-filter", ("is-active" if @signal_filter == value)], aria: { current: ("page" if @signal_filter == value) } do %>
+          <%= link_to stocks_by_area_path(@area, signal: value, anchor: "current-signals"), class: ["signal-filter", ("is-active" if @signal_filter == value)], aria: { current: ("page" if @signal_filter == value) } do %>
             <span><%= label %></span><strong><%= @signal_counts.fetch(value) %></strong>
           <% end %>
         <% end %>
