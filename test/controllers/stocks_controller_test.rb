@@ -268,10 +268,14 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".signal-timeline", count: 1
     assert_select ".current-decision.decision-buy", count: 1, text: /Buy agreement.*2026-07-31.*10.8/m
     assert_select ".decision-signals", text: /Year.*BUY5.*LOHAS.*BUY5/m
+    direct_guide_path = signal_guide_path(area: Stock::SZSTK, anchor: "signal-buy5")
+    assert_select ".decision-signals a.signal-guide-link[href='#{direct_guide_path}']", count: 2
     assert_select ".decision-reason", text: /Both recorded horizons.*not personalized financial advice/
     assert_select "a.decision-guide[href='#{signal_guide_path(area: Stock::SZSTK)}']", text: /Understand these signals/
     assert_select ".timeline-entry", count: 2
     assert_select ".timeline-entry.is-change", count: 1, text: /2026-07-31.*BUY5.*10.8/m
+    assert_select ".timeline-signals a.signal-guide-link[href='#{direct_guide_path}']", count: 3
+    assert_select ".timeline-signals a.signal-guide-link[href='#{signal_guide_path(area: Stock::SZSTK, anchor: "signal-saf1")}']", count: 1
     assert_select "a[href='#{signal_history_path(area: Stock::SZSTK)}']", text: /All market history/
   end
 

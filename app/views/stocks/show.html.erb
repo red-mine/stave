@@ -36,8 +36,8 @@
         <%= link_to "Understand these signals →", signal_guide_path(area: @area), class: "guide-link decision-guide" %>
       </div>
       <div class="decision-signals">
-        <div><small>Year</small><%= signal_badge(current_signal.year_signal) %></div>
-        <div><small>LOHAS</small><%= signal_badge(current_signal.lohas_signal) %></div>
+        <div><small>Year</small><%= linked_signal_badge(current_signal.year_signal) %></div>
+        <div><small>LOHAS</small><%= linked_signal_badge(current_signal.lohas_signal) %></div>
       </div>
     </section>
   <% end %>
@@ -60,8 +60,8 @@
               <span><%= entry.changed ? "Signal changed" : "Recorded" %></span>
             </div>
             <div class="timeline-signals">
-              <div><small>Year</small><%= signal_badge(entry.year_signal) %></div>
-              <div><small>LOHAS</small><%= signal_badge(entry.lohas_signal) %></div>
+              <div><small>Year</small><%= linked_signal_badge(entry.year_signal) %></div>
+              <div><small>LOHAS</small><%= linked_signal_badge(entry.lohas_signal) %></div>
             </div>
             <p><small>Price</small><strong><%= formatted_number(entry.price) %></strong></p>
           </article>
