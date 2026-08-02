@@ -220,7 +220,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_equal [Stock::SHSTK], calls
     assert_equal ["sh600000"], stave.lookups
     assert_select "h1", text: "SH600000"
-    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
+    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK, anchor: "current-signals")}']", text: /Back to SH signals/
   end
 
   test "stock analysis adds the selected market to an unprefixed identifier" do
