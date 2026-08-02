@@ -26,6 +26,22 @@ task :stave, [:area, :days] => :environment do |task, args|
   stave.good_result()
 end
 
+desc "Create and verify a retained backup of the active SQLite database"
+task database_backup: :environment do
+  connection = ActiveRecord::Base.connection
+  database = ActiveRecord::Base.connection_db_config.database
+  if connection.adapter_name == "SQLite" && database && File.file?(database)
+    backup_dir = Rails.root.join("tmp", "backups")
+    FileUtils.mkdir_p(backup_dir)
+    backup = backup_dir.join("stock-#{Time.current.strftime('%Y%m%d-%H%M%S-%L')}.sqlite3")
+    Stock::DatabaseBackup.new(connection: connection).call(backup)
+    puts "Database backup: #{backup}"
+    keep = ENV.fetch("STOCK_BACKUP_KEEP", "7").to_i
+    pruned = Stock::DatabaseBackup.prune(backup_dir, keep: keep)
+    puts "Pruned #{pruned} old backup(s); keeping the newest #{[keep, 1].max}" if pruned.positive?
+  end
+end
+
 desc "Refresh analysis data for all markets (or a selected market list)"
 task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
   supported_areas = Stock::AREAS
@@ -41,18 +57,7 @@ task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
     abort "Missing TongdaXin data for: #{missing_paths.join(', ')} under #{Stock.data_root}"
   end
 
-  connection = ActiveRecord::Base.connection
-  database = ActiveRecord::Base.connection_db_config.database
-  if connection.adapter_name == "SQLite" && database && File.file?(database)
-    backup_dir = Rails.root.join("tmp", "backups")
-    FileUtils.mkdir_p(backup_dir)
-    backup = backup_dir.join("stock-#{Time.current.strftime('%Y%m%d-%H%M%S-%L')}.sqlite3")
-    Stock::DatabaseBackup.new(connection: connection).call(backup)
-    puts "Database backup: #{backup}"
-    keep = ENV.fetch("STOCK_BACKUP_KEEP", "7").to_i
-    pruned = Stock::DatabaseBackup.prune(backup_dir, keep: keep)
-    puts "Pruned #{pruned} old backup(s); keeping the newest #{[keep, 1].max}" if pruned.positive?
-  end
+  Rake::Task[:database_backup].invoke
 
   areas.each do |area|
     puts "Refreshing #{area}..."
@@ -91,6 +96,7 @@ task daily_refresh: :environment do
   begin
     $stdout.sync = true
     Stock::RefreshRun.new.call do
+      Rake::Task[:database_backup].invoke
       progress = lambda do |area, state|
         message = state == :started ? "Checking #{area.upcase} market data..." : "Finished checking #{area.upcase}."
         puts message

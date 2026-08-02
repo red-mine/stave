@@ -75,7 +75,9 @@ preview which markets need work. Daily refreshes are locked so two copies cannot
 modify the database concurrently, and the front page reports the last run as
 running, successful, or failed. A run fails if any healthy market produces no
 snapshot rows, and its log reports newly captured rows separately from total
-stored history.
+stored history. Every daily run creates and integrity-checks a retained SQLite
+backup before either recalculation or signal-history writes, including nights
+when market coefficients are already current.
 
 ### Schedule the Windows refresh
 

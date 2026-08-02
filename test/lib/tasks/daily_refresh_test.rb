@@ -79,15 +79,34 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
     end
   end
 
+  test "backs up before capturing snapshots even when no recalculation is needed" do
+    market = { healthy: true, source_date: Date.new(2026, 7, 31) }
+    checker = Stock::DataStatus.allocate
+    events = []
+
+    checker.stub(:call, Stock::AREAS.index_with { market }) do
+      Stock::DataStatus.stub(:new, ->(*) { checker }) do
+        Stock::SignalSnapshot.stub(:capture!, ->(_area) { events << :snapshot; 1 }) do
+          capture_io { invoke_daily_refresh(backup: -> { events << :backup }) }
+        end
+      end
+    end
+
+    assert_equal :backup, events.first
+    assert_equal 1, events.count(:backup)
+  end
+
   private
 
-  def invoke_daily_refresh
+  def invoke_daily_refresh(backup: -> {})
     refresh_run = Stock::RefreshRun.new(
       lock_path: File.join(@refresh_directory, "refresh.lock"),
       status_path: File.join(@refresh_directory, "status.json")
     )
     Stock::RefreshRun.stub(:new, ->(*) { refresh_run }) do
-      Rake::Task["daily_refresh"].invoke
+      Rake::Task[:database_backup].stub(:invoke, backup) do
+        Rake::Task["daily_refresh"].invoke
+      end
     end
   end
 end
