@@ -16,6 +16,15 @@ if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
 }
 
 $status = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+$startedAt = try {
+  if ($status.started_at -is [DateTime]) {
+    $status.started_at.ToLocalTime()
+  } else {
+    [DateTimeOffset]::Parse($status.started_at).ToLocalTime()
+  }
+} catch {
+  $status.started_at
+}
 $serverLogPath = Join-Path $repository "tmp\public-preview-server-out.log"
 $serverLog = if (Test-Path -LiteralPath $serverLogPath -PathType Leaf) {
   Get-Content -LiteralPath $serverLogPath -Raw -ErrorAction SilentlyContinue
@@ -81,7 +90,7 @@ $marketsHealthy = @($areas | Where-Object {
 
 $report = [pscustomobject]@{
   Url = $status.url
-  StartedAt = $status.started_at
+  StartedAt = $startedAt
   Environment = if ($status.environment) { $status.environment } else { "unknown" }
   LogLevel = if ($status.log_level) { $status.log_level } else { "unknown" }
   ServerEnvironment = $serverEnvironment
