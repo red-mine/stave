@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  get "/preview-health", to: "stocks#preview_health", as: :preview_health
   get "/signal-guide", to: "stocks#signal_guide", as: :signal_guide
   get "/signal-history", to: "stocks#signal_history", as: :signal_history
   get "/:area", to: "stocks#index",

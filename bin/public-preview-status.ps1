@@ -33,18 +33,33 @@ $database = Get-Item -LiteralPath $status.database -ErrorAction SilentlyContinue
 $isolatedDatabase = [System.IO.Path]::GetFullPath((Join-Path $repository "tmp\ui-stock.sqlite3"))
 $databaseIsIsolated = $database -and $database.FullName -eq $isolatedDatabase
 
-function Test-MarketContent($Response) {
-  return $Response -and
-    $Response.Content -match 'id="current-signals"' -and
-    $Response.Content -match 'class="stock-table"' -and
-    $Response.Content -notmatch 'Data date\s*<strong>Unavailable</strong>'
+$areas = @("sz", "sh", "bj")
+function Get-ApplicationHealth([string]$Uri) {
+  try {
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -TimeoutSec 15
+    $body = $response.Content | ConvertFrom-Json
+    $details = foreach ($area in $areas) {
+      $market = $body.markets.PSObject.Properties[$area].Value
+      "$area=$($market.date)/$($market.rows)"
+    }
+    $marketsReady = @($areas | Where-Object {
+      $market = $body.markets.PSObject.Properties[$_].Value
+      -not $market -or -not $market.ready -or -not $market.date -or [int]$market.rows -le 0
+    }).Count -eq 0
+    return [pscustomobject]@{
+      Code = $response.StatusCode
+      Ready = $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $marketsReady
+      Markets = $details -join ", "
+    }
+  } catch {
+    return [pscustomobject]@{ Code = 0; Ready = $false; Markets = "unavailable" }
+  }
 }
 
-$areas = @("sz", "sh", "bj")
+$localApplication = Get-ApplicationHealth "http://127.0.0.1:$port/preview-health"
+$publicApplication = Get-ApplicationHealth "$($status.url)/preview-health"
 $localStatuses = [ordered]@{}
 $publicStatuses = [ordered]@{}
-$localContent = [ordered]@{}
-$publicContent = [ordered]@{}
 foreach ($area in $areas) {
   $localResponse = try {
     Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$port/$area" -TimeoutSec 15
@@ -58,12 +73,9 @@ foreach ($area in $areas) {
   }
   $localStatuses[$area] = if ($localResponse) { $localResponse.StatusCode } else { 0 }
   $publicStatuses[$area] = if ($publicResponse) { $publicResponse.StatusCode } else { 0 }
-  $localContent[$area] = Test-MarketContent $localResponse
-  $publicContent[$area] = Test-MarketContent $publicResponse
 }
 $marketsHealthy = @($areas | Where-Object {
-  $localStatuses[$_] -ne 200 -or $publicStatuses[$_] -ne 200 -or
-    -not $localContent[$_] -or -not $publicContent[$_]
+  $localStatuses[$_] -ne 200 -or $publicStatuses[$_] -ne 200
 }).Count -eq 0
 
 $report = [pscustomobject]@{
@@ -79,11 +91,11 @@ $report = [pscustomobject]@{
   TunnelRunning = $tunnel -and $tunnel.ProcessName -eq "cloudflared"
   LocalMarkets = ($areas | ForEach-Object { "$_=$($localStatuses[$_])" }) -join ", "
   PublicMarkets = ($areas | ForEach-Object { "$_=$($publicStatuses[$_])" }) -join ", "
-  LocalContent = ($areas | ForEach-Object { "$_=$(if ($localContent[$_]) { 'ready' } else { 'empty' })" }) -join ", "
-  PublicContent = ($areas | ForEach-Object { "$_=$(if ($publicContent[$_]) { 'ready' } else { 'empty' })" }) -join ", "
+  LocalApplication = "$($localApplication.Code)/$(if ($localApplication.Ready) { 'ready' } else { 'incomplete' }) [$($localApplication.Markets)]"
+  PublicApplication = "$($publicApplication.Code)/$(if ($publicApplication.Ready) { 'ready' } else { 'incomplete' }) [$($publicApplication.Markets)]"
   IsolatedDatabase = $databaseIsIsolated
   DatabaseBytes = $database.Length
-  Healthy = $rails -and $tunnel -and $marketsHealthy -and $databaseIsIsolated -and $status.environment -eq "development" -and $serverEnvironment -eq "development"
+  Healthy = $rails -and $tunnel -and $marketsHealthy -and $localApplication.Ready -and $publicApplication.Ready -and $databaseIsIsolated -and $status.environment -eq "development" -and $serverEnvironment -eq "development"
 }
 $report
 if (-not $report.Healthy -and -not $ReturnOnly) { exit 1 }

@@ -45,6 +45,15 @@ class StocksController < ApplicationController
     end
   end
 
+  def preview_health
+    report = Stock::PreviewHealth.new.call
+    render json: {
+      status: report[:ready] ? "ready" : "incomplete",
+      environment: Rails.env,
+      markets: report[:markets]
+    }, status: report[:ready] ? :ok : :service_unavailable
+  end
+
   # GET /stocks/1 or /stocks/1.json
   def show
     area     = stock_area

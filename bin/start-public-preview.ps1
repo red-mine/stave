@@ -123,15 +123,25 @@ if (-not $listener) {
 }
 
 $areas = @("sz", "sh", "bj")
-function Test-MarketContent($Response) {
-  return $Response -and
-    $Response.Content -match 'id="current-signals"' -and
-    $Response.Content -match 'class="stock-table"' -and
-    $Response.Content -notmatch 'Data date\s*<strong>Unavailable</strong>'
+function Test-ApplicationHealth([string]$Uri) {
+  try {
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -TimeoutSec 15
+    $body = $response.Content | ConvertFrom-Json
+    $marketsReady = @($areas | Where-Object {
+      $market = $body.markets.PSObject.Properties[$_].Value
+      -not $market -or -not $market.ready -or -not $market.date -or [int]$market.rows -le 0
+    }).Count -eq 0
+    return $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $marketsReady
+  } catch {
+    return $false
+  }
 }
 
 $healthDeadline = (Get-Date).AddSeconds(90)
 do {
+  $applicationFailures = @()
+  if (-not (Test-ApplicationHealth "http://127.0.0.1:$Port/preview-health")) { $applicationFailures += "local application data" }
+  if (-not (Test-ApplicationHealth "$publicUrl/preview-health")) { $applicationFailures += "public application data" }
   $failedChecks = foreach ($area in $areas) {
     $localResponse = try {
       Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/$area" -TimeoutSec 15
@@ -145,17 +155,16 @@ do {
     }
     $localCode = if ($localResponse) { $localResponse.StatusCode } else { 0 }
     $publicCode = if ($publicResponse) { $publicResponse.StatusCode } else { 0 }
-    $localReady = Test-MarketContent $localResponse
-    $publicReady = Test-MarketContent $publicResponse
-    if ($localCode -ne 200 -or $publicCode -ne 200 -or -not $localReady -or -not $publicReady) {
-      "$area(local=$localCode/$localReady, public=$publicCode/$publicReady)"
+    if ($localCode -ne 200 -or $publicCode -ne 200) {
+      "$area(local=$localCode, public=$publicCode)"
     }
   }
-  if ($failedChecks -and (Get-Date) -lt $healthDeadline) {
+  $failedChecks = @($applicationFailures) + @($failedChecks)
+  if ($failedChecks.Count -gt 0 -and (Get-Date) -lt $healthDeadline) {
     Start-Sleep -Seconds 5
   }
-} while ($failedChecks -and (Get-Date) -lt $healthDeadline)
-if ($failedChecks) {
+} while ($failedChecks.Count -gt 0 -and (Get-Date) -lt $healthDeadline)
+if ($failedChecks.Count -gt 0) {
   throw "Preview market health check failed: $($failedChecks -join '; ')"
 }
 

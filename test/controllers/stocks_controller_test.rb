@@ -33,6 +33,34 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "preview health returns structured market readiness" do
+    report = {
+      ready: true,
+      markets: Stock::AREAS.to_h { |area| [area, { ready: true, date: Date.new(2026, 7, 31), rows: 2 }] }
+    }
+
+    Stock::PreviewHealth.stub(:new, -> { Struct.new(:call).new(report) }) do
+      get preview_health_path
+    end
+
+    assert_response :success
+    body = response.parsed_body
+    assert_equal "ready", body["status"]
+    assert_equal Rails.env, body["environment"]
+    assert_equal 2, body.dig("markets", "sz", "rows")
+  end
+
+  test "preview health fails when any market is incomplete" do
+    report = { ready: false, markets: { bj: { ready: false, date: nil, rows: 0 } } }
+
+    Stock::PreviewHealth.stub(:new, -> { Struct.new(:call).new(report) }) do
+      get preview_health_path
+    end
+
+    assert_response :service_unavailable
+    assert_equal "incomplete", response.parsed_body["status"]
+  end
+
   test "market page uses the market from the route" do
     areas = []
 
