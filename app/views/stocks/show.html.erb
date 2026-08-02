@@ -72,11 +72,13 @@
     <% end %>
   </section>
 
+  <p class="chart-sampling-note"><strong>Why can the last plotted date be earlier?</strong> Recent charts use one point per month and long-horizon charts use one point per quarter. The data-current date above is the authoritative final trading date.</p>
+
   <div class="chart-grid">
     <section class="chart-card">
       <div class="chart-heading">
         <div><p class="eyebrow">Long horizon</p><h2>LOHAS stave</h2></div>
-        <span class="chart-period"><strong>3.5 years</strong><small><%= chart_date_range(@stave_lohas) %></small></span>
+        <span class="chart-period"><strong>3.5 years · quarterly</strong><small><%= chart_date_range(@stave_lohas) %></small></span>
       </div>
       <%= line_chart @stave_lohas.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
     </section>
@@ -84,7 +86,7 @@
     <section class="chart-card">
       <div class="chart-heading">
         <div><p class="eyebrow">Recent horizon</p><h2>Year stave</h2></div>
-        <span class="chart-period"><strong>1 year</strong><small><%= chart_date_range(@stave_years) %></small></span>
+        <span class="chart-period"><strong>1 year · monthly</strong><small><%= chart_date_range(@stave_years) %></small></span>
       </div>
       <%= line_chart @stave_years.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
     </section>
@@ -92,7 +94,7 @@
     <section class="chart-card">
       <div class="chart-heading">
         <div><p class="eyebrow">Long horizon</p><h2>LOHAS channel</h2></div>
-        <span class="chart-period"><strong>3.5 years</strong><small><%= chart_date_range(@bolls_lohas) %></small></span>
+        <span class="chart-period"><strong>3.5 years · quarterly</strong><small><%= chart_date_range(@bolls_lohas) %></small></span>
       </div>
       <%= line_chart @bolls_lohas.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
     </section>
@@ -100,7 +102,7 @@
     <section class="chart-card">
       <div class="chart-heading">
         <div><p class="eyebrow">Recent horizon</p><h2>Year channel</h2></div>
-        <span class="chart-period"><strong>1 year</strong><small><%= chart_date_range(@bolls_years) %></small></span>
+        <span class="chart-period"><strong>1 year · monthly</strong><small><%= chart_date_range(@bolls_years) %></small></span>
       </div>
       <%= line_chart @bolls_years.map { |series| { name: series[:name], data: series[:data] } }, height: "340px", points: false %>
     </section>

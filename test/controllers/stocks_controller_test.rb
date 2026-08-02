@@ -110,8 +110,11 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
+    assert_select ".chart-sampling-note", text: /one point per month.*one point per quarter.*authoritative final trading date/m
     assert_select ".chart-period", count: 2, text: /3\.5 years.*2023-01-03.*2026-07-31/m
+    assert_select ".chart-period", count: 2, text: /quarterly/
     assert_select ".chart-period", count: 2, text: /1 year.*2025-08-01.*2026-07-31/m
+    assert_select ".chart-period", count: 2, text: /monthly/
   end
 
   test "stock analysis accepts a market-prefixed identifier" do

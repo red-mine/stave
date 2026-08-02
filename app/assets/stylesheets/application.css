@@ -439,6 +439,8 @@ a { color: var(--teal-dark); }
 .timeline-empty { margin: 16px 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.55; }
 
 .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.chart-sampling-note { margin: 0 0 14px; padding: 13px 16px; border: 1px solid #dbe6e9; border-radius: 13px; color: var(--muted); background: rgba(255, 255, 255, 0.82); font-size: 0.74rem; line-height: 1.55; }
+.chart-sampling-note strong { color: var(--ink); }
 .chart-card { min-width: 0; padding: 24px; border-radius: 20px; }
 .chart-heading { margin-bottom: 18px; }
 .chart-heading > span { padding: 6px 10px; border-radius: 999px; color: var(--muted); background: var(--surface-soft); font-size: 0.74rem; font-weight: 750; }
