@@ -51,6 +51,17 @@ module StocksHelper
     value.nil? ? "—" : number_with_precision(value, precision: 2, strip_insignificant_zeros: true)
   end
 
+  def chart_date_range(series)
+    dates = Array(series).flat_map { |item| Array(item[:data]) }.filter_map do |point|
+      Date.parse(point.first.to_s) if point.respond_to?(:first) && point.first.present?
+    rescue Date::Error
+      nil
+    end
+    return "Date range unavailable" if dates.empty?
+
+    "#{dates.min.iso8601} – #{dates.max.iso8601}"
+  end
+
   def data_recency(date)
     return { label: "Unavailable", tone: "unknown" } unless date
 

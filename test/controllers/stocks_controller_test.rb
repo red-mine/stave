@@ -99,6 +99,21 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".chart-card", count: 4
   end
 
+  test "stock analysis labels charts with their actual date range" do
+    stave = FakeStave.new
+    long_series = [{ name: "Price", data: [[Date.new(2023, 1, 3), 10], [Date.new(2026, 7, 31), 12]] }]
+    year_series = [{ name: "Price", data: [[Date.new(2025, 8, 1), 11], [Date.new(2026, 7, 31), 12]] }]
+    stave.define_singleton_method(:good_show) { |_stock| [long_series, year_series, long_series, year_series] }
+
+    Stock::Stave.stub(:new, ->(*) { stave }) do
+      get stock_analysis_path("000522", area: Stock::SZSTK)
+    end
+
+    assert_response :success
+    assert_select ".chart-period", count: 2, text: /3\.5 years.*2023-01-03.*2026-07-31/m
+    assert_select ".chart-period", count: 2, text: /1 year.*2025-08-01.*2026-07-31/m
+  end
+
   test "stock analysis accepts a market-prefixed identifier" do
     calls = []
     stave = FakeStave.new

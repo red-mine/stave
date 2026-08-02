@@ -26,4 +26,14 @@ class StocksHelperTest < ActionView::TestCase
     )
     assert_nil refresh_duration(started_at: nil, finished_at: nil)
   end
+
+  test "reports the actual first and last chart dates" do
+    series = [
+      { name: "Price", data: [[Date.new(2026, 7, 29), 10], [Date.new(2026, 7, 31), 11]] },
+      { name: "Trend", data: [["2026-07-30", 10.5]] }
+    ]
+
+    assert_equal "2026-07-29 – 2026-07-31", chart_date_range(series)
+    assert_equal "Date range unavailable", chart_date_range([])
+  end
 end
