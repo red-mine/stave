@@ -1,6 +1,7 @@
 param(
   [string]$RubyPath = "C:\Ruby34-x64\bin\ruby.exe",
-  [string]$DatabasePath = ""
+  [string]$DatabasePath = "",
+  [int]$LogRetention = 30
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,6 +13,7 @@ $database = if ($DatabasePath) {
 }
 $logDirectory = Join-Path $repository "log\daily-refresh"
 $logFile = Join-Path $logDirectory "latest.log"
+$archiveLog = Join-Path $logDirectory "refresh-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 
 if (-not (Test-Path -LiteralPath $RubyPath -PathType Leaf)) {
   throw "Ruby executable not found: $RubyPath"
@@ -36,5 +38,13 @@ try {
   "[$(Get-Date -Format o)] $($_.Exception.Message)" | Tee-Object -FilePath $logFile -Append
   exit 1
 } finally {
+  if (Test-Path -LiteralPath $logFile) {
+    Copy-Item -LiteralPath $logFile -Destination $archiveLog -Force
+  }
+  $keep = [Math]::Max($LogRetention, 1)
+  Get-ChildItem -LiteralPath $logDirectory -Filter "refresh-*.log" -File |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -Skip $keep |
+    Remove-Item -Force
   Pop-Location
 }
