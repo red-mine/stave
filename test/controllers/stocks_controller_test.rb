@@ -46,6 +46,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{stocks_by_area_path(Stock::BJSTK)}']", text: "BJ"
     assert_select "#stock-search-help", text: /full code or a partial symbol/
     assert_select "input#stock[inputmode='search'][enterkeyhint='search'][autocapitalize='none'][aria-describedby='stock-search-help']"
+    assert_select "a.mobile-signal-jump[href='#current-signals']", text: /Jump to buy\/sell signals/
+    assert_select "section#current-signals.signal-panel"
   end
 
   test "market page displays the last successful daily refresh" do

@@ -53,6 +53,7 @@
           <%= link_to "View signal history →", signal_history_path(area: @area), class: "history-shortcut" %>
         </div>
       </div>
+      <%= link_to "Jump to buy/sell signals ↓", "#current-signals", class: "mobile-signal-jump" %>
 
       <% if @buy_candidates.any? %>
         <div class="buy-grid">
@@ -98,7 +99,7 @@
     </section>
   <% end %>
 
-  <section class="panel signal-panel">
+  <section class="panel signal-panel" id="current-signals">
     <div class="panel-heading">
       <div>
         <p class="eyebrow"><%= @area.upcase %> market</p>
