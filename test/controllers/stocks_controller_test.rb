@@ -86,7 +86,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       finished_at: "2026-08-01T17:30:00Z"
     }
 
-    Stock::RefreshRun.stub(:new, -> { Struct.new(:status).new(status) }) do
+    Stock::RefreshRun.stub(:new, -> { Struct.new(:status, :scheduled_status).new(status, status) }) do
       get stocks_by_area_path("sz")
     end
 
@@ -100,7 +100,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       started_at: "2026-08-01T17:29:51Z", finished_at: "2026-08-01T17:30:00Z"
     }
 
-    Stock::RefreshRun.stub(:new, -> { Struct.new(:status).new(status) }) do
+    Stock::RefreshRun.stub(:new, -> { Struct.new(:status, :scheduled_status).new(status, status) }) do
       get stocks_by_area_path("sz")
     end
 
@@ -117,6 +117,26 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".refresh-schedule", text: /Automatic refresh daily at 20:30/
+  end
+
+  test "market page preserves scheduled verification after a manual refresh" do
+    latest = {
+      state: "succeeded", source: "manual",
+      started_at: "2026-08-02T16:46:50Z", finished_at: "2026-08-02T16:47:05Z"
+    }
+    scheduled = {
+      state: "succeeded", source: "scheduled",
+      started_at: "2026-08-01T17:29:51Z", finished_at: "2026-08-01T17:30:00Z"
+    }
+    runner = Struct.new(:status, :scheduled_status).new(latest, scheduled)
+
+    Stock::RefreshRun.stub(:new, runner) do
+      get stocks_by_area_path("sz")
+    end
+
+    assert_response :success
+    assert_select ".refresh-status", text: /Refresh verified 2026-08-03 in 15s/
+    assert_select ".scheduled-refresh-status", text: /Scheduled refresh verified 2026-08-02 in 9s/
   end
 
   test "stock analysis preserves its market query parameter" do

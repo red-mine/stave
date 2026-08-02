@@ -40,13 +40,28 @@ class StockRefreshRunTest < ActiveSupport::TestCase
     end
   end
 
+  test "preserves the last scheduled result across later manual runs" do
+    Dir.mktmpdir do |directory|
+      scheduled = build_runner(directory)
+      scheduled.call { :scheduled }
+
+      manual = build_runner(directory, source: "manual")
+      manual.call { :manual }
+
+      assert_equal "manual", manual.status[:source]
+      assert_equal "succeeded", manual.scheduled_status[:state]
+      assert_equal "scheduled", manual.scheduled_status[:source]
+    end
+  end
+
   private
 
-  def build_runner(directory, clock: -> { Time.current })
+  def build_runner(directory, clock: -> { Time.current }, source: "scheduled")
     Stock::RefreshRun.new(
       lock_path: File.join(directory, "refresh.lock"),
       status_path: File.join(directory, "status.json"),
-      source: "scheduled",
+      scheduled_status_path: File.join(directory, "scheduled-status.json"),
+      source: source,
       clock: clock
     )
   end

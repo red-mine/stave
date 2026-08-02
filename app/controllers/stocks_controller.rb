@@ -20,7 +20,9 @@ class StocksController < ApplicationController
     end
     @buy_candidates = stock ? [] : stave.strongest_buy_candidates
     @result_count = @stocks_stavs.count if stock
-    @refresh_status = Stock::RefreshRun.new.status
+    refresh_run = Stock::RefreshRun.new
+    @refresh_status = refresh_run.status
+    @scheduled_refresh_status = refresh_run.scheduled_status
     @refresh_schedule = Stock::RefreshSchedule.new.status
   end
 

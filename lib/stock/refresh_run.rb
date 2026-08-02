@@ -7,6 +7,7 @@ module Stock
     def initialize(
       lock_path: Rails.root.join("tmp", "stock-refresh.lock"),
       status_path: Rails.root.join("tmp", "stock-refresh-status.json"),
+      scheduled_status_path: Rails.root.join("tmp", "stock-refresh-scheduled-status.json"),
       source: ENV.fetch("STOCK_REFRESH_SOURCE", "application"),
       environment: Rails.env,
       stale_after: 5.hours,
@@ -14,6 +15,7 @@ module Stock
     )
       @lock_path = Pathname.new(lock_path)
       @status_path = Pathname.new(status_path)
+      @scheduled_status_path = Pathname.new(scheduled_status_path)
       @source = source
       @environment = environment.to_s
       @stale_after = stale_after
@@ -39,11 +41,11 @@ module Stock
     end
 
     def status
-      return {} unless @status_path.file?
+      read_status(@status_path)
+    end
 
-      JSON.parse(@status_path.read, symbolize_names: true)
-    rescue JSON::ParserError, SystemCallError
-      {}
+    def scheduled_status
+      read_status(@scheduled_status_path).presence || (status if status[:source] == "scheduled") || {}
     end
 
     private
@@ -76,10 +78,23 @@ module Stock
     end
 
     def write_status(attributes)
-      FileUtils.mkdir_p(@status_path.dirname)
-      temporary = Pathname.new("#{@status_path}.tmp")
+      write_status_file(@status_path, attributes)
+      write_status_file(@scheduled_status_path, attributes) if @source == "scheduled"
+    end
+
+    def write_status_file(path, attributes)
+      FileUtils.mkdir_p(path.dirname)
+      temporary = Pathname.new("#{path}.tmp")
       temporary.write(JSON.pretty_generate(attributes.transform_values { |value| value.respond_to?(:iso8601) ? value.iso8601 : value }))
-      FileUtils.mv(temporary, @status_path)
+      FileUtils.mv(temporary, path)
+    end
+
+    def read_status(path)
+      return {} unless path.file?
+
+      JSON.parse(path.read, symbolize_names: true)
+    rescue JSON::ParserError, SystemCallError
+      {}
     end
   end
 end
