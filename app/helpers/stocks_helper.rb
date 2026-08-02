@@ -12,6 +12,19 @@ module StocksHelper
     "CHP0" => "Recovery buy zone"
   }.freeze
 
+  SIGNAL_ACTIONS = {
+    "SAF1" => "Buy",
+    "SOX2" => "Hold",
+    "SEL3" => "Sell",
+    "BUY4" => "Buy",
+    "BUY5" => "Buy",
+    "SEL6" => "Sell",
+    "SEL7" => "Sell",
+    "WAT8" => "Wait",
+    "WAT9" => "Avoid",
+    "CHP0" => "Buy"
+  }.freeze
+
   def market_navigation(current_area)
     safe_join(Stock::AREAS.map do |area|
       classes = ["market-tab", ("is-active" if area == current_area)].compact
@@ -29,12 +42,12 @@ module StocksHelper
     when /\ASOX/ then "strong"
     else "neutral"
     end
-    content_tag(
-      :span,
-      normalized,
-      class: "signal-badge signal-#{tone}",
-      title: SIGNAL_DETAILS.fetch(normalized, normalized)
-    )
+    content_tag(:span, class: "signal-badge signal-#{tone}", title: SIGNAL_DETAILS.fetch(normalized, normalized)) do
+      safe_join([
+        content_tag(:span, normalized, class: "signal-code"),
+        content_tag(:span, SIGNAL_ACTIONS.fetch(normalized, "Signal"), class: "signal-action")
+      ])
+    end
   end
 
   def linked_signal_badge(code)

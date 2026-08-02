@@ -341,6 +341,7 @@ a { color: var(--teal-dark); }
   letter-spacing: 0.055em;
   text-transform: uppercase;
 }
+.signal-action { display: none; }
 .signal-positive { color: #0b684f; background: #dff5ec; }
 .signal-negative { color: #943939; background: #fbe5e5; }
 .signal-strong { color: #354f9c; background: #e5eafb; }
@@ -506,6 +507,8 @@ a { color: var(--teal-dark); }
   .stock-table th:nth-child(2), .stock-table td:nth-child(2),
   .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 33%; }
   .stock-table .signal-badge { min-width: 0; width: 100%; padding-right: 5px; padding-left: 5px; }
+  .stock-table .signal-badge { flex-direction: column; gap: 2px; line-height: 1.05; }
+  .stock-table .signal-action { display: block; font-size: 0.55rem; font-weight: 750; letter-spacing: 0; text-transform: none; }
   .stock-code a { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 44px; width: 100%; }
   .stock-open-arrow { display: inline; color: var(--teal); font-size: 1rem; }
   .mobile-table-note { display: block; margin: 0; padding: 10px 18px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.7rem; }

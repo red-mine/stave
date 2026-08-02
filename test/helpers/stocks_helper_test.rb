@@ -1,6 +1,16 @@
 require "test_helper"
 
 class StocksHelperTest < ActionView::TestCase
+  test "adds a plain action to each coded signal badge" do
+    badge = signal_badge("SAF1")
+
+    assert_dom_equal '<span class="signal-badge signal-positive" title="Safe buy zone"><span class="signal-code">SAF1</span><span class="signal-action">Buy</span></span>', badge
+    assert_includes signal_badge("SEL7"), '<span class="signal-action">Sell</span>'
+    assert_includes signal_badge("SOX2"), '<span class="signal-action">Hold</span>'
+    assert_includes signal_badge("WAT8"), '<span class="signal-action">Wait</span>'
+    assert_includes signal_badge("WAT9"), '<span class="signal-action">Avoid</span>'
+  end
+
   test "labels recent and stale model dates without implying live prices" do
     travel_to Time.zone.local(2026, 8, 2, 12) do
       assert_equal({ label: "Recent", tone: "recent" }, data_recency(Date.new(2026, 7, 31)))
