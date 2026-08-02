@@ -496,6 +496,8 @@ a { color: var(--teal-dark); }
   .stock-table td { padding-right: 12px; padding-left: 12px; }
   .table-scroll { overflow-x: visible; }
   .stock-table { table-layout: fixed; white-space: normal; }
+  .stock-table thead { position: sticky; top: 0; z-index: 2; }
+  .stock-table th { background: #f4f7f9; box-shadow: 0 1px 0 var(--line); }
   .stock-table .metric-column { display: none; }
   .stock-table th:first-child, .stock-table td:first-child { width: 34%; }
   .stock-table th:nth-child(2), .stock-table td:nth-child(2),
