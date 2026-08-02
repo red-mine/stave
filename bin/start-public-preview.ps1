@@ -102,6 +102,8 @@ $publicUrl = $urlMatch.Value
 $publicHost = ([Uri]$publicUrl).Host
 $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
 $env:STOCK_DATABASE = $database
+$env:RAILS_ENV = "development"
+$env:RACK_ENV = "development"
 $env:PUBLIC_TUNNEL_HOST = $publicHost
 $env:PUBLIC_PREVIEW = "1"
 $env:ASSET_CACHE_PATH = "memory"
@@ -153,6 +155,7 @@ $status = @{
   tunnel_pid = $tunnel.Id
   database = $database
   port = $Port
+  environment = "development"
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
 Write-Output ([pscustomobject]$status)

@@ -46,6 +46,7 @@ $marketsHealthy = @($areas | Where-Object { $localStatuses[$_] -ne 200 -or $publ
 $report = [pscustomobject]@{
   Url = $status.url
   StartedAt = $status.started_at
+  Environment = if ($status.environment) { $status.environment } else { "unknown" }
   Port = $port
   RailsPid = $railsPid
   RecordedRailsPid = $status.rails_pid
@@ -56,7 +57,7 @@ $report = [pscustomobject]@{
   PublicMarkets = ($areas | ForEach-Object { "$_=$($publicStatuses[$_])" }) -join ", "
   IsolatedDatabase = $databaseIsIsolated
   DatabaseBytes = $database.Length
-  Healthy = $rails -and $tunnel -and $marketsHealthy -and $databaseIsIsolated
+  Healthy = $rails -and $tunnel -and $marketsHealthy -and $databaseIsIsolated -and $status.environment -eq "development"
 }
 $report
 if (-not $report.Healthy -and -not $ReturnOnly) { exit 1 }
