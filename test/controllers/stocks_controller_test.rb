@@ -322,6 +322,22 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: "Return to market signals"
   end
 
+  test "full prefixed search switches to the encoded market" do
+    StocksCoefsStav.create!(
+      stock: "sh600000", area: Stock::SHSTK, price: 12.34,
+      years: "SAF1", lohas: "BUY5", date: Date.new(2026, 7, 31)
+    )
+
+    get stocks_by_area_path(Stock::SZSTK), params: { stock: "SH600000" }
+
+    assert_redirected_to stocks_by_area_path(Stock::SHSTK, stock: "sh600000", anchor: "current-signals")
+    follow_redirect!
+    assert_response :success
+    assert_select ".market-tab.is-active", text: "SH"
+    assert_select ".search-summary", text: /1 result.*SH600000/
+    assert_select ".stock-code", text: /SH600000/
+  end
+
   test "market signals are available as JSON" do
     signal = StocksCoefsStav.create!(
       stock: "sh600000",

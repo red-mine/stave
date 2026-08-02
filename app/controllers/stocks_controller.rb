@@ -10,6 +10,11 @@ class StocksController < ApplicationController
     stock   = normalized_stock_query
     return render_bad_request if params[:stock].present? && stock.nil?
 
+    encoded_area = STOCK_ID_PATTERN.match(stock.to_s)&.[](:area)
+    if encoded_area.present? && encoded_area != area
+      return redirect_to stocks_by_area_path(encoded_area, stock: stock, anchor: "current-signals")
+    end
+
     @stock  = stock
     stave   = Stock::Stave.new(area, Stock::STAVE)
     @stocks_stavs, @stavs_date = stave.good_index(stock)
