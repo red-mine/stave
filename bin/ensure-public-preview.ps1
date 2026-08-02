@@ -1,0 +1,43 @@
+param(
+  [int]$RetryDelaySeconds = 15
+)
+
+$ErrorActionPreference = "Stop"
+$repository = Split-Path -Parent $PSScriptRoot
+$pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
+$statusScript = Join-Path $PSScriptRoot "public-preview-status.ps1"
+$startScript = Join-Path $PSScriptRoot "start-public-preview.ps1"
+$logDirectory = Join-Path $repository "log\public-preview"
+$logFile = Join-Path $logDirectory "monitor.log"
+New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
+
+function Write-MonitorLog([string]$Message) {
+  "[$(Get-Date -Format o)] $Message" | Tee-Object -FilePath $logFile -Append
+}
+
+function Test-PreviewHealth {
+  $check = Start-Process -FilePath $pwsh `
+    -ArgumentList "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $statusScript `
+    -WorkingDirectory $repository -WindowStyle Hidden -Wait -PassThru
+  return $check.ExitCode -eq 0
+}
+
+if (Test-PreviewHealth) {
+  Write-MonitorLog "Preview healthy; no action needed."
+  exit 0
+}
+
+Write-MonitorLog "Preview health check failed; retrying in $RetryDelaySeconds seconds."
+Start-Sleep -Seconds ([Math]::Max($RetryDelaySeconds, 1))
+if (Test-PreviewHealth) {
+  Write-MonitorLog "Preview recovered on retry; no restart needed."
+  exit 0
+}
+
+Write-MonitorLog "Preview failed twice; starting verified recovery."
+& $startScript | Tee-Object -FilePath $logFile -Append
+if ($LASTEXITCODE -ne 0) {
+  Write-MonitorLog "Preview recovery failed with exit code $LASTEXITCODE."
+  exit $LASTEXITCODE
+}
+Write-MonitorLog "Preview recovery succeeded."
