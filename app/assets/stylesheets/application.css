@@ -306,6 +306,7 @@ a { color: var(--teal-dark); }
 .stock-table tr.is-historical:hover { background: #fff7e6; }
 .stock-code a { color: var(--navy); font-weight: 800; letter-spacing: 0.025em; text-decoration: none; }
 .stock-code a:hover { color: var(--teal); }
+.stock-open-arrow { display: none; }
 .historical-label {
   display: block;
   width: fit-content;
@@ -490,6 +491,8 @@ a { color: var(--teal-dark); }
   .stock-table th:nth-child(2), .stock-table td:nth-child(2),
   .stock-table th:nth-child(3), .stock-table td:nth-child(3) { width: 33%; }
   .stock-table .signal-badge { min-width: 0; width: 100%; padding-right: 5px; padding-left: 5px; }
+  .stock-code a { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 44px; width: 100%; }
+  .stock-open-arrow { display: inline; color: var(--teal); font-size: 1rem; }
   .mobile-table-note { display: block; margin: 0; padding: 10px 18px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.7rem; }
   .data-freshness { align-items: flex-start; flex-direction: column; gap: 6px; }
   .freshness-context { text-align: left; }

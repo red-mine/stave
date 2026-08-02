@@ -250,6 +250,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".stock-table th.metric-column", count: 7
     assert_select ".stock-table tbody tr:first-child td.metric-column", count: 7
     assert_select ".mobile-table-note", text: /Tap a stock for price, trend, channel, and chart details/
+    assert_select ".stock-code a[aria-label='Open SZ000001 analysis'] .stock-open-arrow", text: "→"
     guide_path = signal_guide_path(area: Stock::SZSTK)
     assert_select "a.guide-link[href='#{guide_path}']", text: /Open signal guide/
     assert_select "a.signal-guide-link[href='#{guide_path}']", count: 4

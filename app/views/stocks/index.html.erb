@@ -140,7 +140,10 @@
               <% historical = stock.date.present? && @stavs_date.present? && stock.date < @stavs_date %>
               <tr class="<%= "is-historical" if historical %>">
                 <td class="stock-code">
-                  <%= link_to stock.stock.upcase, stock_analysis_path(stock.stock, area: @area) %>
+                  <%= link_to stock_analysis_path(stock.stock, area: @area), aria: { label: "Open #{stock.stock.upcase} analysis" } do %>
+                    <span><%= stock.stock.upcase %></span>
+                    <span class="stock-open-arrow" aria-hidden="true">→</span>
+                  <% end %>
                   <% if historical %>
                     <span class="historical-label">Historical</span>
                     <span class="historical-date">Ended <%= stock.date %></span>
