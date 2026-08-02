@@ -14,6 +14,8 @@ $action = New-ScheduledTaskAction `
 $trigger = New-ScheduledTaskTrigger -Daily -At $time
 $settings = New-ScheduledTaskSettingsSet `
   -StartWhenAvailable `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
   -MultipleInstances IgnoreNew `
   -ExecutionTimeLimit (New-TimeSpan -Hours 4)
 $principal = New-ScheduledTaskPrincipal `

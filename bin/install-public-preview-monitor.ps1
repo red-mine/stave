@@ -16,6 +16,8 @@ $trigger = New-ScheduledTaskTrigger `
   -RepetitionInterval (New-TimeSpan -Minutes $interval)
 $settings = New-ScheduledTaskSettingsSet `
   -StartWhenAvailable `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
   -MultipleInstances IgnoreNew `
   -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
 $principal = New-ScheduledTaskPrincipal `
