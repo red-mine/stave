@@ -467,10 +467,13 @@ a { color: var(--teal-dark); }
   .buy-grid { grid-template-columns: 1fr; }
   .candidate-details { display: none; }
   .candidate-mobile-reasons { display: block; }
+  .candidate-open { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 14px; border: 1px solid #b9ddd7; border-radius: 10px; background: #eff9f7; font-size: 0.78rem; text-decoration: none; }
   .search-controls { align-items: stretch; flex-direction: column; }
   .search-controls input[type="text"] { width: 100%; }
   .panel-heading { gap: 10px; }
   .panel-meta { justify-items: start; }
+  .signal-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow-x: visible; padding: 12px; }
+  .signal-filter { justify-content: space-between; min-height: 44px; padding: 9px 12px; }
   .guide-explainer { grid-template-columns: 1fr; }
   .original-examples { padding: 18px; }
   .stock-table th:first-child,
