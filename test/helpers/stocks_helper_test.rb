@@ -14,4 +14,16 @@ class StocksHelperTest < ActionView::TestCase
     assert_nil refresh_finished_date("not-a-time")
     assert_nil refresh_finished_date(nil)
   end
+
+  test "formats completed refresh duration and tolerates incomplete status" do
+    assert_equal "5m 28s", refresh_duration(
+      started_at: "2026-08-02T08:47:20Z",
+      finished_at: "2026-08-02T08:52:48Z"
+    )
+    assert_equal "9s", refresh_duration(
+      started_at: "2026-08-02T08:47:20Z",
+      finished_at: "2026-08-02T08:47:29Z"
+    )
+    assert_nil refresh_duration(started_at: nil, finished_at: nil)
+  end
 end

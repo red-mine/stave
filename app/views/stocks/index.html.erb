@@ -37,7 +37,8 @@
           <span class="model-date">Model date <strong><%= @stavs_date || "Unavailable" %></strong></span>
           <% if @refresh_status[:state] == "succeeded" %>
             <% refresh_date = refresh_finished_date(@refresh_status[:finished_at]) %>
-            <span class="refresh-status">Daily refresh verified<%= " #{refresh_date}" if refresh_date %></span>
+            <% duration = refresh_duration(@refresh_status) %>
+            <span class="refresh-status">Daily refresh verified<%= " #{refresh_date}" if refresh_date %><%= " in #{duration}" if duration %></span>
           <% elsif @refresh_status[:state] == "running" %>
             <span class="refresh-status is-running">Daily refresh is running</span>
           <% elsif @refresh_status[:state] == "failed" %>

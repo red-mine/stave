@@ -65,4 +65,14 @@ module StocksHelper
   rescue ArgumentError, TypeError
     nil
   end
+
+  def refresh_duration(status)
+    started_at = Time.iso8601(status[:started_at])
+    finished_at = Time.iso8601(status[:finished_at])
+    seconds = [(finished_at - started_at).round, 0].max
+    minutes, remaining_seconds = seconds.divmod(60)
+    minutes.positive? ? "#{minutes}m #{remaining_seconds}s" : "#{remaining_seconds}s"
+  rescue ArgumentError, TypeError
+    nil
+  end
 end

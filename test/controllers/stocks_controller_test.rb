@@ -47,14 +47,18 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "market page displays the last successful daily refresh" do
-    status = { state: "succeeded", finished_at: "2026-08-01T17:30:00Z" }
+    status = {
+      state: "succeeded",
+      started_at: "2026-08-01T17:29:51Z",
+      finished_at: "2026-08-01T17:30:00Z"
+    }
 
     Stock::RefreshRun.stub(:new, -> { Struct.new(:status).new(status) }) do
       get stocks_by_area_path("sz")
     end
 
     assert_response :success
-    assert_select ".refresh-status", text: /Daily refresh verified 2026-08-02/
+    assert_select ".refresh-status", text: /Daily refresh verified 2026-08-02 in 9s/
   end
 
   test "market page displays an installed automatic refresh schedule" do
