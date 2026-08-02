@@ -1,5 +1,6 @@
 param(
-  [string]$StatusPath = ""
+  [string]$StatusPath = "",
+  [switch]$ReturnOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,4 +54,4 @@ $report = [pscustomobject]@{
   Healthy = $rails -and $tunnel -and $marketsHealthy
 }
 $report
-if (-not $report.Healthy) { exit 1 }
+if (-not $report.Healthy -and -not $ReturnOnly) { exit 1 }

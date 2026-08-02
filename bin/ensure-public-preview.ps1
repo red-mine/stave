@@ -6,7 +6,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repository = Split-Path -Parent $PSScriptRoot
-$pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
 $statusScript = Join-Path $PSScriptRoot "public-preview-status.ps1"
 $startScript = Join-Path $PSScriptRoot "start-public-preview.ps1"
 $logDirectory = Join-Path $repository "log\public-preview"
@@ -34,10 +33,16 @@ function Write-MonitorLog([string]$Message) {
 }
 
 function Test-PreviewHealth {
-  $check = Start-Process -FilePath $pwsh `
-    -ArgumentList "-NoLogo", "-NoProfile", "-NonInteractive", "-File", $statusScript `
-    -WorkingDirectory $repository -WindowStyle Hidden -Wait -PassThru
-  return $check.ExitCode -eq 0
+  try {
+    $check = & $statusScript -ReturnOnly
+    if (-not $check.Healthy) {
+      Write-MonitorLog "Health details: rails=$($check.RailsRunning), tunnel=$($check.TunnelRunning), local=[$($check.LocalMarkets)], public=[$($check.PublicMarkets)]."
+    }
+    return [bool]$check.Healthy
+  } catch {
+    Write-MonitorLog "Health check could not run: $($_.Exception.Message)"
+    return $false
+  }
 }
 
 if (Test-PreviewHealth) {
