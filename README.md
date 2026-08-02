@@ -172,7 +172,8 @@ pwsh -File bin\install-public-preview-monitor.ps1
 ```
 
 The monitor makes two health checks 15 seconds apart before recovery, ignores
-overlapping runs, and writes its decisions to `log/public-preview/monitor.log`.
+overlapping runs, and writes its decisions to `log/public-preview/monitor.log`. The
+monitor trims this log after it reaches 1 MB, retaining the latest 1,000 lines.
 Because Quick Tunnel URLs are temporary, a recovery can assign a new URL; read
 the current address with `bin\public-preview-status.ps1`.
 
