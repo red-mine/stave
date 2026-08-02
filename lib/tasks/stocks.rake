@@ -114,6 +114,21 @@ task snapshot_status: :environment do
   end
 end
 
+desc "Report stocks whose latest coefficient date trails the market date"
+task stale_stocks: :environment do
+  Stock::AREAS.each do |area|
+    market_date = StocksCoefsStav.where(area: area).maximum(:date)
+    next unless market_date
+
+    lagging = StocksCoefsStav.where(area: area).where.not(date: market_date).order(:date, :stock)
+    total = StocksCoefsStav.where(area: area).count
+    puts "#{area.upcase}: #{lagging.count} of #{total} stocks trail #{market_date}"
+    lagging.each do |record|
+      puts "  #{record.stock} date=#{record.date} lohas=#{record.lohas.inspect} years=#{record.years.inspect}"
+    end
+  end
+end
+
 desc "stock"
 task :stock => :environment do
   puts "stock"

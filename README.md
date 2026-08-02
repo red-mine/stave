@@ -96,6 +96,13 @@ bundle exec rails data_status
 The status task exits unsuccessfully when any market stage is missing or stale,
 so it can also be used by scheduled jobs and CI.
 
+List stocks whose latest coefficient date trails the market date (suspended,
+delisted, or missing source files):
+
+```powershell
+bundle exec rails stale_stocks
+```
+
 The individual stages remain available for diagnostics:
 
 ```powershell
