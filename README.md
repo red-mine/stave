@@ -67,8 +67,10 @@ bundle exec rails daily_refresh
 
 This checks all three markets first, skips healthy markets, creates a SQLite
 backup before recalculation, refreshes only new or incomplete markets, saves a
-daily signal snapshot, and verifies the generated data before succeeding. Run
-`bundle exec rails snapshot_status` to inspect accumulated signal history.
+daily signal snapshot, and verifies the generated data before succeeding. The
+signal snapshot is recorded after every run, including runs that skip
+recalculation. Run `bundle exec rails snapshot_status` to inspect accumulated
+signal history.
 
 
 Refresh all three markets with one command:

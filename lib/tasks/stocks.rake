@@ -92,16 +92,16 @@ task daily_refresh: :environment do
   if areas.empty?
     latest = report.values.filter_map { |market| market[:source_date] }.max
     puts "No refresh needed. All markets are healthy through #{latest || 'an unavailable date'}."
-    next
+  else
+    puts "Markets requiring refresh: #{areas.map(&:upcase).join(', ')}"
+    Rake::Task[:refresh].reenable
+    Rake::Task[:refresh].invoke(*areas)
+
+    verified = checker.call
+    abort "Refresh finished but generated data remains incomplete" unless checker.healthy?(verified)
   end
 
-  puts "Markets requiring refresh: #{areas.map(&:upcase).join(', ')}"
-  Rake::Task[:refresh].reenable
-  Rake::Task[:refresh].invoke(*areas)
-
-  verified = checker.call
-  abort "Refresh finished but generated data remains incomplete" unless checker.healthy?(verified)
-
+  Stock::AREAS.each { |area| Stock::SignalSnapshot.capture!(area) }
   counts = StockSignalSnapshot.group(:area).count
   puts "Daily refresh complete. Snapshot rows: #{counts.sort.to_h.inspect}"
 end
