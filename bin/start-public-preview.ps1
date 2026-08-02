@@ -123,21 +123,32 @@ if (-not $listener) {
 }
 
 $areas = @("sz", "sh", "bj")
+function Test-MarketContent($Response) {
+  return $Response -and
+    $Response.Content -match 'id="current-signals"' -and
+    $Response.Content -match 'class="stock-table"' -and
+    $Response.Content -notmatch 'Data date\s*<strong>Unavailable</strong>'
+}
+
 $healthDeadline = (Get-Date).AddSeconds(90)
 do {
   $failedChecks = foreach ($area in $areas) {
-    $localCode = try {
-      (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/$area" -TimeoutSec 15).StatusCode
+    $localResponse = try {
+      Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/$area" -TimeoutSec 15
     } catch {
-      0
+      $null
     }
-    $publicCode = try {
-      (Invoke-WebRequest -UseBasicParsing -Uri "$publicUrl/$area" -TimeoutSec 15).StatusCode
+    $publicResponse = try {
+      Invoke-WebRequest -UseBasicParsing -Uri "$publicUrl/$area" -TimeoutSec 15
     } catch {
-      0
+      $null
     }
-    if ($localCode -ne 200 -or $publicCode -ne 200) {
-      "$area(local=$localCode, public=$publicCode)"
+    $localCode = if ($localResponse) { $localResponse.StatusCode } else { 0 }
+    $publicCode = if ($publicResponse) { $publicResponse.StatusCode } else { 0 }
+    $localReady = Test-MarketContent $localResponse
+    $publicReady = Test-MarketContent $publicResponse
+    if ($localCode -ne 200 -or $publicCode -ne 200 -or -not $localReady -or -not $publicReady) {
+      "$area(local=$localCode/$localReady, public=$publicCode/$publicReady)"
     }
   }
   if ($failedChecks -and (Get-Date) -lt $healthDeadline) {
