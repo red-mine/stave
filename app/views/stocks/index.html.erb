@@ -34,6 +34,7 @@
           <p class="eyebrow">Strongest model agreement</p>
           <h2 id="buy-candidates-title">Buy candidates</h2>
           <p>Current buy-family signals ranked by agreement, trend direction, and channel position. The score measures technical agreement—not the probability of profit.</p>
+          <%= link_to "Jump to buy/sell signals ↓", "#current-signals", class: "mobile-signal-jump" %>
         </div>
         <div class="model-status">
           <span class="data-status data-status-<%= recency[:tone] %>"><%= recency[:label] %></span>
@@ -58,8 +59,6 @@
           <%= link_to "View signal history →", signal_history_path(area: @area), class: "history-shortcut" %>
         </div>
       </div>
-      <%= link_to "Jump to buy/sell signals ↓", "#current-signals", class: "mobile-signal-jump" %>
-
       <% if @buy_candidates.any? %>
         <div class="buy-grid">
           <% @buy_candidates.each do |candidate| %>
