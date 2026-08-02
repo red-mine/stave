@@ -25,6 +25,36 @@
     <% end %>
   </section>
 
+  <section class="signal-timeline" aria-labelledby="signal-timeline-title">
+    <div class="timeline-heading">
+      <div>
+        <p class="eyebrow">Recorded evidence</p>
+        <h2 id="signal-timeline-title">Recent signal history</h2>
+      </div>
+      <%= link_to "All market history →", signal_history_path(area: @area), class: "guide-link" %>
+    </div>
+
+    <% if @signal_timeline.any? %>
+      <div class="timeline-list">
+        <% @signal_timeline.each do |entry| %>
+          <article class="timeline-entry <%= "is-change" if entry.changed %>">
+            <div class="timeline-date">
+              <strong><%= entry.date %></strong>
+              <span><%= entry.changed ? "Signal changed" : "Recorded" %></span>
+            </div>
+            <div class="timeline-signals">
+              <div><small>Year</small><%= signal_badge(entry.year_signal) %></div>
+              <div><small>LOHAS</small><%= signal_badge(entry.lohas_signal) %></div>
+            </div>
+            <p><small>Price</small><strong><%= formatted_number(entry.price) %></strong></p>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="timeline-empty">History starts after the next successful daily refresh. No past signal is reconstructed from future data.</p>
+    <% end %>
+  </section>
+
   <div class="chart-grid">
     <section class="chart-card">
       <div class="chart-heading">

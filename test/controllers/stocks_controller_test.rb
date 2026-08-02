@@ -111,6 +111,27 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".data-freshness", text: /SZ market data continues through 2026-07-31/
   end
 
+  test "stock analysis shows recorded signal history without reconstructing missing history" do
+    StockSignalSnapshot.create!(
+      stock: "sz000522", area: Stock::SZSTK, signal_date: Date.new(2026, 7, 30),
+      price: 10.5, year_signal: "SAF1", lohas_signal: "BUY5"
+    )
+    StockSignalSnapshot.create!(
+      stock: "sz000522", area: Stock::SZSTK, signal_date: Date.new(2026, 7, 31),
+      price: 10.8, year_signal: "BUY5", lohas_signal: "BUY5"
+    )
+
+    Stock::Stave.stub(:new, ->(*) { FakeStave.new }) do
+      get stock_analysis_path("000522", area: Stock::SZSTK)
+    end
+
+    assert_response :success
+    assert_select ".signal-timeline", count: 1
+    assert_select ".timeline-entry", count: 2
+    assert_select ".timeline-entry.is-change", count: 1, text: /2026-07-31.*BUY5.*10.8/m
+    assert_select "a[href='#{signal_history_path(area: Stock::SZSTK)}']", text: /All market history/
+  end
+
   test "stock analysis defaults invalid market input to Shenzhen" do
     areas = []
 
