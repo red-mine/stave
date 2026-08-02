@@ -73,7 +73,9 @@ recalculation. Run `bundle exec rails snapshot_status` to inspect accumulated
 signal history. Use `bundle exec rails refresh_plan` first when you only want to
 preview which markets need work. Daily refreshes are locked so two copies cannot
 modify the database concurrently, and the front page reports the last run as
-running, successful, or failed.
+running, successful, or failed. A run fails if any healthy market produces no
+snapshot rows, and its log reports newly captured rows separately from total
+stored history.
 
 ### Schedule the Windows refresh
 

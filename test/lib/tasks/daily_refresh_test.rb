@@ -20,8 +20,10 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
       captured = []
 
       Stock::DataStatus.stub(:new, ->(*) { checker }) do
-        Stock::SignalSnapshot.stub(:capture!, ->(area) { captured << area; 0 }) do
-          invoke_daily_refresh
+        Stock::SignalSnapshot.stub(:capture!, ->(area) { captured << area; 2 }) do
+          output, = capture_io { invoke_daily_refresh }
+          assert_match(/Captured rows: \{"bj" => 2, "sh" => 2, "sz" => 2\}/, output)
+          assert_match(/Stored history rows:/, output)
         end
       end
 
@@ -50,7 +52,7 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
       refreshed = []
 
       Stock::DataStatus.stub(:new, ->(*) { checker }) do
-        Stock::SignalSnapshot.stub(:capture!, 0) do
+        Stock::SignalSnapshot.stub(:capture!, 1) do
           Rake::Task[:refresh].stub(:invoke, ->(*areas) { refreshed.concat(areas) }) do
             invoke_daily_refresh
           end
@@ -59,6 +61,21 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
 
       assert_equal [Stock::SHSTK], refreshed
       assert_equal 2, call_count
+    end
+  end
+
+  test "fails instead of reporting success when a market captures no snapshots" do
+    market = { healthy: true, source_date: Date.new(2026, 7, 31) }
+    checker = Stock::DataStatus.allocate
+
+    checker.stub(:call, Stock::AREAS.index_with { market }) do
+      Stock::DataStatus.stub(:new, ->(*) { checker }) do
+        capture = ->(area) { area == Stock::BJSTK ? 0 : 1 }
+        Stock::SignalSnapshot.stub(:capture!, capture) do
+          error = assert_raises(SystemExit) { capture_io { invoke_daily_refresh } }
+          assert_equal 1, error.status
+        end
+      end
     end
   end
 

@@ -111,9 +111,12 @@ task daily_refresh: :environment do
         abort "Refresh finished but generated data remains incomplete" unless checker.healthy?(verified)
       end
 
-      Stock::AREAS.each { |area| Stock::SignalSnapshot.capture!(area) }
-      counts = StockSignalSnapshot.group(:area).count
-      puts "Daily refresh complete. Snapshot rows: #{counts.sort.to_h.inspect}"
+      captured = Stock::AREAS.to_h { |area| [area, Stock::SignalSnapshot.capture!(area)] }
+      missing = captured.select { |_area, rows| rows.zero? }.keys
+      abort "Snapshot capture produced no rows for: #{missing.map(&:upcase).join(', ')}" if missing.any?
+
+      stored = StockSignalSnapshot.group(:area).count
+      puts "Daily refresh complete. Captured rows: #{captured.sort.to_h.inspect}. Stored history rows: #{stored.sort.to_h.inspect}"
     end
   rescue Stock::RefreshRun::AlreadyRunning => error
     abort error.message
