@@ -144,6 +144,40 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".scheduled-refresh-status", text: /Scheduled refresh verified 2026-08-02 in 9s/
   end
 
+  test "market page preserves a scheduled failure after a manual refresh" do
+    latest = {
+      state: "succeeded", source: "manual",
+      started_at: "2026-08-02T16:46:50Z", finished_at: "2026-08-02T16:47:05Z"
+    }
+    scheduled = {
+      state: "failed", source: "scheduled",
+      started_at: "2026-08-02T12:30:00Z", finished_at: "2026-08-02T12:31:00Z",
+      error: "source unavailable"
+    }
+    runner = Struct.new(:status, :scheduled_status).new(latest, scheduled)
+
+    Stock::RefreshRun.stub(:new, runner) do
+      get stocks_by_area_path("sz")
+    end
+
+    assert_response :success
+    assert_select ".refresh-status:not(.scheduled-refresh-status)", text: /Refresh verified 2026-08-03 in 15s/
+    assert_select ".scheduled-refresh-status.is-failed", text: /Last scheduled refresh failed 2026-08-02/
+  end
+
+  test "market page preserves a running scheduled refresh after a manual refresh" do
+    latest = { state: "succeeded", source: "manual" }
+    scheduled = { state: "running", source: "scheduled", started_at: "2026-08-02T12:30:00Z" }
+    runner = Struct.new(:status, :scheduled_status).new(latest, scheduled)
+
+    Stock::RefreshRun.stub(:new, runner) do
+      get stocks_by_area_path("sz")
+    end
+
+    assert_response :success
+    assert_select ".scheduled-refresh-status.is-running", text: /Scheduled refresh is running/
+  end
+
   test "stock analysis preserves its market query parameter" do
     areas = []
 

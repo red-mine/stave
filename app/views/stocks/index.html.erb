@@ -48,10 +48,17 @@
           <% elsif @refresh_status[:state] == "failed" %>
             <span class="refresh-status is-failed">Last daily refresh failed</span>
           <% end %>
-          <% if @refresh_status[:source] != "scheduled" && @scheduled_refresh_status[:state] == "succeeded" %>
-            <% scheduled_date = refresh_finished_date(@scheduled_refresh_status[:finished_at]) %>
-            <% scheduled_duration = refresh_duration(@scheduled_refresh_status) %>
-            <span class="refresh-status scheduled-refresh-status">Scheduled refresh verified<%= " #{scheduled_date}" if scheduled_date %><%= " in #{scheduled_duration}" if scheduled_duration %></span>
+          <% if @refresh_status[:source] != "scheduled" %>
+            <% if @scheduled_refresh_status[:state] == "succeeded" %>
+              <% scheduled_date = refresh_finished_date(@scheduled_refresh_status[:finished_at]) %>
+              <% scheduled_duration = refresh_duration(@scheduled_refresh_status) %>
+              <span class="refresh-status scheduled-refresh-status">Scheduled refresh verified<%= " #{scheduled_date}" if scheduled_date %><%= " in #{scheduled_duration}" if scheduled_duration %></span>
+            <% elsif @scheduled_refresh_status[:state] == "running" %>
+              <span class="refresh-status scheduled-refresh-status is-running">Scheduled refresh is running</span>
+            <% elsif @scheduled_refresh_status[:state] == "failed" %>
+              <% scheduled_date = refresh_finished_date(@scheduled_refresh_status[:finished_at]) %>
+              <span class="refresh-status scheduled-refresh-status is-failed">Last scheduled refresh failed<%= " #{scheduled_date}" if scheduled_date %></span>
+            <% end %>
           <% end %>
           <% if @refresh_schedule[:enabled] && @refresh_schedule[:time].present? %>
             <span class="refresh-schedule">Automatic refresh daily at <strong><%= @refresh_schedule[:time] %></strong></span>
