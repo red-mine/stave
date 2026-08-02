@@ -67,11 +67,15 @@ Rails.application.configure do
   # cannot atomically replace a cache file while another process has it open.
   if ENV["ASSET_CACHE_PATH"].present?
     config.assets.configure do |environment|
-      environment.cache = Sprockets::Cache::FileStore.new(
-        ENV.fetch("ASSET_CACHE_PATH"),
-        config.assets.cache_limit,
-        environment.logger
-      )
+      environment.cache = if ENV["ASSET_CACHE_PATH"] == "memory"
+        Sprockets::Cache::MemoryStore.new
+      else
+        Sprockets::Cache::FileStore.new(
+          ENV.fetch("ASSET_CACHE_PATH"),
+          config.assets.cache_limit,
+          environment.logger
+        )
+      end
     end
   end
 

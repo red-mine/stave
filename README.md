@@ -139,6 +139,20 @@ bundle exec rails server
 Open <http://localhost:3000/sz>, `/sh`, or `/bj`. Select a stock to view its
 one-year and 3.5-year stave and channel charts.
 
+To replace the local server and temporary Cloudflare Quick Tunnel with one
+verified command, run:
+
+```powershell
+pwsh -File bin\start-public-preview.ps1
+```
+
+The command stops only verified Stock Stave Rails and Cloudflare processes,
+uses `tmp/ui-stock.sqlite3`, checks both local and public HTTP responses, and
+writes the current URL and process IDs to `tmp/public-preview.json`. Quick
+Tunnel URLs are temporary and may change when this command is run again. The
+managed preview uses an in-memory asset cache to avoid Windows file-rename
+collisions during concurrent asset compilation.
+
 ## Tests
 
 Prepare the isolated test database once, then run the suite:
