@@ -43,6 +43,9 @@
           <% elsif @refresh_status[:state] == "failed" %>
             <span class="refresh-status is-failed">Last daily refresh failed</span>
           <% end %>
+          <% if @refresh_schedule[:enabled] && @refresh_schedule[:time].present? %>
+            <span class="refresh-schedule">Automatic refresh daily at <strong><%= @refresh_schedule[:time] %></strong></span>
+          <% end %>
         </div>
       </div>
 
@@ -95,6 +98,7 @@
     </div>
 
     <% if @stocks_stavs.any? %>
+      <p class="mobile-table-note">Tap a stock for price, trend, channel, and chart details.</p>
       <div class="table-scroll">
         <table class="stock-table">
           <thead>
@@ -102,13 +106,13 @@
               <th>Stock</th>
               <th>Year signal</th>
               <th>LOHAS signal</th>
-              <th>Long trend</th>
-              <th>1-year trend</th>
-              <th>Price</th>
-              <th>1Y channel</th>
-              <th>1Y stave</th>
-              <th>3.5Y channel</th>
-              <th>3.5Y stave</th>
+              <th class="metric-column">Long trend</th>
+              <th class="metric-column">1-year trend</th>
+              <th class="metric-column">Price</th>
+              <th class="metric-column">1Y channel</th>
+              <th class="metric-column">1Y stave</th>
+              <th class="metric-column">3.5Y channel</th>
+              <th class="metric-column">3.5Y stave</th>
             </tr>
           </thead>
           <tbody>
@@ -124,13 +128,13 @@
                 </td>
                 <td class="signal-cell"><%= linked_signal_badge(stock.years) %></td>
                 <td class="signal-cell"><%= linked_signal_badge(stock.lohas) %></td>
-                <td><%= formatted_number(stock.loha) %></td>
-                <td><%= formatted_number(stock.year) %></td>
-                <td class="price"><%= formatted_number(stock.price) %></td>
-                <td><%= stock.boll1 || "—" %></td>
-                <td><%= stock.stav1 || "—" %></td>
-                <td><%= stock.boll3 || "—" %></td>
-                <td><%= stock.stav3 || "—" %></td>
+                <td class="metric-column"><%= formatted_number(stock.loha) %></td>
+                <td class="metric-column"><%= formatted_number(stock.year) %></td>
+                <td class="price metric-column"><%= formatted_number(stock.price) %></td>
+                <td class="metric-column"><%= stock.boll1 || "—" %></td>
+                <td class="metric-column"><%= stock.stav1 || "—" %></td>
+                <td class="metric-column"><%= stock.boll3 || "—" %></td>
+                <td class="metric-column"><%= stock.stav3 || "—" %></td>
               </tr>
             <% end %>
           </tbody>

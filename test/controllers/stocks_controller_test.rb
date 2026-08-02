@@ -57,6 +57,17 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".refresh-status", text: /Daily refresh verified 2026-08-02/
   end
 
+  test "market page displays an installed automatic refresh schedule" do
+    schedule = { enabled: true, time: "20:30" }
+
+    Stock::RefreshSchedule.stub(:new, -> { Struct.new(:status).new(schedule) }) do
+      get stocks_by_area_path("sz")
+    end
+
+    assert_response :success
+    assert_select ".refresh-schedule", text: /Automatic refresh daily at 20:30/
+  end
+
   test "stock analysis preserves its market query parameter" do
     areas = []
 
@@ -213,6 +224,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal ["Stock", "Year signal", "LOHAS signal"], css_select(".stock-table th").first(3).map { |header| header.text.strip }
+    assert_select ".stock-table th.metric-column", count: 7
+    assert_select ".stock-table tbody tr:first-child td.metric-column", count: 7
+    assert_select ".mobile-table-note", text: /Tap a stock for price, trend, channel, and chart details/
     guide_path = signal_guide_path(area: Stock::SZSTK)
     assert_select "a.guide-link[href='#{guide_path}']", text: /Open signal guide/
     assert_select "a.signal-guide-link[href='#{guide_path}']", count: 4

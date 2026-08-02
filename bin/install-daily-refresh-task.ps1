@@ -30,4 +30,15 @@ Register-ScheduledTask `
   -Description "Refresh Stock Stave data and record signal snapshots every evening." `
   -Force | Out-Null
 
-Get-ScheduledTask -TaskName $TaskName | Get-ScheduledTaskInfo
+$registeredTask = Get-ScheduledTask -TaskName $TaskName
+$taskInfo = $registeredTask | Get-ScheduledTaskInfo
+$repository = Split-Path -Parent $PSScriptRoot
+$statusPath = Join-Path $repository "tmp\stock-refresh-schedule.json"
+@{
+  task_name = $TaskName
+  time = $time.ToString("HH:mm")
+  enabled = $registeredTask.State -ne "Disabled"
+  installed_at = (Get-Date).ToUniversalTime().ToString("o")
+} | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
+
+$taskInfo
