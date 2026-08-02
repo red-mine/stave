@@ -25,13 +25,17 @@
 
   <% unless @stock %>
     <section class="buy-panel" aria-labelledby="buy-candidates-title">
+      <% recency = data_recency(@stavs_date) %>
       <div class="buy-heading">
         <div>
           <p class="eyebrow">Strongest model agreement</p>
           <h2 id="buy-candidates-title">Buy candidates</h2>
-          <p>Current buy-family signals ranked by agreement, trend direction, and channel position. Check the live price and company news before acting.</p>
+          <p>Current buy-family signals ranked by agreement, trend direction, and channel position. The score measures technical agreement—not the probability of profit.</p>
         </div>
-        <span class="model-date">Model date <strong><%= @stavs_date || "Unavailable" %></strong></span>
+        <div class="model-status">
+          <span class="data-status data-status-<%= recency[:tone] %>"><%= recency[:label] %></span>
+          <span class="model-date">Model date <strong><%= @stavs_date || "Unavailable" %></strong></span>
+        </div>
       </div>
 
       <% if @buy_candidates.any? %>
@@ -44,10 +48,18 @@
               </div>
               <div class="candidate-score-row">
                 <p class="candidate-price"><small>Dataset price</small><%= formatted_number(candidate.price) %></p>
-                <p class="candidate-score"><strong><%= candidate.score %></strong><small>/100 · <%= candidate.confidence %></small></p>
+                <p class="candidate-score"><strong><%= candidate.score %></strong><small>/100 agreement · <%= candidate.confidence %></small></p>
               </div>
               <p class="candidate-reason"><%= candidate.reasons.first %></p>
               <p class="candidate-invalidation">Recheck if the signal changes to wait or sell.</p>
+              <details class="candidate-details">
+                <summary>Why this score?</summary>
+                <ul>
+                  <% candidate.reasons.each do |reason| %>
+                    <li><%= reason %></li>
+                  <% end %>
+                </ul>
+              </details>
               <span class="candidate-open">Open analysis →</span>
             <% end %>
           <% end %>
@@ -55,7 +67,7 @@
       <% else %>
         <p class="no-candidates">No strongest-agreement candidates in this market today. Do not force a trade.</p>
       <% end %>
-      <p class="risk-note">Model shortlist only—not a guarantee or personalized financial advice.</p>
+      <p class="risk-note">Agreement score ≠ expected return. Model shortlist only—not a guarantee or personalized financial advice.</p>
     </section>
   <% end %>
 

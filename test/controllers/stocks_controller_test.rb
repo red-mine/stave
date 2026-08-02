@@ -192,7 +192,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "tr:not(.is-historical) .stock-code", text: /SZ000001/
   end
 
-  test "market page highlights only current BUY5 agreement candidates" do
+  test "market page ranks current buy-family candidates" do
     StocksCoefsStav.create!(
       stock: "sz002653", area: Stock::SZSTK, price: 62.38,
       years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 31)
@@ -217,6 +217,9 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".buy-card", count: 1, text: /SZ002653/
     assert_select ".buy-card", text: /BUY5 \+ BUY5/
     assert_select ".candidate-score", text: %r{/100}
+    assert_select ".candidate-score", text: /agreement/
+    assert_select ".candidate-details", count: 2, text: /Why this score?/
+    assert_select ".data-status-recent", text: "Recent"
     assert_select ".risk-note", text: /not a guarantee/
   end
 

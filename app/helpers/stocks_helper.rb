@@ -50,4 +50,13 @@ module StocksHelper
   def formatted_number(value)
     value.nil? ? "—" : number_with_precision(value, precision: 2, strip_insignificant_zeros: true)
   end
+
+  def data_recency(date)
+    return { label: "Unavailable", tone: "unknown" } unless date
+
+    age = (Date.current - date).to_i
+    return { label: "Recent", tone: "recent" } if age <= 3
+
+    { label: "Needs update", tone: "stale" }
+  end
 end
