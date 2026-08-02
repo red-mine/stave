@@ -335,7 +335,33 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "2026-07-31", payload.fetch("data_date")
     assert_equal "2026-07-31", payload.fetch("market_date")
     assert_equal false, payload.fetch("historical")
+    assert_nil payload.fetch("decision")
+    assert_nil payload.fetch("latest_signal")
+    assert_equal [], payload.fetch("signal_history")
     assert_equal %w[bolls_lohas bolls_years stave_lohas stave_years], payload.fetch("charts").keys.sort
+  end
+
+  test "stock analysis JSON includes the shared decision and recorded timeline" do
+    StockSignalSnapshot.create!(
+      stock: "sh600000", area: Stock::SHSTK, signal_date: Date.new(2026, 7, 30),
+      price: 10.0, year_signal: "WAT9", lohas_signal: "BUY5"
+    )
+    StockSignalSnapshot.create!(
+      stock: "sh600000", area: Stock::SHSTK, signal_date: Date.new(2026, 7, 31),
+      price: 10.5, year_signal: "BUY5", lohas_signal: "SAF1"
+    )
+
+    Stock::Stave.stub(:new, ->(*) { FakeStave.new }) do
+      get stock_analysis_path("600000", area: Stock::SHSTK, format: :json)
+    end
+
+    assert_response :success
+    payload = response.parsed_body
+    assert_equal "buy", payload.fetch("decision")
+    assert_equal "2026-07-31", payload.dig("latest_signal", "date")
+    assert_equal "BUY5", payload.dig("latest_signal", "year_signal")
+    assert_equal 2, payload.fetch("signal_history").size
+    assert_equal true, payload.fetch("signal_history").first.fetch("changed")
   end
 
   test "signal guide explains every active signal on a mobile-friendly page" do
