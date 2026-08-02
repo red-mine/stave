@@ -89,7 +89,9 @@ available, and refuses overlapping executions. Its latest output is saved to
 `log/daily-refresh/latest.log`. Timestamped logs are retained for the latest 30
 runs so failures can be audited later. Scheduled runs identify their source in
 `tmp/stock-refresh-status.json`, allowing the website to distinguish scheduler
-evidence from a manual refresh. Choose a different time with `-At HH:mm`.
+evidence from a manual refresh. If Windows terminates a run at its four-hour
+limit, the next run safely recovers the empty lock after five hours and reports
+that recovery on the website. Choose a different time with `-At HH:mm`.
 
 Refresh all three markets with one command:
 

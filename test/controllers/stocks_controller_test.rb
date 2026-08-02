@@ -62,6 +62,20 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".refresh-status", text: /Scheduled refresh verified 2026-08-02 in 9s/
   end
 
+  test "market page discloses automatic stale-lock recovery" do
+    status = {
+      state: "succeeded", source: "scheduled", recovered_stale_lock: true,
+      started_at: "2026-08-01T17:29:51Z", finished_at: "2026-08-01T17:30:00Z"
+    }
+
+    Stock::RefreshRun.stub(:new, -> { Struct.new(:status).new(status) }) do
+      get stocks_by_area_path("sz")
+    end
+
+    assert_response :success
+    assert_select ".refresh-status", text: /after recovering an expired lock/
+  end
+
   test "market page displays an installed automatic refresh schedule" do
     schedule = { enabled: true, time: "20:30" }
 
