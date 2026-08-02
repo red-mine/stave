@@ -52,7 +52,10 @@
             <article class="buy-card">
               <div class="buy-card-top">
                 <strong><%= candidate.stock.upcase %></strong>
-                <span><%= candidate.years %> + <%= candidate.lohas %></span>
+                <div class="candidate-labels">
+                  <span class="candidate-history candidate-history-<%= candidate.history_state.parameterize %>"><%= candidate.history_state %></span>
+                  <span><%= candidate.years %> + <%= candidate.lohas %></span>
+                </div>
               </div>
               <div class="candidate-score-row">
                 <p class="candidate-price"><small>Dataset price</small><%= formatted_number(candidate.price) %></p>

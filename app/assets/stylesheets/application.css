@@ -153,6 +153,9 @@ a { color: var(--teal-dark); }
 .buy-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .buy-card-top strong { color: var(--navy); letter-spacing: 0.03em; }
 .buy-card-top span { padding: 4px 7px; border-radius: 999px; color: #0b684f; background: #dff5ec; font-size: 0.6rem; font-weight: 850; }
+.candidate-labels { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.buy-card-top .candidate-history { color: #596579; background: #edf1f4; }
+.buy-card-top .candidate-history-new-buy-signal { color: #805817; background: #f8e7bd; }
 .candidate-price { display: flex; align-items: baseline; gap: 8px; margin: 17px 0 5px; color: var(--ink); font-size: 1.25rem; font-weight: 800; }
 .candidate-price small { color: var(--muted); font-size: 0.66rem; font-weight: 650; text-transform: uppercase; }
 .candidate-score-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }

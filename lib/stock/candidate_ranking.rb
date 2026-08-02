@@ -13,7 +13,7 @@ module Stock
       "bj" => %w[bj43____ bj83____ bj87____ bj88____ bj92____]
     }.freeze
 
-    Candidate = Data.define(:record, :score, :confidence, :reasons) do
+    Candidate = Data.define(:record, :score, :confidence, :reasons, :history_state) do
       delegate :stock, :price, :date, :years, :lohas, to: :record
     end
 
@@ -33,6 +33,7 @@ module Stock
       records.map { |record| evaluate(record) }
         .sort_by { |candidate| [-candidate.score, candidate.stock] }
         .first(limit)
+        .map { |candidate| add_history_state(candidate) }
     end
 
     private
@@ -64,7 +65,25 @@ module Stock
       end
 
       score = [score, 100].min
-      Candidate.new(record:, score:, confidence: confidence_for(score), reasons: reasons.first(3))
+      Candidate.new(record:, score:, confidence: confidence_for(score), reasons: reasons.first(3), history_state: nil)
+    end
+
+    def add_history_state(candidate)
+      previous = StockSignalSnapshot
+        .where(area: @area, stock: candidate.stock)
+        .where(signal_date: ...candidate.date)
+        .order(signal_date: :desc)
+        .first
+
+      state = if previous.nil?
+        "First recorded"
+      elsif previous.year_signal.in?(BUY_SIGNALS) && previous.lohas_signal.in?(BUY_SIGNALS)
+        "Still active"
+      else
+        "New buy signal"
+      end
+
+      Candidate.new(**candidate.to_h, history_state: state)
     end
 
     def balanced_positive_trends?(record)

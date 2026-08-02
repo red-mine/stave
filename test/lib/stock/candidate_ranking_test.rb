@@ -17,6 +17,19 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
     assert_equal "Strong", candidates.first.confidence
     assert_equal strong, candidates.first.record
     assert_includes candidates.first.reasons, "Price position is supported on both horizons"
+    assert_equal "First recorded", candidates.first.history_state
+  end
+
+  test "identifies new and continuing buys from prior recorded snapshots" do
+    create_candidate(stock: "sz000001", years: "BUY5", lohas: "BUY5")
+    create_candidate(stock: "sz000002", years: "BUY5", lohas: "BUY5")
+    create_snapshot(stock: "sz000001", years: "WAT9", lohas: "WAT9")
+    create_snapshot(stock: "sz000002", years: "SAF1", lohas: "BUY4")
+
+    candidates = Stock::CandidateRanking.new(Stock::SZSTK).call
+
+    assert_equal "New buy signal", candidates.find { |candidate| candidate.stock == "sz000001" }.history_state
+    assert_equal "Still active", candidates.find { |candidate| candidate.stock == "sz000002" }.history_state
   end
 
   test "limits the ranked result" do
@@ -32,5 +45,12 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
       stock:, area: stock.first(2), price: 50, date:, years:, lohas:,
       year: -0.01, loha: -0.01, boll1: -1, stav1: -1, boll3: -1, stav3: -1
     }.merge(attributes))
+  end
+
+  def create_snapshot(stock:, years:, lohas:)
+    StockSignalSnapshot.create!(
+      stock: stock, area: stock.first(2), signal_date: Date.new(2026, 7, 30),
+      price: 49, year_signal: years, lohas_signal: lohas
+    )
   end
 end
