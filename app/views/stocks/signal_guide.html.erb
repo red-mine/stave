@@ -25,7 +25,7 @@
 
 <main class="app-shell guide-page">
   <header class="guide-header">
-    <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area), class: "back-link" %>
+    <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area, anchor: "current-signals"), class: "back-link" %>
     <p class="eyebrow">Stock Stave</p>
     <h1>Signal guide</h1>
     <p class="subtitle">Each signal combines the price's position in the stave trend bands with its position in the LOHAS channel.</p>

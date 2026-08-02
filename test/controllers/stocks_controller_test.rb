@@ -510,7 +510,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     %w[SAF1 SOX2 SEL3 BUY4 BUY5 SEL6 SEL7 WAT8 WAT9 CHP0].each do |code|
       assert_select ".guide-card#signal-#{code.downcase}", text: /#{code}/
     end
-    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK)}']", text: /Back to SH signals/
+    assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK, anchor: "current-signals")}']", text: /Back to SH signals/
   end
 
   test "signal history reports evidence coverage without premature performance claims" do
