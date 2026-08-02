@@ -47,6 +47,7 @@
           <% if @refresh_schedule[:enabled] && @refresh_schedule[:time].present? %>
             <span class="refresh-schedule">Automatic refresh daily at <strong><%= @refresh_schedule[:time] %></strong></span>
           <% end %>
+          <%= link_to "View signal history →", signal_history_path(area: @area), class: "history-shortcut" %>
         </div>
       </div>
 

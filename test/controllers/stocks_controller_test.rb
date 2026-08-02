@@ -294,6 +294,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".candidate-details a", count: 0
     assert_select "a.candidate-open[href='#{stock_analysis_path("sz002653", area: Stock::SZSTK)}']", text: /Open analysis/
     assert_select ".data-status-recent", text: "Recent"
+    assert_select "a.history-shortcut[href='#{signal_history_path(area: Stock::SZSTK)}']", text: /View signal history/
     assert_select ".risk-note", text: /not a guarantee/
   end
 
