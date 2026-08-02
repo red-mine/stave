@@ -6,7 +6,7 @@ module Stock
       "CHP0" => 24,
       "SAF1" => 20
     }.freeze
-    BUY_SIGNALS = SIGNAL_POINTS.keys.freeze
+    BUY_SIGNALS = SignalFamily::BUY
     A_SHARE_CODE_PATTERNS = {
       "sz" => %w[sz00____ sz30____],
       "sh" => %w[sh60____ sh68____],

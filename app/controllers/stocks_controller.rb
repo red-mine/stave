@@ -2,8 +2,6 @@ class StocksController < ApplicationController
   STOCK_ID_PATTERN = /\A(?:(?<area>sz|sh|bj))?(?<code>\d{6})\z/
   STOCK_QUERY_PATTERN = /\A[a-z0-9]{1,8}\z/
   SIGNAL_FILTERS = %w[all buy sell watch].freeze
-  BUY_SIGNALS = %w[SAF1 BUY4 BUY5 CHP0].freeze
-  SELL_SIGNALS = %w[SEL3 SEL6 SEL7].freeze
 
   # GET /stocks or /stocks.json
   def index
@@ -64,6 +62,10 @@ class StocksController < ApplicationController
     @stock_date, @market_date = stave.data_dates(stock)
     @historical_data = @stock_date.present? && @market_date.present? && @stock_date < @market_date
     @signal_timeline = Stock::SignalTimeline.new(area, stock).call
+    if @signal_timeline.any?
+      current = @signal_timeline.first
+      @current_decision = Stock::SignalFamily.classify(current.year_signal, current.lohas_signal)
+    end
   end
 
   private
@@ -109,25 +111,21 @@ class StocksController < ApplicationController
 
       case filter
       when "buy"
-        scope.where(years: BUY_SIGNALS, lohas: BUY_SIGNALS)
+        scope.where(years: Stock::SignalFamily::BUY, lohas: Stock::SignalFamily::BUY)
       when "sell"
-        scope.where(years: SELL_SIGNALS).or(scope.where(lohas: SELL_SIGNALS))
+        scope.where(years: Stock::SignalFamily::SELL).or(scope.where(lohas: Stock::SignalFamily::SELL))
       when "watch"
         scope
-          .where.not(years: SELL_SIGNALS)
-          .where.not(lohas: SELL_SIGNALS)
-          .where.not(years: BUY_SIGNALS, lohas: BUY_SIGNALS)
+          .where.not(years: Stock::SignalFamily::SELL)
+          .where.not(lohas: Stock::SignalFamily::SELL)
+          .where.not(years: Stock::SignalFamily::BUY, lohas: Stock::SignalFamily::BUY)
       else
         scope
       end
     end
 
     def signal_group(record)
-      signals = [record.years, record.lohas]
-      return "sell" if signals.any? { |signal| signal.in?(SELL_SIGNALS) }
-      return "buy" if signals.all? { |signal| signal.in?(BUY_SIGNALS) }
-
-      "watch"
+      Stock::SignalFamily.classify(record.years, record.lohas)
     end
 
     def signal_group_counts(scope)
