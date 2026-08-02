@@ -153,6 +153,16 @@ Tunnel URLs are temporary and may change when this command is run again. The
 managed preview uses an in-memory asset cache to avoid Windows file-rename
 collisions during concurrent asset compilation.
 
+Inspect the current URL and verify both local and public health without
+restarting either process:
+
+```powershell
+pwsh -File bin\public-preview-status.ps1
+```
+
+The status command exits unsuccessfully if Rails, the tunnel, or either HTTP
+endpoint is unavailable, making it suitable for monitoring.
+
 ## Tests
 
 Prepare the isolated test database once, then run the suite:

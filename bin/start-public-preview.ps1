@@ -99,4 +99,4 @@ $status = @{
   database = $database
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
-$status
+Write-Output ([pscustomobject]$status)
