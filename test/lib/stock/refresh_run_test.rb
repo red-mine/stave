@@ -7,6 +7,7 @@ class StockRefreshRunTest < ActiveSupport::TestCase
       assert_equal :done, runner.call { :done }
       assert_equal "succeeded", runner.status[:state]
       assert_equal "scheduled", runner.status[:source]
+      assert_equal "test", runner.status[:environment]
       assert runner.status[:finished_at].present?
 
       assert_raises(RuntimeError) { runner.call { raise "source unavailable" } }

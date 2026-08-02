@@ -8,12 +8,14 @@ module Stock
       lock_path: Rails.root.join("tmp", "stock-refresh.lock"),
       status_path: Rails.root.join("tmp", "stock-refresh-status.json"),
       source: ENV.fetch("STOCK_REFRESH_SOURCE", "application"),
+      environment: Rails.env,
       stale_after: 5.hours,
       clock: -> { Time.current }
     )
       @lock_path = Pathname.new(lock_path)
       @status_path = Pathname.new(status_path)
       @source = source
+      @environment = environment.to_s
       @stale_after = stale_after
       @clock = clock
     end
@@ -68,7 +70,7 @@ module Stock
     end
 
     def run_status(attributes)
-      attributes.merge(source: @source).tap do |status|
+      attributes.merge(source: @source, environment: @environment).tap do |status|
         status[:recovered_stale_lock] = true if @recovered_stale_lock
       end
     end

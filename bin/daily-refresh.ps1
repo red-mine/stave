@@ -15,7 +15,7 @@ $database = if ($DatabasePath) {
 }
 $logDirectory = Join-Path $repository "log\daily-refresh"
 $logFile = Join-Path $logDirectory "latest.log"
-$archiveLog = Join-Path $logDirectory "refresh-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+$archiveLog = Join-Path $logDirectory "refresh-$(Get-Date -Format 'yyyyMMdd-HHmmss-fff').log"
 
 if (-not (Test-Path -LiteralPath $RubyPath -PathType Leaf)) {
   throw "Ruby executable not found: $RubyPath"
@@ -27,6 +27,8 @@ if (-not (Test-Path -LiteralPath $database -PathType Leaf)) {
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 $env:STOCK_DATABASE = $database
 $env:STOCK_REFRESH_SOURCE = $RunSource
+$env:RAILS_ENV = "development"
+$env:RACK_ENV = "development"
 $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
 
 Push-Location $repository
