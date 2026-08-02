@@ -4,5 +4,5 @@ require "rails/test_help"
 require "minitest/mock"
 
 class ActiveSupport::TestCase
-  parallelize(workers: :number_of_processors)
+  parallelize(workers: :number_of_processors) unless Gem.win_platform?
 end

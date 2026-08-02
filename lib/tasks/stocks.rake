@@ -83,6 +83,37 @@ task data_status: :environment do
   abort "Stock data is incomplete" unless checker.healthy?(report)
 end
 
+desc "Refresh only markets with new or incomplete data, then verify and snapshot them"
+task daily_refresh: :environment do
+  checker = Stock::DataStatus.new
+  report = checker.call
+  areas = checker.refresh_areas(report)
+
+  if areas.empty?
+    latest = report.values.filter_map { |market| market[:source_date] }.max
+    puts "No refresh needed. All markets are healthy through #{latest || 'an unavailable date'}."
+    next
+  end
+
+  puts "Markets requiring refresh: #{areas.map(&:upcase).join(', ')}"
+  Rake::Task[:refresh].reenable
+  Rake::Task[:refresh].invoke(*areas)
+
+  verified = checker.call
+  abort "Refresh finished but generated data remains incomplete" unless checker.healthy?(verified)
+
+  counts = StockSignalSnapshot.group(:area).count
+  puts "Daily refresh complete. Snapshot rows: #{counts.sort.to_h.inspect}"
+end
+
+desc "Report saved daily signal-history coverage"
+task snapshot_status: :environment do
+  Stock::AREAS.each do |area|
+    snapshots = StockSignalSnapshot.where(area: area)
+    puts "#{area.upcase}: rows=#{snapshots.count} dates=#{snapshots.distinct.count(:signal_date)} latest=#{snapshots.maximum(:signal_date) || 'missing'}"
+  end
+end
+
 desc "stock"
 task :stock => :environment do
   puts "stock"

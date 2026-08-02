@@ -34,6 +34,10 @@ module Stock
       report.values.all? { |market| market[:healthy] }
     end
 
+    def refresh_areas(report)
+      report.filter_map { |area, market| area unless market[:healthy] }
+    end
+
     def healthy_market?(market)
       source_date = market[:source_date]
       return false unless source_date

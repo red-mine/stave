@@ -58,6 +58,19 @@ window plus the 20-week channel.
 
 ## Generate analysis data
 
+For normal daily operation after TongdaXin downloads the latest files, run:
+
+```powershell
+$env:Path = "C:\Ruby34-x64\bin;$env:Path"
+bundle exec rails daily_refresh
+```
+
+This checks all three markets first, skips healthy markets, creates a SQLite
+backup before recalculation, refreshes only new or incomplete markets, saves a
+daily signal snapshot, and verifies the generated data before succeeding. Run
+`bundle exec rails snapshot_status` to inspect accumulated signal history.
+
+
 Refresh all three markets with one command:
 
 ```powershell

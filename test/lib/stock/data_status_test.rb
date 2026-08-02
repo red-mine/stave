@@ -24,6 +24,17 @@ class DataStatusTest < ActiveSupport::TestCase
     refute checker.healthy_market?(market)
   end
 
+  test "refresh areas contains only incomplete markets" do
+    checker = Stock::DataStatus.allocate
+    report = {
+      Stock::SZSTK => { healthy: true },
+      Stock::SHSTK => { healthy: false },
+      Stock::BJSTK => { healthy: false }
+    }
+
+    assert_equal [Stock::SHSTK, Stock::BJSTK], checker.refresh_areas(report)
+  end
+
   private
 
   def market_status(source_date:, chart_stocks:)
