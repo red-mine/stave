@@ -75,6 +75,14 @@
                   <% end %>
                 </ul>
               </details>
+              <div class="candidate-mobile-reasons">
+                <strong>Why this score</strong>
+                <ul>
+                  <% candidate.reasons.each do |reason| %>
+                    <li><%= reason %></li>
+                  <% end %>
+                </ul>
+              </div>
               <%= link_to "Open analysis →", stock_analysis_path(candidate.stock, area: @area), class: "candidate-open" %>
             </article>
           <% end %>

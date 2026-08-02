@@ -170,6 +170,9 @@ a { color: var(--teal-dark); }
 .candidate-details { margin: 0 0 12px; color: var(--muted); font-size: 0.7rem; }
 .candidate-details summary { width: fit-content; color: var(--teal-dark); font-weight: 750; cursor: pointer; }
 .candidate-details ul { margin: 9px 0 0; padding-left: 18px; line-height: 1.55; }
+.candidate-mobile-reasons { display: none; margin: 0 0 12px; color: var(--muted); font-size: 0.7rem; }
+.candidate-mobile-reasons strong { color: var(--teal-dark); }
+.candidate-mobile-reasons ul { margin: 9px 0 0; padding-left: 18px; line-height: 1.55; }
 .candidate-open { color: var(--teal-dark); font-weight: 800; }
 .no-candidates { margin: 20px 0 0; padding: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.75); }
 .risk-note { margin: 16px 0 0; }
@@ -462,6 +465,8 @@ a { color: var(--teal-dark); }
   .buy-heading { flex-direction: column; gap: 8px; }
   .model-status { justify-items: start; }
   .buy-grid { grid-template-columns: 1fr; }
+  .candidate-details { display: none; }
+  .candidate-mobile-reasons { display: block; }
   .search-controls { align-items: stretch; flex-direction: column; }
   .search-controls input[type="text"] { width: 100%; }
   .panel-heading { gap: 10px; }
