@@ -159,7 +159,8 @@ uses `tmp/ui-stock.sqlite3`, checks both local and public HTTP responses, and
 writes the current URL and process IDs to `tmp/public-preview.json`. Quick
 Tunnel URLs are temporary and may change when this command is run again. The
 startup is atomically locked, so a scheduled recovery cannot race a manual
-publish restart. The
+publish restart. It retries all-market tunnel readiness for up to 90 seconds and
+cleans up newly started processes if any startup gate ultimately fails. The
 managed preview uses an in-memory asset cache to avoid Windows file-rename
 collisions during concurrent asset compilation. It also suppresses detailed
 development exception pages so local paths and source snippets are not exposed

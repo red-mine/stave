@@ -43,6 +43,8 @@ function New-PreviewStartLock {
 }
 
 $startLock = New-PreviewStartLock
+$tunnel = $null
+$server = $null
 try {
 
 foreach ($file in @($RubyPath, $database, $cloudflared)) {
@@ -114,21 +116,27 @@ if (-not $listener) {
 }
 
 $areas = @("sz", "sh", "bj")
-$failedChecks = foreach ($area in $areas) {
-  $localCode = try {
-    (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/$area" -TimeoutSec 30).StatusCode
-  } catch {
-    0
+$healthDeadline = (Get-Date).AddSeconds(90)
+do {
+  $failedChecks = foreach ($area in $areas) {
+    $localCode = try {
+      (Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/$area" -TimeoutSec 15).StatusCode
+    } catch {
+      0
+    }
+    $publicCode = try {
+      (Invoke-WebRequest -UseBasicParsing -Uri "$publicUrl/$area" -TimeoutSec 15).StatusCode
+    } catch {
+      0
+    }
+    if ($localCode -ne 200 -or $publicCode -ne 200) {
+      "$area(local=$localCode, public=$publicCode)"
+    }
   }
-  $publicCode = try {
-    (Invoke-WebRequest -UseBasicParsing -Uri "$publicUrl/$area" -TimeoutSec 30).StatusCode
-  } catch {
-    0
+  if ($failedChecks -and (Get-Date) -lt $healthDeadline) {
+    Start-Sleep -Seconds 5
   }
-  if ($localCode -ne 200 -or $publicCode -ne 200) {
-    "$area(local=$localCode, public=$publicCode)"
-  }
-}
+} while ($failedChecks -and (Get-Date) -lt $healthDeadline)
 if ($failedChecks) {
   throw "Preview market health check failed: $($failedChecks -join '; ')"
 }
@@ -142,6 +150,10 @@ $status = @{
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8
 Write-Output ([pscustomobject]$status)
+} catch {
+  if ($server) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
+  if ($tunnel) { Stop-Process -Id $tunnel.Id -Force -ErrorAction SilentlyContinue }
+  throw
 } finally {
   $startLock.Dispose()
   Remove-Item -LiteralPath $startLockPath -Force -ErrorAction SilentlyContinue
