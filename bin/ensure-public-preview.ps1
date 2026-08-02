@@ -37,7 +37,7 @@ function Test-PreviewHealth {
   try {
     $check = & $statusScript -ReturnOnly
     if (-not $check.Healthy) {
-      Write-MonitorLog "Health details: rails=$($check.RailsRunning), tunnel=$($check.TunnelRunning), isolated_database=$($check.IsolatedDatabase), local=[$($check.LocalMarkets)], public=[$($check.PublicMarkets)]."
+      Write-MonitorLog "Health details: rails=$($check.RailsRunning), tunnel=$($check.TunnelRunning), environment=$($check.ServerEnvironment), isolated_database=$($check.IsolatedDatabase), local=[$($check.LocalMarkets)], public=[$($check.PublicMarkets)]."
     }
     return [bool]$check.Healthy
   } catch {

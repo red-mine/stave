@@ -16,6 +16,13 @@ if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
 }
 
 $status = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+$serverLogPath = Join-Path $repository "tmp\public-preview-server-out.log"
+$serverLog = if (Test-Path -LiteralPath $serverLogPath -PathType Leaf) {
+  Get-Content -LiteralPath $serverLogPath -Raw -ErrorAction SilentlyContinue
+} else {
+  ""
+}
+$serverEnvironment = if ($serverLog -match "(?m)^\*\s+Environment:\s+(\S+)\s*$") { $Matches[1] } else { "unknown" }
 $port = if ($status.port) { [int]$status.port } else { 3000 }
 $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
   Select-Object -First 1
@@ -47,6 +54,7 @@ $report = [pscustomobject]@{
   Url = $status.url
   StartedAt = $status.started_at
   Environment = if ($status.environment) { $status.environment } else { "unknown" }
+  ServerEnvironment = $serverEnvironment
   Port = $port
   RailsPid = $railsPid
   RecordedRailsPid = $status.rails_pid
@@ -57,7 +65,7 @@ $report = [pscustomobject]@{
   PublicMarkets = ($areas | ForEach-Object { "$_=$($publicStatuses[$_])" }) -join ", "
   IsolatedDatabase = $databaseIsIsolated
   DatabaseBytes = $database.Length
-  Healthy = $rails -and $tunnel -and $marketsHealthy -and $databaseIsIsolated -and $status.environment -eq "development"
+  Healthy = $rails -and $tunnel -and $marketsHealthy -and $databaseIsIsolated -and $status.environment -eq "development" -and $serverEnvironment -eq "development"
 }
 $report
 if (-not $report.Healthy -and -not $ReturnOnly) { exit 1 }
