@@ -7,10 +7,12 @@ module Stock
     def initialize(
       lock_path: Rails.root.join("tmp", "stock-refresh.lock"),
       status_path: Rails.root.join("tmp", "stock-refresh-status.json"),
+      source: ENV.fetch("STOCK_REFRESH_SOURCE", "application"),
       clock: -> { Time.current }
     )
       @lock_path = Pathname.new(lock_path)
       @status_path = Pathname.new(status_path)
+      @source = source
       @clock = clock
     end
 
@@ -23,13 +25,13 @@ module Stock
       end
 
       started_at = @clock.call
-      write_status(state: "running", started_at: started_at)
+      write_status(state: "running", source: @source, started_at: started_at)
       begin
         result = yield
-        write_status(state: "succeeded", started_at: started_at, finished_at: @clock.call)
+        write_status(state: "succeeded", source: @source, started_at: started_at, finished_at: @clock.call)
         result
       rescue Exception => error # record task failures before Rake exits
-        write_status(state: "failed", started_at: started_at, finished_at: @clock.call, error: error.message)
+        write_status(state: "failed", source: @source, started_at: started_at, finished_at: @clock.call, error: error.message)
         raise
       ensure
         Dir.rmdir(@lock_path) if @lock_path.directory?

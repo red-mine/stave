@@ -10,7 +10,7 @@ $pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
 
 $action = New-ScheduledTaskAction `
   -Execute $pwsh `
-  -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$runner`""
+  -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$runner`" -RunSource scheduled"
 $trigger = New-ScheduledTaskTrigger -Daily -At $time
 $settings = New-ScheduledTaskSettingsSet `
   -StartWhenAvailable `

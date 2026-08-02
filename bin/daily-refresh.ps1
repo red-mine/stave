@@ -1,6 +1,8 @@
 param(
   [string]$RubyPath = "C:\Ruby34-x64\bin\ruby.exe",
   [string]$DatabasePath = "",
+  [ValidateSet("manual", "scheduled")]
+  [string]$RunSource = "manual",
   [int]$LogRetention = 30
 )
 
@@ -24,6 +26,7 @@ if (-not (Test-Path -LiteralPath $database -PathType Leaf)) {
 
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 $env:STOCK_DATABASE = $database
+$env:STOCK_REFRESH_SOURCE = $RunSource
 $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
 
 Push-Location $repository

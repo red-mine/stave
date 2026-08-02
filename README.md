@@ -87,7 +87,9 @@ The task runs against the isolated UI database at `tmp/ui-stock.sqlite3`, uses
 the Ruby 3.4 executable explicitly, starts missed runs when the computer becomes
 available, and refuses overlapping executions. Its latest output is saved to
 `log/daily-refresh/latest.log`. Timestamped logs are retained for the latest 30
-runs so failures can be audited later. Choose a different time with `-At HH:mm`.
+runs so failures can be audited later. Scheduled runs identify their source in
+`tmp/stock-refresh-status.json`, allowing the website to distinguish scheduler
+evidence from a manual refresh. Choose a different time with `-At HH:mm`.
 
 Refresh all three markets with one command:
 

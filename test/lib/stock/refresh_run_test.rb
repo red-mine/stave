@@ -6,6 +6,7 @@ class StockRefreshRunTest < ActiveSupport::TestCase
       runner = build_runner(directory)
       assert_equal :done, runner.call { :done }
       assert_equal "succeeded", runner.status[:state]
+      assert_equal "scheduled", runner.status[:source]
       assert runner.status[:finished_at].present?
 
       assert_raises(RuntimeError) { runner.call { raise "source unavailable" } }
@@ -28,7 +29,8 @@ class StockRefreshRunTest < ActiveSupport::TestCase
   def build_runner(directory)
     Stock::RefreshRun.new(
       lock_path: File.join(directory, "refresh.lock"),
-      status_path: File.join(directory, "status.json")
+      status_path: File.join(directory, "status.json"),
+      source: "scheduled"
     )
   end
 end

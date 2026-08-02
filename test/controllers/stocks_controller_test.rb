@@ -49,6 +49,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   test "market page displays the last successful daily refresh" do
     status = {
       state: "succeeded",
+      source: "scheduled",
       started_at: "2026-08-01T17:29:51Z",
       finished_at: "2026-08-01T17:30:00Z"
     }
@@ -58,7 +59,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_select ".refresh-status", text: /Daily refresh verified 2026-08-02 in 9s/
+    assert_select ".refresh-status", text: /Scheduled refresh verified 2026-08-02 in 9s/
   end
 
   test "market page displays an installed automatic refresh schedule" do
