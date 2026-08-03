@@ -1,7 +1,7 @@
 <main class="app-shell">
   <header class="detail-header">
     <div>
-      <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area, anchor: "current-signals"), class: "back-link" %>
+      <%= link_to "← Back to #{@area.upcase} signals", stocks_by_area_path(@area, anchor: @return_anchor), class: "back-link" %>
       <p class="eyebrow">Stock analysis</p>
       <h1><%= @stock.upcase %></h1>
     </div>

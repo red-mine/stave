@@ -27,7 +27,7 @@
   </section>
 
   <% unless @stock %>
-    <section class="buy-panel" aria-labelledby="buy-candidates-title">
+    <section class="buy-panel" id="buy-candidates" aria-labelledby="buy-candidates-title">
       <% recency = data_recency(@stavs_date) %>
       <div class="buy-heading">
         <div>
@@ -99,7 +99,7 @@
                   <% end %>
                 </ul>
               </div>
-              <%= link_to "Open analysis →", stock_analysis_path(candidate.stock, area: @area), class: "candidate-open" %>
+              <%= link_to "Open analysis →", stock_analysis_path(candidate.stock, area: @area, return_to: "buy-candidates"), class: "candidate-open" %>
             </article>
           <% end %>
         </div>

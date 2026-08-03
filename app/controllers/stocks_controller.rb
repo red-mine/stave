@@ -2,6 +2,7 @@ class StocksController < ApplicationController
   STOCK_ID_PATTERN = /\A(?:(?<area>sz|sh|bj))?(?<code>\d{6})\z/
   STOCK_QUERY_PATTERN = /\A[a-z0-9]{1,8}\z/
   SIGNAL_FILTERS = %w[all buy sell watch].freeze
+  RETURN_ANCHORS = %w[buy-candidates current-signals].freeze
 
   # GET /stocks or /stocks.json
   def index
@@ -77,6 +78,7 @@ class StocksController < ApplicationController
     stock   = "#{area}#{stock_id[:code]}"
     @stock  = stock
     @area   = area
+    @return_anchor = params[:return_to].to_s.in?(RETURN_ANCHORS) ? params[:return_to].to_s : "current-signals"
     stave   = Stock::Stave.new(area, Stock::STAVE)
     return render_not_found unless stave.known_stock?(stock)
 

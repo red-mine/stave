@@ -250,6 +250,24 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".data-freshness", text: /SZ market data continues through 2026-07-31/
   end
 
+  test "stock analysis returns Buy candidates to their originating section" do
+    Stock::Stave.stub(:new, ->(*) { FakeStave.new }) do
+      get stock_analysis_path("002653", area: Stock::SZSTK, return_to: "buy-candidates")
+    end
+
+    assert_response :success
+    assert_select "a.back-link[href='#{stocks_by_area_path(Stock::SZSTK, anchor: "buy-candidates")}']", text: /Back to SZ signals/
+  end
+
+  test "stock analysis rejects an unrecognized return section" do
+    Stock::Stave.stub(:new, ->(*) { FakeStave.new }) do
+      get stock_analysis_path("002653", area: Stock::SZSTK, return_to: "outside")
+    end
+
+    assert_response :success
+    assert_select "a.back-link[href='#{stocks_by_area_path(Stock::SZSTK, anchor: "current-signals")}']"
+  end
+
   test "stock analysis shows recorded signal history without reconstructing missing history" do
     StockSignalSnapshot.create!(
       stock: "sz000522", area: Stock::SZSTK, signal_date: Date.new(2026, 7, 30),
@@ -413,7 +431,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     get stocks_by_area_path(Stock::SZSTK)
 
     assert_response :success
-    assert_select ".buy-panel", count: 1
+    assert_select "section#buy-candidates.buy-panel", count: 1
     assert_select ".buy-card", count: 1, text: /SZ002653/
     assert_select ".buy-card", text: /BUY5 \+ BUY5/
     assert_select ".candidate-history", text: /First recorded/
@@ -423,7 +441,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".candidate-mobile-reasons", count: 2, text: /Why this score.*Both horizons are in a buy-family signal/m
     assert_select "article.buy-card", count: 2
     assert_select ".candidate-details a", count: 0
-    assert_select "a.candidate-open[href='#{stock_analysis_path("sz002653", area: Stock::SZSTK)}']", text: /Open analysis/
+    assert_select "a.candidate-open[href='#{stock_analysis_path("sz002653", area: Stock::SZSTK, return_to: "buy-candidates")}']", text: /Open analysis/
     assert_select ".data-status-recent", text: "Recent"
     assert_select "a.history-shortcut[href='#{signal_history_path(area: Stock::SZSTK)}']", text: /View signal history/
     assert_select ".risk-note", text: /not a guarantee/
