@@ -34,6 +34,10 @@ module Stock
           end
         loha_engine = _engin(@good_area, LOHAS)
         year_engine = _engin(@good_area, YEARS)
+        unless loha_engine.valid_model?(good_stock) && year_engine.valid_model?(good_stock)
+          StocksCoefsStav.where(stock: good_stock, area: @good_area).delete_all
+          next
+        end
         lohas_price, lohas_trend, lohas_up1, lohas_dn1, lohas_top, lohas_bot = _stave(loha_engine, LOHAS, good_stock)
         years_price, years_trend, years_up1, years_dn1, years_top, years_bot = _stave(year_engine, YEARS, good_stock)
         lohas_price, lohas_bolls, lohas_mup, lohas_mdn = _bolls(loha_engine, LOHAS, good_stock)

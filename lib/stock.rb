@@ -27,7 +27,7 @@ module Stock
   SMUTH = 2   * WEEKS
 
   def self.data_root
-    default_root = if RUBY_PLATFORM == "x86_64-linux-gnu"
+    default_root = if RUBY_PLATFORM.include?("linux")
       "vipdoc"
     else
       "C:/new_tdx/vipdoc"

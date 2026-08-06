@@ -49,9 +49,9 @@ module Stock
       return false unless coefficients.all? { |status| status[:rows].positive? && status[:date] == source_date }
 
       combined_stocks = market[:tables].fetch("stocks_coefs_stavs")[:stocks]
-      expected_series_date = source_date.beginning_of_month
       SERIES_TABLES.all? do |table|
         status = market[:tables].fetch(table)
+        expected_series_date = table.include?("loha") ? source_date.beginning_of_quarter : source_date.beginning_of_month
         status[:rows].positive? &&
           status[:stocks] == combined_stocks &&
           status[:date] == expected_series_date

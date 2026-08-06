@@ -94,6 +94,10 @@ module Stock
       good_aver
     end
 
+    def valid_model?(good_stock)
+      _good_model(good_stock).present?
+    end
+
     def good_trend(good_stock)
       good_trend  = _good_trend(good_stock)
       good_trend  = good_trend.pluck(:date, :price)
