@@ -411,21 +411,22 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "market page ranks current buy-family candidates" do
+    recent_date = Date.current
     StocksCoefsStav.create!(
       stock: "sz002653", area: Stock::SZSTK, price: 62.38,
-      years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 31)
+      years: "BUY5", lohas: "BUY5", date: recent_date
     )
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, price: 11,
-      years: "SAF1", lohas: "BUY5", date: Date.new(2026, 7, 31)
+      years: "SAF1", lohas: "BUY5", date: recent_date
     )
     StocksCoefsStav.create!(
       stock: "sz000002", area: Stock::SZSTK, price: 10,
-      years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 30)
+      years: "BUY5", lohas: "BUY5", date: recent_date - 1
     )
     StocksCoefsStav.create!(
       stock: "sz880016", area: Stock::SZSTK, price: 89,
-      years: "BUY5", lohas: "BUY5", date: Date.new(2026, 7, 31)
+      years: "BUY5", lohas: "BUY5", date: recent_date
     )
 
     get stocks_by_area_path(Stock::SZSTK)
