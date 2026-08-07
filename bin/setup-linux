@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -e
+
+cd "$(dirname "$0")/.."
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+log() {
+  echo -e "${GREEN}[setup]${NC} $1"
+}
+
+warn() {
+  echo -e "${YELLOW}[setup]${NC} $1"
+}
+
+error() {
+  echo -e "${RED}[setup]${NC} $1" >&2
+}
+
+install_rbenv() {
+  if command -v rbenv >/dev/null 2>&1; then
+    return
+  fi
+
+  log "Installing rbenv and ruby-build..."
+  git clone https://github.com/rbenv/rbenv.git "$HOME/.rbenv"
+  git clone https://github.com/rbenv/ruby-build.git "$HOME/.rbenv/plugins/ruby-build"
+}
+
+ensure_path() {
+  if [[ ":$PATH:" != *":$HOME/.rbenv/bin:"* ]]; then
+    export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$HOME/.local/bin:$PATH"
+  fi
+}
+
+ensure_build_deps() {
+  if command -v apt-get >/dev/null 2>&1; then
+    log "Checking build dependencies (apt)..."
+    local pkgs="build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev"
+    if command -v sudo >/dev/null 2>&1; then
+      sudo apt-get install -y $pkgs || warn "Could not install deps via apt; install manually: $pkgs"
+    else
+      warn "sudo not available; please ensure these are installed: $pkgs"
+    fi
+  else
+    warn "Non-apt package manager detected; please ensure Ruby build dependencies are installed."
+  fi
+}
+
+install_ruby() {
+  ensure_path
+  eval "$($HOME/.rbenv/bin/rbenv init - bash)"
+
+  local ruby_version
+  ruby_version="$(cat .ruby-version)"
+
+  if rbenv versions --bare | grep -q "^${ruby_version}$"; then
+    log "Ruby ${ruby_version} already installed."
+  else
+    log "Installing Ruby ${ruby_version}..."
+    ensure_build_deps
+    rbenv install -s "${ruby_version}"
+  fi
+
+  rbenv local "${ruby_version}"
+}
+
+install_gems() {
+  ensure_path
+  eval "$($HOME/.rbenv/bin/rbenv init - bash)"
+
+  log "Installing Bundler..."
+  gem install bundler -v "$(grep -A1 'BUNDLED WITH' Gemfile.lock | tail -1 | tr -d ' ')"
+
+  log "Installing gems..."
+  bundle install
+}
+
+setup_database() {
+  log "Setting up database..."
+  bundle exec rails db:prepare
+}
+
+precompile_assets() {
+  log "Precompiling assets..."
+  bundle exec rails assets:precompile
+}
+
+main() {
+  log "Setting up Stock Stave on Linux..."
+
+  install_rbenv
+  install_ruby
+  install_gems
+  setup_database
+  precompile_assets
+
+  log "Setup complete. Run 'bundle exec rails server' to start."
+  log "To schedule daily refreshes, run: bin/install-daily-refresh-timer.sh"
+}
+
+main "$@"

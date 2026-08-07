@@ -3,7 +3,7 @@ name: CI
 on:
   push:
   pull_request:
-
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -25,6 +25,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: .ruby-version
           bundler-cache: true
 
       - name: Prepare test database

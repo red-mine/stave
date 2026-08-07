@@ -1,0 +1,10 @@
+[Unit]
+Description=Stock Stave daily market data refresh
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/work/stave
+Environment="PATH=%h/.rbenv/bin:%h/.rbenv/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="RAILS_ENV=production"
+ExecStart=%h/.rbenv/shims/bundle exec rails daily_refresh

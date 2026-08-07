@@ -110,6 +110,15 @@ class StockCalculationTest < ActiveSupport::TestCase
     end
   end
 
+  test "data_root uses vipdoc on Linux and Windows path otherwise" do
+    if RUBY_PLATFORM.include?("linux")
+      assert_equal Pathname.new("vipdoc").expand_path, Stock.data_root
+      refute_match %r{C:/new_tdx/vipdoc}, Stock.data_root.to_s
+    else
+      assert_equal Pathname.new("C:/new_tdx/vipdoc").expand_path, Stock.data_root
+    end
+  end
+
   test "resumable model generation skips rows with the current source date" do
     current_date = Date.new(2026, 7, 31)
     relation = Minitest::Mock.new
