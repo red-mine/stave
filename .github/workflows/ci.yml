@@ -54,3 +54,8 @@ jobs:
         run: |
           git diff --exit-code -- db/schema.rb
           git diff --check
+
+      - name: Validate Linux setup scripts
+        run: |
+          bash -n bin/setup-linux
+          bash -n bin/install-daily-refresh-timer.sh

@@ -1,0 +1,9 @@
+[Unit]
+Description=Stock Stave log and preview retention cleanup
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/work/stave
+Environment="PATH=%h/.rbenv/bin:%h/.rbenv/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=%h/.rbenv/shims/bundle exec rails retention

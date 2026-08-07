@@ -2,27 +2,31 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SERVICE_NAME="stave-daily-refresh"
 USER_UNITS="$HOME/.config/systemd/user"
+
+install_service() {
+  local name="$1"
+  install -m 644 "$REPO_DIR/extras/systemd/${name}.service" "$USER_UNITS/${name}.service"
+  install -m 644 "$REPO_DIR/extras/systemd/${name}.timer" "$USER_UNITS/${name}.timer"
+  sed -i "s|%h/work/stave|$REPO_DIR|g" "$USER_UNITS/${name}.service"
+  sed -i "s|%h|$HOME|g" "$USER_UNITS/${name}.service"
+}
 
 mkdir -p "$USER_UNITS"
 
-install -m 644 "$REPO_DIR/extras/systemd/stave-daily-refresh.service" "$USER_UNITS/${SERVICE_NAME}.service"
-install -m 644 "$REPO_DIR/extras/systemd/stave-daily-refresh.timer" "$USER_UNITS/${SERVICE_NAME}.timer"
-
-# Replace placeholders with the actual repository path and user home.
-sed -i "s|%h/work/stave|$REPO_DIR|g" "$USER_UNITS/${SERVICE_NAME}.service"
-sed -i "s|%h|$HOME|g" "$USER_UNITS/${SERVICE_NAME}.service"
+install_service "stave-daily-refresh"
+install_service "stave-retention"
 
 systemctl --user daemon-reload
-systemctl --user enable --now "${SERVICE_NAME}.timer"
+systemctl --user enable --now stave-daily-refresh.timer
+systemctl --user enable --now stave-retention.timer
 
-echo "Installed and started ${SERVICE_NAME}.timer"
-echo "Status:"
-systemctl --user status "${SERVICE_NAME}.timer" --no-pager
+echo "Installed and started timers:"
+systemctl --user status stave-daily-refresh.timer stave-retention.timer --no-pager
 
 echo ""
 echo "To check the next run time:"
-echo "  systemctl --user list-timers ${SERVICE_NAME}.timer"
+echo "  systemctl --user list-timers stave-daily-refresh.timer stave-retention.timer"
 echo "To view logs:"
-echo "  journalctl --user -u ${SERVICE_NAME}.service"
+echo "  journalctl --user -u stave-daily-refresh.service"
+echo "  journalctl --user -u stave-retention.service"
