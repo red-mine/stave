@@ -218,6 +218,8 @@ module Stock
     end
 
     def _good_signal_bands(good_prices, good_model)
+      return {} if good_prices.empty? || good_model.empty?
+
       good_boll       = good_prices.last(STAVE).sum.fdiv(STAVE).round(2)
 
       # Preserve the legacy Bollinger alignment while calculating only its
@@ -234,7 +236,11 @@ module Stock
         good_expected = good_model[:coef] * (good_index + STAVE - 1) + good_model[:inter]
         (good_price - good_expected.round(2)) ** 2
       end
-      good_sqrt       = Math.sqrt(good_residuals.sum.fdiv(good_residuals.length))
+      good_sqrt       = if good_residuals.empty?
+        0.0
+      else
+        Math.sqrt(good_residuals.sum.fdiv(good_residuals.length))
+      end
 
       {
         boll: good_boll,
@@ -362,6 +368,9 @@ module Stock
     def _good_model(good_stock)
       good_price, good_date = _good_model_data(good_stock)
       return {} if good_price.empty?
+      return {} if good_price.length < 2
+      return {} if good_price.uniq.size < 2
+
       good_index  = (0...good_price.length).to_a
       good_count  = good_index.length
       good_sum_x  = good_index.sum
@@ -371,9 +380,12 @@ module Stock
       good_div    = good_count * good_sum_xx - good_sum_x * good_sum_x
       return {} if good_div.zero?
       good_coef   = (good_count * good_sum_xy - good_sum_x * good_sum_y).fdiv(good_div)
+      return {} unless good_coef.finite?
       return {} if  good_coef < 1.0 / STAVE
       good_inter  = (good_sum_y - good_coef * good_sum_x).fdiv(good_count)
+      return {} unless good_inter.finite?
       good_last   = good_price[-1]
+      return {} unless good_last.finite?
       good_model  = {
         stock:      good_stock,
         area:       @good_area,
@@ -416,6 +428,7 @@ module Stock
     def _good_trend(good_stock)
       good_stave  = _good_stave(good_stock)
       good_model  = _good_model(good_stock)
+      return [] if good_model.empty?
       good_stave.each do |good_data|
         good_price = good_model[:coef] * good_data[:index] + good_model[:inter]
         good_data[:price] = good_price.round(2)
@@ -426,6 +439,7 @@ module Stock
     def _good_sqrt(good_stock)
       good_stave  = _good_stave(good_stock)
       good_trend  = _good_trend(good_stock)
+      return 0.0 if good_trend.empty?
       good_stave.each_with_index do |good_data, good_index|
         good_price = good_stave[good_index][:price] - good_trend[good_index][:price]
         good_stave[good_index][:price] = good_price ** 2

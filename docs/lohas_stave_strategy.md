@@ -62,16 +62,22 @@ long-term, low-maintenance investing (no daily monitoring needed), hence the
 ## Signal codes (`_good_price`) — current status
 
 `_good_price` combines "position vs. five-line stave" with "position vs. LOHAS channel"
-into a single code. The assignments are sequential `if`s (not `elsif`), so whenever two
-codes shared an identical condition, whichever was listed last always won and the earlier
-one was permanently dead code:
+into a single code.
 
-| Reachable | Dead (unreachable) | Shared condition |
+**Historical note:** Earlier versions of this code used sequential `if` assignments
+(not `elsif`), which caused several signal codes to be permanently shadowed whenever
+two conditions overlapped. These structural bugs have since been fixed:
+
+| Signal | Status | Notes |
 |---|---|---|
-| `SEL7` | `SEL3`, `SEL6` | `up1_up2 && mup_boll` |
-| `WAT8` | `BUY4` | `dn1_dn2 && mup_boll` |
-| `CHP0` | ~~`WAT9`~~ (fixed, see below) | ~~`dn2_bot && mdn_bot`~~ |
-| `SAF1`, `SOX2`, `BUY5` | — | (unique conditions, unaffected) |
+| `WAT9` vs `CHP0` | **Fixed** | `CHP0` previously duplicated `WAT9`'s condition (`mdn_bot`). Corrected to `mdn_boll` in 2023. See "Resolved: `WAT9` vs `CHP0`" below. |
+| `SEL3`/`SEL6`/`SEL7` | **Structurally fixed** | Originally dead code due to overlapping `if`s. Now uses nested `if/elsif/else` with `crossed_stave_top`/`crossed_channel_top` guards. Reachable when price breaks above the upper boundary and falls back. |
+| `BUY4`/`WAT8` | **Structurally fixed** | Originally dead code (`BUY4` shadowed by `WAT8`). Now uses a ternary on `falling_averages?` to distinguish the two. |
+
+The remaining concern is **semantic verification** — while these signals are now
+technically reachable, no public source confirms whether the `crossed_*` and
+`falling_averages` distinctions match 薛兆亨's original decision table. The exact
+rules likely reside only in the paid CMoney tool.
 
 `_good_model` ([lib/stock/stock.rb](../lib/stock/stock.rb), `return {} if good_coef < 1.0/STAVE`)
 already filters out any stock with a non-positive/near-zero slope before it reaches
@@ -108,16 +114,25 @@ recently breached, so this fix is a reasonable static approximation of the real 
 a fully faithful implementation of it. A fully faithful version would need to track the
 channel's recent state transition over time.
 
-### Still open: `SEL3`/`SEL6`/`SEL7` and `BUY4`/`WAT8`
+### Unverified semantics: `SEL3`/`SEL6`/`SEL7` and `BUY4`/`WAT8`
 
-No source found gives an explicit rule distinguishing these. The sell-side examples
-follow the same breakout-then-reversion pattern (symmetric to the buy case), consistent
-with `SEL7`'s condition, but nothing explains why `SEL3`/`SEL6` exist as separate codes.
-Likewise nothing confirms what should distinguish `BUY4` ("boll up?") from `WAT8` ("boll
-dn?") beyond the comment text itself hinting `WAT8` should test a different channel
-condition than `mup_boll` — nothing found says which one. Likely the exact decision table
-lives only in 薛兆亨/Tivo168's paid CMoney tool, not in free public sources. Left
-untouched pending further verification.
+The signal-generation code is now structurally sound (no dead branches), but the
+semantic distinctions remain unconfirmed against public sources:
+
+- **Sell side (`SEL3`/`SEL6`/`SEL7`):** These trigger when price is in the
+  `up1_up2 && mup_boll` zone. `SEL3` and `SEL6` additionally require a recent
+  breakout above the stave top or channel top (`crossed_stave_top` / `crossed_channel_top`).
+  This follows the symmetric logic of the buy-side channel-recovery rule, yet no
+  published source explicitly documents these three sell variants.
+
+- **Buy side (`BUY4`/`WAT8`):** These trigger in the `dn1_dn2 && mup_boll` zone.
+  The code chooses `WAT8` when all tracked moving averages (5, 10, 20, 40 period)
+  are falling, otherwise `BUY4`. The "falling averages" heuristic is a reasonable
+  defensive filter, but its provenance is unclear.
+
+Pending access to the original CMoney decision table or a verified explainer,
+these distinctions are best treated as **informed approximations** rather than
+confirmed strategy rules.
 
 ### Sources
 

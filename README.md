@@ -34,6 +34,11 @@ bundle install
 bundle exec rails db:migrate
 ```
 
+> **Security note:** This repository includes `config/master.key` and
+> `config/credentials.yml.enc` for local development convenience. Before deploying
+> to production, generate a new master key (`bin/rails credentials:edit`) and keep
+> the key out of version control.
+
 The environments use separate databases:
 
 - Development and production: `db/stock.sqlite3`

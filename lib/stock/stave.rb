@@ -38,30 +38,31 @@ module Stock
           StocksCoefsStav.where(stock: good_stock, area: @good_area).delete_all
           next
         end
-        lohas_price, lohas_trend, lohas_up1, lohas_dn1, lohas_top, lohas_bot = _stave(loha_engine, LOHAS, good_stock)
-        years_price, years_trend, years_up1, years_dn1, years_top, years_bot = _stave(year_engine, YEARS, good_stock)
-        lohas_price, lohas_bolls, lohas_mup, lohas_mdn = _bolls(loha_engine, LOHAS, good_stock)
-        years_price, years_bolls, years_mup, years_mdn = _bolls(year_engine, YEARS, good_stock)
-        good_staves(StocksStaveLoha, lohas_price, good_stock, "price" )
-        good_staves(StocksStaveLoha, lohas_trend, good_stock, "trend" )
-        good_staves(StocksStaveLoha, lohas_up1,   good_stock, "up1"   )
-        good_staves(StocksStaveLoha, lohas_dn1,   good_stock, "dn1"   )
-        good_staves(StocksStaveLoha, lohas_top,   good_stock, "top"   )
-        good_staves(StocksStaveLoha, lohas_bot,   good_stock, "bot"   )
-        good_staves(StocksStaveYear, years_price, good_stock, "price" )
-        good_staves(StocksStaveYear, years_trend, good_stock, "trend" )
-        good_staves(StocksStaveYear, years_up1,   good_stock, "up1"   )
-        good_staves(StocksStaveYear, years_dn1,   good_stock, "dn1"   )
-        good_staves(StocksStaveYear, years_top,   good_stock, "top"   )
-        good_staves(StocksStaveYear, years_bot,   good_stock, "bot"   )
-        good_staves(StocksBollsLoha, lohas_price, good_stock, "price" )
-        good_staves(StocksBollsLoha, lohas_bolls, good_stock, "bolls" )
-        good_staves(StocksBollsLoha, lohas_mup,   good_stock, "mup"   )
-        good_staves(StocksBollsLoha, lohas_mdn,   good_stock, "mdn"   )
-        good_staves(StocksBollsYear, years_price, good_stock, "price" )
-        good_staves(StocksBollsYear, years_bolls, good_stock, "bolls" )
-        good_staves(StocksBollsYear, years_mup,   good_stock, "mup"   )
-        good_staves(StocksBollsYear, years_mdn,   good_stock, "mdn"   )
+
+        # Build series data for both engines
+        data = {
+          lohas_price:  nil, lohas_trend:  nil, lohas_up1:   nil, lohas_dn1:   nil, lohas_top:   nil, lohas_bot:   nil,
+          years_price:  nil, years_trend:  nil, years_up1:   nil, years_dn1:   nil, years_top:   nil, years_bot:   nil,
+          lohas_bolls:  nil, lohas_mup:    nil, lohas_mdn:   nil,
+          years_bolls:  nil, years_mup:    nil, years_mdn:   nil
+        }
+        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, good_stock)
+        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, good_stock)
+        data[:lohas_price], data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, good_stock)
+        data[:years_price], data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, good_stock)
+
+        stave_series = [
+          { table: StocksStaveLoha, prefix: :lohas, keys: %w[price trend up1 dn1 top bot] },
+          { table: StocksStaveYear, prefix: :years, keys: %w[price trend up1 dn1 top bot] },
+          { table: StocksBollsLoha,  prefix: :lohas, keys: %w[price bolls mup mdn] },
+          { table: StocksBollsYear,  prefix: :years, keys: %w[price bolls mup mdn] }
+        ]
+        stave_series.each do |series|
+          series[:keys].each do |key|
+            column_name = "#{series[:prefix]}_#{key}"
+            good_staves(series[:table], data[column_name.to_sym], good_stock, key)
+          end
+        end
         end
       end
       SignalSnapshot.capture!(@good_area)
