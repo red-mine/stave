@@ -3,7 +3,9 @@ param(
   [string]$DatabasePath = "",
   [ValidateSet("manual", "scheduled")]
   [string]$RunSource = "manual",
-  [int]$LogRetention = 30
+  [int]$LogRetention = 30,
+  [string]$TdxDataPath = $(if ($env:TDX_DATA_PATH) { $env:TDX_DATA_PATH } else { "C:\new_tdx\vipdoc" }),
+  [switch]$SkipTdxUpdate
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,6 +29,7 @@ if (-not (Test-Path -LiteralPath $database -PathType Leaf)) {
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 $env:STOCK_DATABASE = $database
 $env:STOCK_REFRESH_SOURCE = $RunSource
+$env:TDX_DATA_PATH = [System.IO.Path]::GetFullPath($TdxDataPath)
 $env:RAILS_ENV = "development"
 $env:RACK_ENV = "development"
 $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
@@ -34,6 +37,15 @@ $env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
 Push-Location $repository
 try {
   "[$(Get-Date -Format o)] Starting daily refresh" | Tee-Object -FilePath $logFile
+  if ($SkipTdxUpdate) {
+    "[$(Get-Date -Format o)] Skipping TongdaXin download by request" | Tee-Object -FilePath $logFile -Append
+  } else {
+    & (Join-Path $PSScriptRoot "update-tdx-data.ps1") -DataPath $env:TDX_DATA_PATH 2>&1 |
+      Tee-Object -FilePath $logFile -Append
+    if ($LASTEXITCODE -ne 0) {
+      throw "TongdaXin update failed with exit code $LASTEXITCODE"
+    }
+  }
   & $RubyPath bin\rails daily_refresh 2>&1 | Tee-Object -FilePath $logFile -Append
   if ($LASTEXITCODE -ne 0) {
     throw "Daily refresh failed with exit code $LASTEXITCODE"
