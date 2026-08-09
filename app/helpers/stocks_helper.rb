@@ -115,4 +115,15 @@ module StocksHelper
   def trend_status_label(status)
     TREND_LABELS.fetch(status.to_s, status.to_s.humanize)
   end
+
+  def classify_trend(coef)
+    return "unknown" if coef.nil?
+
+    c = coef.to_f
+    return "strong_uptrend" if c >= 0.05
+    return "uptrend" if c >= 0.02
+    return "weak_uptrend" if c > 0.01
+    return "flat" if c >= -0.01
+    "downtrend"
+  end
 end

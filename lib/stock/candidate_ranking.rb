@@ -14,7 +14,7 @@ module Stock
     }.freeze
 
     Candidate = Data.define(:record, :score, :confidence, :reasons, :history_state) do
-      delegate :stock, :price, :date, :years, :lohas, to: :record
+      delegate :stock, :price, :date, :years, :lohas, :year, :loha, to: :record
     end
 
     def initialize(area)

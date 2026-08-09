@@ -74,6 +74,7 @@
                 <strong><%= candidate.stock.upcase %></strong>
                 <div class="candidate-labels">
                   <span class="candidate-history candidate-history-<%= candidate.history_state.parameterize %>"><%= candidate.history_state %></span>
+                  <span class="candidate-trend trend-<%= classify_trend(candidate.year) %>"><%= trend_status_label(classify_trend(candidate.year)) %></span>
                   <span><%= candidate.years %> + <%= candidate.lohas %></span>
                 </div>
               </div>

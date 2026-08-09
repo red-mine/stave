@@ -443,6 +443,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "section#buy-candidates.buy-panel", count: 1
     assert_select ".buy-card", count: 1, text: /SZ002653/
     assert_select ".buy-card", text: /BUY5 \+ BUY5/
+    assert_select ".candidate-trend", count: 1, text: /Uptrend/
     assert_select ".candidate-history", text: /First recorded/
     assert_select ".candidate-score", text: %r{/100}
     assert_select ".candidate-score", text: /agreement/

@@ -621,3 +621,19 @@ a { color: var(--teal-dark); }
   background: #fdf8e8;
   color: #7a5c0e;
 }
+
+/* Candidate trend label */
+.candidate-trend {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.candidate-trend.trend-strong_uptrend { background: #e6f4ef; color: #147d64; }
+.candidate-trend.trend-uptrend { background: #e8f6f4; color: #2a9d8f; }
+.candidate-trend.trend-weak_uptrend { background: #fdf8e8; color: #9c7c1c; }
+.candidate-trend.trend-flat { background: #f1f3f5; color: #495057; }
+.candidate-trend.trend-downtrend { background: #f9ebeb; color: #b54747; }
