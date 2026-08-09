@@ -63,12 +63,26 @@ window plus the 20-week channel.
 
 ## Generate analysis data
 
-For normal daily operation after TongdaXin downloads the latest files, run:
+For normal daily operation, run:
 
 ```powershell
 $env:Path = "C:\Ruby34-x64\bin;$env:Path"
 bundle exec rails daily_refresh
 ```
+
+The Rails task recalculates from the files already present under
+`TDX_DATA_PATH`. On Windows, the scheduled runner performs the complete flow:
+
+```powershell
+pwsh -File bin\daily-refresh.ps1
+```
+
+It checks the official TongdaXin `hsjday.zip` date, skips the download when all
+three local markets are current, and otherwise downloads to `tmp/tdx-update`,
+rejects unsafe archive paths, verifies the final record date for SZ, SH, and BJ,
+and incrementally synchronizes the validated files before Rails recalculates.
+Use `-SkipTdxUpdate` only for offline diagnostics, or `-TdxDataPath PATH` to
+override the source directory for both the downloader and Rails.
 
 This checks all three markets first, skips healthy markets, creates a SQLite
 backup before recalculation, refreshes only new or incomplete markets, saves a
@@ -92,7 +106,8 @@ Install a daily Windows task (20:30 local time by default) from PowerShell:
 pwsh -File bin\install-daily-refresh-task.ps1
 ```
 
-The task runs against the isolated UI database at `tmp/ui-stock.sqlite3`, uses
+The task downloads and validates the latest official TongdaXin day archive,
+runs against the isolated UI database at `tmp/ui-stock.sqlite3`, uses
 the Ruby 3.4 executable explicitly, starts missed runs when the computer becomes
 available, and refuses overlapping executions. Its latest output is saved to
 `log/daily-refresh/latest.log`. Timestamped logs are retained for the latest 30
