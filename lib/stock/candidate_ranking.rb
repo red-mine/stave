@@ -29,6 +29,7 @@ module Stock
       records = market
         .where(date: market_date, years: BUY_SIGNALS, lohas: BUY_SIGNALS)
         .where(a_share_condition, *A_SHARE_CODE_PATTERNS.fetch(@area))
+        .where("year > 0 AND loha > 0")
 
       candidates = records.map { |record| evaluate(record) }
         .sort_by { |candidate| [-candidate.score, candidate.stock] }

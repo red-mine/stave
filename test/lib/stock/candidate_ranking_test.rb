@@ -42,6 +42,16 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
     assert_equal "Still active", candidate.history_state
   end
 
+  test "excludes candidates with negative or flat trend slopes" do
+    create_candidate(stock: "sz000001", years: "BUY5", lohas: "BUY5", year: 0.04, loha: 0.03)
+    create_candidate(stock: "sz000002", years: "BUY5", lohas: "BUY5", year: -0.01, loha: 0.03)
+    create_candidate(stock: "sz000003", years: "BUY5", lohas: "BUY5", year: 0.04, loha: 0.0)
+
+    candidates = Stock::CandidateRanking.new(Stock::SZSTK).call
+
+    assert_equal %w[sz000001], candidates.map(&:stock)
+  end
+
   test "limits the ranked result" do
     3.times { |index| create_candidate(stock: "sz00000#{index}", years: "BUY5", lohas: "BUY5") }
 
@@ -53,7 +63,7 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
   def create_candidate(stock:, years:, lohas:, date: Date.new(2026, 7, 31), **attributes)
     StocksCoefsStav.create!({
       stock:, area: stock.first(2), price: 50, date:, years:, lohas:,
-      year: -0.01, loha: -0.01, boll1: -1, stav1: -1, boll3: -1, stav3: -1
+      year: 0.01, loha: 0.01, boll1: -1, stav1: -1, boll3: -1, stav3: -1
     }.merge(attributes))
   end
 

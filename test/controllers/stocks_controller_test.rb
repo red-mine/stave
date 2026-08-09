@@ -418,19 +418,23 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     recent_date = Date.current
     StocksCoefsStav.create!(
       stock: "sz002653", area: Stock::SZSTK, price: 62.38,
-      years: "BUY5", lohas: "BUY5", date: recent_date
+      years: "BUY5", lohas: "BUY5", date: recent_date,
+      year: 0.04, loha: 0.03
     )
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, price: 11,
-      years: "SAF1", lohas: "BUY5", date: recent_date
+      years: "SAF1", lohas: "BUY5", date: recent_date,
+      year: 0.01, loha: 0.02
     )
     StocksCoefsStav.create!(
       stock: "sz000002", area: Stock::SZSTK, price: 10,
-      years: "BUY5", lohas: "BUY5", date: recent_date - 1
+      years: "BUY5", lohas: "BUY5", date: recent_date - 1,
+      year: 0.05, loha: 0.04
     )
     StocksCoefsStav.create!(
       stock: "sz880016", area: Stock::SZSTK, price: 89,
-      years: "BUY5", lohas: "BUY5", date: recent_date
+      years: "BUY5", lohas: "BUY5", date: recent_date,
+      year: 0.03, loha: 0.02
     )
 
     get stocks_by_area_path(Stock::SZSTK)
