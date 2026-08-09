@@ -171,3 +171,45 @@ task :stock => :environment do
   puts "#{Stock::VERSION}"
   puts "#{RUBY_PLATFORM}"
 end
+
+desc "Backtest signal performance across multiple horizons and signal types"
+task :backtest, [:area] => :environment do |_task, args|
+  area = args.area || Stock::SZSTK
+  horizons = [5, 20, 60, 120]
+  signal_types = [:buy, :sell]
+
+  puts "=" * 60
+  puts "Signal backtest for #{area.upcase}"
+  puts "=" * 60
+
+  signal_types.each do |signal_type|
+    puts "\n## #{signal_type.to_s.upcase} SIGNALS"
+    puts "-" * 40
+
+    horizons.each do |horizon|
+      report = Stock::SignalPerformance.new(area, horizon: horizon).call(signal_type: signal_type)
+
+      unless report.ready
+        puts "  #{horizon}d: Not enough data (#{report.dates} dates, need #{Stock::SignalPerformance::MINIMUM_DATES}+)"
+        next
+      end
+
+      puts "  #{horizon}d horizon (#{report.dates} trading dates):"
+
+      if report.cohorts.empty?
+        puts "    No cohorts met minimum sample size (#{Stock::SignalPerformance::MINIMUM_SAMPLE})"
+        next
+      end
+
+      report.cohorts.each do |cohort|
+        label = "#{cohort.year_signal} + #{cohort.lohas_signal}"
+        label += " [#{cohort.trend_group}]" if cohort.trend_group
+        puts "    #{label.ljust(20)} n=#{cohort.sample_size.to_s.ljust(4)} win=#{cohort.win_rate.to_s.rjust(5)}%  avg_ret=#{cohort.average_return.to_s.rjust(7)}%  avg_dd=#{cohort.average_drawdown.to_s.rjust(7)}%"
+      end
+    end
+  end
+
+  puts "\n" + "=" * 60
+  puts "Note: Returns are not annualized. Transaction costs are not deducted."
+  puts "      Overlapping holding periods are included in the sample."
+end

@@ -593,7 +593,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   test "signal history displays qualified forward performance with warnings" do
     cohort = Stock::SignalPerformance::Cohort.new(
       year_signal: "BUY5", lohas_signal: "BUY5", sample_size: 75,
-      win_rate: 60.0, average_return: 1.2, average_drawdown: -2.1
+      win_rate: 60.0, average_return: 1.2, average_drawdown: -2.1,
+      trend_group: nil
     )
     report = Stock::SignalPerformance::Report.new(ready: true, dates: 20, horizon: 5, cohorts: [cohort])
 
