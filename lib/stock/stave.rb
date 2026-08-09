@@ -133,6 +133,19 @@ module Stock
       CandidateRanking.new(@good_area).call(limit: limit)
     end
 
+    def trend_health(good_stock)
+      record = StocksCoefsStav.where(stock: good_stock, area: @good_area).order(date: :desc).first
+      return nil unless record
+
+      {
+        date: record.date,
+        loha_slope: record.loha,
+        year_slope: record.year,
+        loha_status: classify_trend(record.loha),
+        year_status: classify_trend(record.year)
+      }
+    end
+
     private
 
     def _engin(area, years)
@@ -324,6 +337,17 @@ module Stock
       bolls_mdn     = _better(bolls_mdn,    years )
 
       return bolls_price, bolls_bolls, bolls_mup, bolls_mdn
+    end
+
+    def classify_trend(coef)
+      return "unknown" if coef.nil?
+
+      c = coef.to_f
+      return "strong_uptrend" if c >= 0.05
+      return "uptrend" if c >= 0.02
+      return "weak_uptrend" if c > 0.01
+      return "flat" if c >= -0.01
+      "downtrend"
     end
 
   end

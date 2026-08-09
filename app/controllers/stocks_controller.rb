@@ -84,6 +84,7 @@ class StocksController < ApplicationController
 
     @stave_lohas, @stave_years, @bolls_lohas, @bolls_years = stave.good_show(stock)
     @stock_date, @market_date = stave.data_dates(stock)
+    @trend_health = stave.trend_health(stock)
     @historical_data = @stock_date.present? && @market_date.present? && @stock_date < @market_date
     @signal_timeline = Stock::SignalTimeline.new(area, stock).call
     if @signal_timeline.any?

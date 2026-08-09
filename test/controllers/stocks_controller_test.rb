@@ -31,6 +31,10 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     def data_dates(_stock)
       [@stock_date, @market_date]
     end
+
+    def trend_health(_stock)
+      nil
+    end
   end
 
   test "preview health returns structured market readiness" do

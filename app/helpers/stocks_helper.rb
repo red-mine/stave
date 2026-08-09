@@ -102,4 +102,17 @@ module StocksHelper
   rescue ArgumentError, TypeError
     nil
   end
+
+  TREND_LABELS = {
+    "strong_uptrend" => "Strong uptrend",
+    "uptrend" => "Uptrend",
+    "weak_uptrend" => "Weak uptrend",
+    "flat" => "Flat",
+    "downtrend" => "Downtrend",
+    "unknown" => "Unknown"
+  }.freeze
+
+  def trend_status_label(status)
+    TREND_LABELS.fetch(status.to_s, status.to_s.humanize)
+  end
 end

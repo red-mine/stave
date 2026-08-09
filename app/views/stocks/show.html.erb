@@ -25,6 +25,33 @@
     <% end %>
   </section>
 
+  <% if @trend_health %>
+    <section class="trend-health" aria-labelledby="trend-health-title">
+      <div>
+        <p class="eyebrow">Trend strength</p>
+        <h2 id="trend-health-title">Regression slope health</h2>
+        <p class="trend-note">The LOHAS strategy is designed for confirmed uptrends. Weak or negative trends lower the expected win rate.</p>
+      </div>
+      <div class="trend-horizons">
+        <div class="trend-horizon trend-<%= @trend_health[:loha_status] %>">
+          <small>LOHAS (3.5 yr)</small>
+          <strong><%= number_with_precision(@trend_health[:loha_slope], precision: 4) %></strong>
+          <span class="trend-label"><%= trend_status_label(@trend_health[:loha_status]) %></span>
+        </div>
+        <div class="trend-horizon trend-<%= @trend_health[:year_status] %>">
+          <small>Year (1 yr)</small>
+          <strong><%= number_with_precision(@trend_health[:year_slope], precision: 4) %></strong>
+          <span class="trend-label"><%= trend_status_label(@trend_health[:year_status]) %></span>
+        </div>
+      </div>
+      <% if @trend_health[:loha_status] == "downtrend" || @trend_health[:year_status] == "downtrend" %>
+        <p class="trend-warning">⚠️ At least one horizon shows a downtrend. The mean-reversion assumption may not hold.</p>
+      <% elsif @trend_health[:loha_status] == "weak_uptrend" || @trend_health[:year_status] == "weak_uptrend" || @trend_health[:loha_status] == "flat" || @trend_health[:year_status] == "flat" %>
+        <p class="trend-caution">⚠️ Trend strength is weak or flat. Consider waiting for a stronger uptrend confirmation.</p>
+      <% end %>
+    </section>
+  <% end %>
+
   <% if @signal_timeline.any? %>
     <% current_signal = @signal_timeline.first %>
     <section class="current-decision decision-<%= @current_decision %>" aria-labelledby="current-decision-title">

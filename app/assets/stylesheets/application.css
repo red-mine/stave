@@ -528,3 +528,96 @@ a { color: var(--teal-dark); }
   .chart-period { justify-items: start; }
   .status-card { padding: 38px 24px; }
 }
+
+/* Trend health indicator */
+.trend-health {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 28px 0;
+  padding: 28px;
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.trend-health .eyebrow { color: var(--teal); }
+
+.trend-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.trend-horizons {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.trend-horizon {
+  flex: 1;
+  min-width: 160px;
+  padding: 18px;
+  border-radius: 10px;
+  background: var(--surface);
+  border-left: 4px solid var(--line);
+}
+
+.trend-horizon strong {
+  display: block;
+  margin: 6px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.trend-horizon small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.trend-label {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.trend-horizon.trend-strong_uptrend { border-left-color: #147d64; }
+.trend-horizon.trend-strong_uptrend .trend-label { background: #e6f4ef; color: #147d64; }
+
+.trend-horizon.trend-uptrend { border-left-color: #2a9d8f; }
+.trend-horizon.trend-uptrend .trend-label { background: #e8f6f4; color: #2a9d8f; }
+
+.trend-horizon.trend-weak_uptrend { border-left-color: #e9c46a; }
+.trend-horizon.trend-weak_uptrend .trend-label { background: #fdf8e8; color: #9c7c1c; }
+
+.trend-horizon.trend-flat { border-left-color: #adb5bd; }
+.trend-horizon.trend-flat .trend-label { background: #f1f3f5; color: #495057; }
+
+.trend-horizon.trend-downtrend { border-left-color: #b54747; }
+.trend-horizon.trend-downtrend .trend-label { background: #f9ebeb; color: #b54747; }
+
+.trend-warning,
+.trend-caution {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.trend-warning {
+  background: #f9ebeb;
+  color: #842929;
+}
+
+.trend-caution {
+  background: #fdf8e8;
+  color: #7a5c0e;
+}
