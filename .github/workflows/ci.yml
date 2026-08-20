@@ -62,3 +62,7 @@ jobs:
           bash -n bin/update-tdx-data.sh
           bash -n bin/install-daily-refresh-cron.sh
           bash -n bin/install-daily-refresh-timer.sh
+          bash -n bin/start-public-preview.sh
+          bash -n bin/public-preview-status.sh
+          bash -n bin/ensure-public-preview.sh
+          bash -n bin/install-public-preview-monitor.sh

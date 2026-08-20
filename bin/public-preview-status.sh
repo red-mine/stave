@@ -11,7 +11,7 @@ if [[ ! -f "$STATUS_PATH" ]]; then
 fi
 
 read_json() {
-  ruby -rjson -e "puts JSON.parse(File.read('$STATUS_PATH'))['$1']"
+  ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))[ARGV[1]]' "$STATUS_PATH" "$1"
 }
 
 PUBLIC_URL=$(read_json url)
@@ -57,15 +57,28 @@ PUBLIC_MARKETS=$(market_codes "$PUBLIC_URL")
 RAILS_RUNNING="false"
 TUNNEL_RUNNING="false"
 DATABASE_ISOLATED="false"
-[[ -d "/proc/$RAILS_PID" ]] && RAILS_RUNNING="true"
-[[ -d "/proc/$TUNNEL_PID" ]] && TUNNEL_RUNNING="true"
+if [[ "$RAILS_PID" =~ ^[0-9]+$ ]] && kill -0 "$RAILS_PID" 2>/dev/null; then
+  RAILS_RUNNING="true"
+fi
+if [[ "$TUNNEL_PID" =~ ^[0-9]+$ ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
+  TUNNEL_RUNNING="true"
+fi
 [[ "$DATABASE" == "$REPO_DIR/tmp/ui-stock.sqlite3" ]] && DATABASE_ISOLATED="true"
+
+markets_ready() {
+  local report="$1" area
+  for area in "${AREAS[@]}"; do
+    [[ "$report" == *" $area=200"* ]] || return 1
+  done
+}
 
 HEALTHY="false"
 if [[ "$RAILS_RUNNING" == "true" && "$TUNNEL_RUNNING" == "true" && \
       "$DATABASE_ISOLATED" == "true" && \
       "$LOCAL_HEALTH" == "200/ready" && "$PUBLIC_HEALTH" == "200/ready" ]]; then
-  HEALTHY="true"
+  if markets_ready "$LOCAL_MARKETS" && markets_ready "$PUBLIC_MARKETS"; then
+    HEALTHY="true"
+  fi
 fi
 
 cat <<EOF

@@ -247,6 +247,22 @@ Failed checks record Rails/tunnel state and per-market local/public status codes
 Because Quick Tunnel URLs are temporary, a recovery can assign a new URL; read
 the current address with `bin\public-preview-status.ps1`.
 
+On Linux, install the equivalent systemd-managed preview and self-healing check
+with:
+
+```sh
+bin/install-public-preview-monitor.sh
+```
+
+The Rails server and Cloudflare tunnel run under
+`stave-public-preview.service`. A timer checks local and public health twice
+every 30 minutes before restarting that service. Inspect the current URL with
+`bin/public-preview-status.sh` and view service decisions with:
+
+```sh
+journalctl --user -u stave-public-preview.service -u stave-public-preview-monitor.service
+```
+
 ## Tests
 
 Prepare the isolated test database once, then run the suite:

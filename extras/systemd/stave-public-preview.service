@@ -1,0 +1,13 @@
+[Unit]
+Description=Stock Stave managed public preview
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/work/stave
+Environment="PATH=%h/.rbenv/bin:%h/.rbenv/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=%h/work/stave/bin/start-public-preview.sh
+
+[Install]
+WantedBy=default.target
