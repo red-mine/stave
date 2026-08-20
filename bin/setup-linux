@@ -50,6 +50,24 @@ ensure_build_deps() {
   fi
 }
 
+ensure_tdx_tools() {
+  local missing=() command_name
+  for command_name in curl unzip python3 rsync od realpath stat; do
+    command -v "$command_name" >/dev/null 2>&1 || missing+=("$command_name")
+  done
+  if (( ${#missing[@]} == 0 )); then
+    return
+  fi
+
+  local packages="curl unzip python3 rsync coreutils"
+  if command -v apt-get >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; then
+    log "Installing TongdaXin updater dependencies..."
+    sudo apt-get install -y $packages || warn "Could not install updater dependencies: $packages"
+  else
+    warn "Missing updater commands (${missing[*]}); install: $packages"
+  fi
+}
+
 install_ruby() {
   ensure_path
   eval "$($HOME/.rbenv/bin/rbenv init - bash)"
@@ -92,6 +110,7 @@ precompile_assets() {
 main() {
   log "Setting up Stock Stave on Linux..."
 
+  ensure_tdx_tools
   install_rbenv
   install_ruby
   install_gems

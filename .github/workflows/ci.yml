@@ -59,5 +59,6 @@ jobs:
         run: |
           bash -n bin/setup-linux
           bash -n bin/daily-refresh.sh
+          bash -n bin/update-tdx-data.sh
           bash -n bin/install-daily-refresh-cron.sh
           bash -n bin/install-daily-refresh-timer.sh

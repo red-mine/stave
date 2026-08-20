@@ -128,6 +128,12 @@ cleanup runs weekly:
 bin/install-daily-refresh-timer.sh
 ```
 
+Before recalculating, the runner checks and safely synchronizes the official
+TongdaXin archive using `bin/update-tdx-data.sh`. Pass `--skip-tdx-update` only
+for offline diagnostics, or `--tdx-data-path PATH` to override the default
+`vipdoc` directory. The updater requires `curl`, `unzip`, `python3`, `rsync`,
+and `od`.
+
 The runner resolves `ruby` from `PATH`, falling back to `~/.rbenv/shims/ruby`
 (override either with `RUBY_BIN`). It defaults to the tracked `db/stock.sqlite3`
 database (override with `--database`), writes the same `log/daily-refresh/latest.log`
