@@ -120,11 +120,12 @@ that recovery on the website. Choose a different time with `-At HH:mm`.
 
 ### Schedule the Linux refresh
 
-Run `bin/daily-refresh.sh` directly for a manual refresh, or install a daily
-cron entry (20:30 local time by default):
+Run `bin/daily-refresh.sh` directly for a manual refresh, or install the
+systemd user timers. The refresh runs daily at 20:30 local time and retention
+cleanup runs weekly:
 
 ```sh
-bin/install-daily-refresh-cron.sh
+bin/install-daily-refresh-timer.sh
 ```
 
 The runner resolves `ruby` from `PATH`, falling back to `~/.rbenv/shims/ruby`
@@ -132,10 +133,15 @@ The runner resolves `ruby` from `PATH`, falling back to `~/.rbenv/shims/ruby`
 database (override with `--database`), writes the same `log/daily-refresh/latest.log`
 and timestamped archives (kept to the latest 30 with `--log-retention`), and marks
 each run's source in `tmp/stock-refresh-status.json` via `STOCK_REFRESH_SOURCE`,
-matching the Windows task's status contract. The installer writes a single
-identifiable crontab line, so rerunning it with a different `--at HH:mm` replaces
-the old schedule instead of duplicating it, and records the installed schedule in
-`tmp/stock-refresh-schedule.json` for the website to report.
+matching the Windows task's status contract. The installer enables persistent
+systemd user timers and records the installed refresh schedule in
+`tmp/stock-refresh-schedule.json` for the website to report. Inspect them with
+`systemctl --user list-timers stave-daily-refresh.timer stave-retention.timer`
+and view refresh logs with
+`journalctl --user -u stave-daily-refresh.service`.
+
+`bin/install-daily-refresh-cron.sh` remains available as a deprecated fallback
+for Linux systems without systemd user services.
 
 Refresh all three markets with one command:
 

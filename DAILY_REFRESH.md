@@ -2,12 +2,12 @@
 
 ## 快速使用
 
-### 方式 1：双击运行（最简单）
+### 方式 1：双击运行（Windows，最简单）
 双击 `daily_refresh.bat`，等待完成即可。
 
-### 方式 2：PowerShell
+### 方式 2：PowerShell（Windows）
 ```powershell
-.\daily_refresh.ps1
+.\bin\daily-refresh.ps1
 ```
 
 ### 方式 3：手动命令
@@ -37,11 +37,25 @@ bundle exec rails backtest[sz]
 bundle exec rails backtest[sh]
 ```
 
-## 定时自动运行（Windows 任务计划程序）
+## 定时自动运行（Windows）
 
-1. 打开「任务计划程序」
-2. 创建基本任务 → 名称：`StockStaveDailyRefresh`
-3. 触发器：每天 18:00（收盘后，通达信数据已更新）
-4. 操作：启动程序
-5. 程序：`C:\Users\huntl\work\stave\daily_refresh.bat`
-6. 起始于：`C:\Users\huntl\work\stave`
+以 PowerShell 安装每日 20:30 运行的任务计划：
+
+```powershell
+.\bin\install-daily-refresh-task.ps1
+```
+
+## 定时自动运行（Linux）
+
+systemd 用户定时器是主要方式，默认每天 20:30 刷新，每周清理日志：
+
+```sh
+bin/install-daily-refresh-timer.sh
+systemctl --user list-timers stave-daily-refresh.timer stave-retention.timer
+```
+
+如果系统不支持 systemd 用户服务，仍可使用已弃用的 cron 兼容安装器：
+
+```sh
+bin/install-daily-refresh-cron.sh
+```

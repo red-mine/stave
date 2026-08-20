@@ -5,6 +5,8 @@
 # report it via Stock::RefreshSchedule the same way it does on Windows.
 set -euo pipefail
 
+echo "Warning: cron installation is deprecated; prefer bin/install-daily-refresh-timer.sh." >&2
+
 AT="20:30"
 TASK_NAME="Stock Stave Daily Refresh"
 MARKER="# stock-stave-daily-refresh"
@@ -32,7 +34,7 @@ if [[ ! -x "$RUNNER" ]]; then
   exit 1
 fi
 
-CRON_LINE="$MINUTE $HOUR * * * cd $REPO_ROOT && RUN_SOURCE=scheduled \"$RUNNER\" >/dev/null 2>&1 $MARKER"
+CRON_LINE="$MINUTE $HOUR * * * cd $REPO_ROOT && \"$RUNNER\" --source scheduled >/dev/null 2>&1 $MARKER"
 
 EXISTING="$(crontab -l 2>/dev/null || true)"
 FILTERED="$(printf '%s\n' "$EXISTING" | grep -vF "$MARKER" || true)"

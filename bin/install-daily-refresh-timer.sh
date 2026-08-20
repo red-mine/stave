@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 USER_UNITS="$HOME/.config/systemd/user"
@@ -20,6 +20,17 @@ install_service "stave-retention"
 systemctl --user daemon-reload
 systemctl --user enable --now stave-daily-refresh.timer
 systemctl --user enable --now stave-retention.timer
+
+mkdir -p "$REPO_DIR/tmp"
+installed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+cat > "$REPO_DIR/tmp/stock-refresh-schedule.json" <<JSON
+{
+  "task_name": "Stock Stave Daily Refresh (systemd)",
+  "time": "20:30",
+  "enabled": true,
+  "installed_at": "$installed_at"
+}
+JSON
 
 echo "Installed and started timers:"
 systemctl --user status stave-daily-refresh.timer stave-retention.timer --no-pager

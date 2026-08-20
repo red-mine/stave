@@ -1,9 +1,7 @@
 @echo off
 chcp 65001 >nul
-set "PATH=C:\Ruby34-x64\bin;%PATH%"
-set "TDX_DATA_PATH=C:\new_tdx\vipdoc"
-cd /d "C:\Users\huntl\work\stave"
-echo [%date% %time%] Starting daily refresh...
-bundle exec rails daily_refresh
-echo [%date% %time%] Done.
+pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0bin\daily-refresh.ps1" %*
+set "STAVE_EXIT_CODE=%ERRORLEVEL%"
+if not "%STAVE_EXIT_CODE%"=="0" echo Daily refresh failed with exit code %STAVE_EXIT_CODE%.
 pause
+exit /b %STAVE_EXIT_CODE%
