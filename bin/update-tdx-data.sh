@@ -74,7 +74,8 @@ trap cleanup_staging EXIT
 
 mkdir -p "$WORK_DIRECTORY" "$DATA_PATH"
 metadata_url="${METADATA_URI}$([[ "$METADATA_URI" == *\?* ]] && printf '&' || printf '?')t=$(date +%s)"
-metadata="$(curl --fail --silent --show-error --location --connect-timeout 30 --max-time 60 "$metadata_url")"
+metadata="$(curl --fail --silent --show-error --location --connect-timeout 30 --max-time 60 \
+  --retry 5 --retry-delay 5 --retry-max-time 120 --retry-all-errors "$metadata_url")"
 remote_timestamp="$(printf '%s' "$metadata" | sed -n 's/.*HSJDAY_SOFT_TIME="\([^"]*\)".*/\1/p' | head -n 1)"
 if [[ ! "$remote_timestamp" =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})[[:space:]][0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
   echo "TongdaXin metadata did not contain a valid HSJDAY_SOFT_TIME" >&2
@@ -98,10 +99,27 @@ fi
 if [[ "$REUSE_ARCHIVE" == true && -f "$ARCHIVE" ]]; then
   echo "Reusing previously downloaded archive: $ARCHIVE"
 else
-  echo "Downloading official TongdaXin day archive..."
-  rm -f -- "$PARTIAL_ARCHIVE"
+  if [[ ! -f "$PARTIAL_ARCHIVE" && -f "$ARCHIVE" ]] && ! unzip -tqq "$ARCHIVE" >/dev/null 2>&1; then
+    echo "Recovering interrupted archive download: $ARCHIVE"
+    mv -f -- "$ARCHIVE" "$PARTIAL_ARCHIVE"
+  fi
+  if [[ -f "$PARTIAL_ARCHIVE" ]]; then
+    echo "Resuming official TongdaXin day archive at $(stat -c %s "$PARTIAL_ARCHIVE") bytes..."
+  else
+    echo "Downloading official TongdaXin day archive..."
+  fi
   curl --fail --show-error --location --connect-timeout 30 --max-time 1800 \
+    --retry 5 --retry-delay 5 --retry-max-time 1800 --retry-all-errors --continue-at - \
     --output "$PARTIAL_ARCHIVE" "$ARCHIVE_URI"
+  if (( $(stat -c %s "$PARTIAL_ARCHIVE") < 1048576 )); then
+    echo "Downloaded TongdaXin archive is unexpectedly small" >&2
+    exit 1
+  fi
+  if ! unzip -tqq "$PARTIAL_ARCHIVE" >/dev/null; then
+    echo "Downloaded TongdaXin archive failed its ZIP integrity check; removing the unusable partial file" >&2
+    rm -f -- "$PARTIAL_ARCHIVE"
+    exit 1
+  fi
   mv -f -- "$PARTIAL_ARCHIVE" "$ARCHIVE"
 fi
 if (( $(stat -c %s "$ARCHIVE") < 1048576 )); then
