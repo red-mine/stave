@@ -242,11 +242,22 @@ task :simulate_strategy, [:area] => :environment do |_task, args|
     end
 
     puts
-    puts "Equity curve (sampled):"
-    step = [(result.equity_curve.size / 10.0).ceil, 1].max
-    checkpoints = result.equity_curve.each_slice(step).map(&:first)
-    checkpoints << result.equity_curve.last unless checkpoints.last == result.equity_curve.last
-    checkpoints.each { |point| puts "  #{point.date}: #{format('%.2f', point.equity)}" }
+    puts "Daily equity curve:"
+    entries_by_date = result.trades.group_by(&:entry_date)
+    exits_by_date = result.trades.group_by(&:exit_date)
+    previous_equity = result.starting_cash
+    result.equity_curve.each do |point|
+      change_pct = ((point.equity - previous_equity) / previous_equity * 100).round(2)
+      buys = entries_by_date[point.date]&.size || 0
+      sells = exits_by_date[point.date]&.size || 0
+      activity = []
+      activity << "#{buys} buy#{'s' unless buys == 1}" if buys.positive?
+      activity << "#{sells} sell#{'s' unless sells == 1}" if sells.positive?
+      activity_note = activity.any? ? "  [#{activity.join(', ')}]" : ""
+      sign = change_pct >= 0 ? "+" : ""
+      puts "  #{point.date}: #{format('%.2f', point.equity)} (#{sign}#{change_pct}%)#{activity_note}"
+      previous_equity = point.equity
+    end
   else
     puts "No signal history available for #{area.upcase}."
   end
