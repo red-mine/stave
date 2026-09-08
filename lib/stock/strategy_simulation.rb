@@ -2,6 +2,7 @@ module Stock
   class StrategySimulation
     STARTING_CASH = 100_000.0
     MAX_HOLD_DAYS = 20
+    MINIMUM_DATES = SignalPerformance::MINIMUM_DATES
 
     Result = Data.define(:ready, :dates, :starting_cash, :final_equity, :total_return, :max_drawdown, :trades, :equity_curve)
     Trade = Data.define(:stock, :entry_date, :exit_date, :entry_price, :exit_price, :return_pct, :reason)
@@ -16,7 +17,7 @@ module Stock
 
     def call
       dates = StockSignalSnapshot.where(area: @area).distinct.order(:signal_date).pluck(:signal_date)
-      return not_ready if dates.empty?
+      return not_ready(dates.size) if dates.size < MINIMUM_DATES
 
       snapshots_by_date = StockSignalSnapshot.where(area: @area, signal_date: dates)
         .group_by(&:signal_date)
@@ -77,9 +78,9 @@ module Stock
 
     private
 
-    def not_ready
+    def not_ready(dates_count)
       Result.new(
-        ready: false, dates: 0, starting_cash: @starting_cash, final_equity: @starting_cash,
+        ready: false, dates: dates_count, starting_cash: @starting_cash, final_equity: @starting_cash,
         total_return: 0.0, max_drawdown: 0.0, trades: [], equity_curve: []
       )
     end

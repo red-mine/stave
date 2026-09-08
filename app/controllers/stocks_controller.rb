@@ -41,6 +41,8 @@ class StocksController < ApplicationController
   def signal_history
     @area = stock_area
     @performance = Stock::SignalPerformance.new(@area).call
+    @simulation = Stock::StrategySimulation.new(@area).call
+    @simulation_days = simulation_daily_rows(@simulation) if @simulation.ready
     @history = Stock::AREAS.to_h do |area|
       snapshots = StockSignalSnapshot.where(area: area)
       dates = snapshots.distinct.count(:signal_date)
@@ -112,6 +114,22 @@ class StocksController < ApplicationController
 
     def stock_area
       params[:area].to_s.downcase.in?(supported_stock_areas) ? params[:area].downcase : Stock::SZSTK
+    end
+
+    def simulation_daily_rows(result)
+      entries_by_date = result.trades.group_by(&:entry_date)
+      exits_by_date = result.trades.group_by(&:exit_date)
+      previous_equity = result.starting_cash
+
+      result.equity_curve.map do |point|
+        change_pct = ((point.equity - previous_equity) / previous_equity * 100).round(2)
+        previous_equity = point.equity
+        {
+          date: point.date, equity: point.equity, change_pct: change_pct,
+          buys: entries_by_date[point.date]&.size || 0,
+          sells: exits_by_date[point.date]&.size || 0
+        }
+      end
     end
 
     def supported_stock_areas

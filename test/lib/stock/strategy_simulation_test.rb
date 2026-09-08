@@ -9,7 +9,7 @@ class StockStrategySimulationTest < ActiveSupport::TestCase
   end
 
   test "closes a position on a sell signal and books the realized return" do
-    dates = 10.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates = 22.times.map { |index| Date.new(2026, 1, 1) + index }
     dates.each_with_index do |date, index|
       year_signal, lohas_signal, price = case index
       when 0 then ["BUY5", "BUY5", 10.0]
@@ -89,5 +89,16 @@ class StockStrategySimulationTest < ActiveSupport::TestCase
 
     refute result.ready
     assert_equal 0, result.dates
+  end
+
+  test "withholds results until the same minimum date count as SignalPerformance" do
+    (Stock::StrategySimulation::MINIMUM_DATES - 1).times do |index|
+      snapshot(stock: "sz000001", date: Date.new(2026, 1, 1) + index, price: 10.0, year_signal: "BUY5", lohas_signal: "BUY5")
+    end
+
+    result = Stock::StrategySimulation.new(Stock::SZSTK).call
+
+    refute result.ready
+    assert_equal Stock::StrategySimulation::MINIMUM_DATES - 1, result.dates
   end
 end

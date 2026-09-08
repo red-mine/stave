@@ -55,6 +55,70 @@
     </section>
   <% end %>
 
+  <% if @simulation.ready %>
+    <section class="performance-panel" aria-labelledby="simulation-title">
+      <div class="performance-heading">
+        <div>
+          <p class="eyebrow">Full account simulation</p>
+          <h2 id="simulation-title">Strategy simulation</h2>
+        </div>
+        <span><%= @simulation.dates %> trading dates recorded</span>
+      </div>
+      <p class="performance-warning">Equal-weight buys on every "Buy agreement" day, forced exit after <%= Stock::StrategySimulation::MAX_HOLD_DAYS %> trading days without a "Sell alert". No transaction costs.</p>
+
+      <div class="performance-grid">
+        <article class="performance-card">
+          <strong>Account</strong>
+          <dl>
+            <div><dt>Starting cash</dt><dd><%= number_with_precision(@simulation.starting_cash, precision: 2) %></dd></div>
+            <div><dt>Final equity</dt><dd><%= number_with_precision(@simulation.final_equity, precision: 2) %></dd></div>
+            <div><dt>Total return</dt><dd><%= @simulation.total_return %>%</dd></div>
+            <div><dt>Max drawdown</dt><dd><%= @simulation.max_drawdown %>%</dd></div>
+          </dl>
+        </article>
+        <article class="performance-card">
+          <strong>Trades</strong>
+          <dl>
+            <div><dt>Trades closed</dt><dd><%= @simulation.trades.size %></dd></div>
+            <div><dt>Win rate</dt><dd><%= @simulation.trades.any? ? "#{(@simulation.trades.count { |trade| trade.return_pct.positive? }.fdiv(@simulation.trades.size) * 100).round(2)}%" : "—" %></dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-heading">
+          <div><p class="eyebrow">Equity curve</p><h2>Simulated account value</h2></div>
+        </div>
+        <%= line_chart [{ name: "Equity", data: @simulation.equity_curve.map { |point| [point.date.to_s, point.equity] } }], height: "320px", points: false %>
+      </div>
+
+      <div class="table-scroll">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="metric-column">Equity</th>
+              <th class="metric-column">Change</th>
+              <th class="metric-column">Buys</th>
+              <th class="metric-column">Sells</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @simulation_days.each do |day| %>
+              <tr>
+                <td><%= day[:date] %></td>
+                <td class="metric-column"><%= number_with_precision(day[:equity], precision: 2) %></td>
+                <td class="metric-column"><%= day[:change_pct] >= 0 ? "+" : "" %><%= day[:change_pct] %>%</td>
+                <td class="metric-column"><%= day[:buys] %></td>
+                <td class="metric-column"><%= day[:sells] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
   <section class="history-note">
     <h2>Why wait?</h2>
     <p>A single successful stock does not prove that a signal works. The system will wait for at least 20 trading dates, then report sample size, average return, win rate, and drawdown together—not just the best outcomes.</p>
