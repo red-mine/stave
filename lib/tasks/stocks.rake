@@ -214,6 +214,48 @@ task :backtest, [:area] => :environment do |_task, args|
   puts "      Overlapping holding periods are included in the sample."
 end
 
+desc "Simulate following the buy/sell recommendation on every historical day"
+task :simulate_strategy, [:area] => :environment do |_task, args|
+  area = args.area || Stock::SZSTK
+  result = Stock::StrategySimulation.new(area).call
+
+  puts "=" * 60
+  puts "Strategy simulation for #{area.upcase}"
+  puts "=" * 60
+
+  if result.ready
+    puts "Trading dates:     #{result.dates}"
+    puts "Starting cash:     #{format('%.2f', result.starting_cash)}"
+    puts "Final equity:      #{format('%.2f', result.final_equity)}"
+    puts "Total return:      #{result.total_return}%"
+    puts "Max drawdown:      #{result.max_drawdown}%"
+    puts
+
+    if result.trades.any?
+      wins = result.trades.count { |trade| trade.return_pct.positive? }
+      avg_hold = result.trades.sum { |trade| (trade.exit_date - trade.entry_date).to_i }.fdiv(result.trades.size)
+      puts "Trades closed:     #{result.trades.size}"
+      puts "Win rate:          #{(wins.fdiv(result.trades.size) * 100).round(2)}%"
+      puts "Avg holding days:  #{avg_hold.round(1)}"
+    else
+      puts "No trades were closed."
+    end
+
+    puts
+    puts "Equity curve (sampled):"
+    step = [(result.equity_curve.size / 10.0).ceil, 1].max
+    checkpoints = result.equity_curve.each_slice(step).map(&:first)
+    checkpoints << result.equity_curve.last unless checkpoints.last == result.equity_curve.last
+    checkpoints.each { |point| puts "  #{point.date}: #{format('%.2f', point.equity)}" }
+  else
+    puts "No signal history available for #{area.upcase}."
+  end
+
+  puts "\n" + "=" * 60
+  puts "Note: Equal-weight sizing, no transaction costs, forced exit after"
+  puts "      #{Stock::StrategySimulation::MAX_HOLD_DAYS} trading days without a sell signal."
+end
+
 desc "Backfill historical signal snapshots for backtesting by replaying LOHAS/YEARS/STAVE against trimmed price history"
 task :backfill_signal_history, [:days] => :environment do |_task, args|
   days = (args.days || 63).to_i
