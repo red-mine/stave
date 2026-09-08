@@ -608,6 +608,60 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".performance-warning", text: /not a forecast.*transaction costs are not yet deducted/
   end
 
+  test "signal history shows the strategy simulation with a benchmark comparison" do
+    dates = [Date.new(2026, 1, 1), Date.new(2026, 1, 2), Date.new(2026, 1, 5)]
+    equity_curve = [
+      Stock::StrategySimulation::EquityPoint.new(date: dates[0], equity: 100_000.0),
+      Stock::StrategySimulation::EquityPoint.new(date: dates[1], equity: 101_000.0),
+      Stock::StrategySimulation::EquityPoint.new(date: dates[2], equity: 103_000.0)
+    ]
+    trade = Stock::StrategySimulation::Trade.new(
+      stock: "sz000001", entry_date: dates[0], exit_date: dates[2],
+      entry_price: 10.0, exit_price: 10.3, return_pct: 3.0, reason: "sell"
+    )
+    simulation = Stock::StrategySimulation::Result.new(
+      ready: true, dates: dates.size, starting_cash: 100_000.0, final_equity: 103_000.0,
+      total_return: 3.0, max_drawdown: -1.0, trades: [trade], equity_curve: equity_curve
+    )
+    benchmark = Stock::IndexBenchmark::Result.new(
+      available: true, index_code: "sz399001", total_return: 2.0,
+      prices: { dates[0] => 100.0, dates[1] => 100.5, dates[2] => 102.0 }
+    )
+
+    Stock::StrategySimulation.stub(:new, ->(*) { Struct.new(:call).new(simulation) }) do
+      Stock::IndexBenchmark.stub(:new, ->(*) { Struct.new(:call).new(benchmark) }) do
+        get signal_history_path(area: Stock::SZSTK)
+      end
+    end
+
+    assert_response :success
+    assert_select "#simulation-title", text: "Strategy simulation"
+    assert_select ".performance-card", text: /Final equity.*103,?000\.00/m
+    assert_select ".performance-card", text: /Index.*sz399001.*Buy . hold return.*2\.0%/m
+    assert_select ".performance-card", text: /Strategy vs\. index.*1\.0pp/m
+    assert_select "table.stock-table tbody tr", count: 3
+  end
+
+  test "signal history shows a plain note when no index benchmark is available" do
+    dates = [Date.new(2026, 1, 1)] * 20
+    dates = dates.each_with_index.map { |_, index| Date.new(2026, 1, 1) + index }
+    equity_curve = dates.map { |date| Stock::StrategySimulation::EquityPoint.new(date: date, equity: 100_000.0) }
+    simulation = Stock::StrategySimulation::Result.new(
+      ready: true, dates: dates.size, starting_cash: 100_000.0, final_equity: 100_000.0,
+      total_return: 0.0, max_drawdown: 0.0, trades: [], equity_curve: equity_curve
+    )
+    benchmark = Stock::IndexBenchmark::Result.new(available: false, index_code: nil, total_return: nil, prices: {})
+
+    Stock::StrategySimulation.stub(:new, ->(*) { Struct.new(:call).new(simulation) }) do
+      Stock::IndexBenchmark.stub(:new, ->(*) { Struct.new(:call).new(benchmark) }) do
+        get signal_history_path(area: Stock::BJSTK)
+      end
+    end
+
+    assert_response :success
+    assert_select ".performance-card", text: /No index data available for BJ/
+  end
+
   test "JSON errors use a structured response" do
     Stock::Stave.stub(:new, ->(*) { flunk "engine should not be initialized" }) do
       get stock_analysis_path("bad!", format: :json)

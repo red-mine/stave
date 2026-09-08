@@ -42,7 +42,11 @@ class StocksController < ApplicationController
     @area = stock_area
     @performance = Stock::SignalPerformance.new(@area).call
     @simulation = Stock::StrategySimulation.new(@area).call
-    @simulation_days = simulation_daily_rows(@simulation) if @simulation.ready
+    if @simulation.ready
+      @simulation_days = simulation_daily_rows(@simulation)
+      @benchmark = Stock::IndexBenchmark.new(@area, @simulation.equity_curve.map(&:date)).call
+      @benchmark_series = benchmark_series(@benchmark, @simulation) if @benchmark.available
+    end
     @history = Stock::AREAS.to_h do |area|
       snapshots = StockSignalSnapshot.where(area: area)
       dates = snapshots.distinct.count(:signal_date)
@@ -130,6 +134,12 @@ class StocksController < ApplicationController
           sells: exits_by_date[point.date]&.size || 0
         }
       end
+    end
+
+    def benchmark_series(benchmark, simulation)
+      dates = simulation.equity_curve.map(&:date)
+      first_price = benchmark.prices[dates.first]
+      dates.map { |date| [date.to_s, (simulation.starting_cash * benchmark.prices[date] / first_price).round(2)] }
     end
 
     def supported_stock_areas

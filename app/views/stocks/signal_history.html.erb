@@ -64,7 +64,7 @@
         </div>
         <span><%= @simulation.dates %> trading dates recorded</span>
       </div>
-      <p class="performance-warning">Equal-weight buys on every "Buy agreement" day, forced exit after <%= Stock::StrategySimulation::MAX_HOLD_DAYS %> trading days without a "Sell alert". No transaction costs.</p>
+      <p class="performance-warning">Equal-weight buys on every "Buy agreement" day, forced exit after <%= Stock::StrategySimulation::MAX_HOLD_DAYS %> trading days without a "Sell alert". Assumes <%= number_to_percentage(Stock::StrategySimulation::BUY_COST_RATE * 100, precision: 2) %> commission on buys and <%= number_to_percentage(Stock::StrategySimulation::SELL_COST_RATE * 100, precision: 2) %> commission + stamp duty on sells.</p>
 
       <div class="performance-grid">
         <article class="performance-card">
@@ -83,13 +83,29 @@
             <div><dt>Win rate</dt><dd><%= @simulation.trades.any? ? "#{(@simulation.trades.count { |trade| trade.return_pct.positive? }.fdiv(@simulation.trades.size) * 100).round(2)}%" : "—" %></dd></div>
           </dl>
         </article>
+        <article class="performance-card">
+          <strong>Benchmark</strong>
+          <% if @benchmark.available %>
+            <dl>
+              <div><dt>Index</dt><dd><%= @benchmark.index_code %></dd></div>
+              <div><dt>Buy &amp; hold return</dt><dd><%= @benchmark.total_return %>%</dd></div>
+              <div><dt>Strategy vs. index</dt><dd><%= (@simulation.total_return - @benchmark.total_return).round(2) %>pp</dd></div>
+            </dl>
+          <% else %>
+            <p>No index data available for <%= @area.upcase %>.</p>
+          <% end %>
+        </article>
       </div>
 
       <div class="chart-card">
         <div class="chart-heading">
-          <div><p class="eyebrow">Equity curve</p><h2>Simulated account value</h2></div>
+          <div><p class="eyebrow">Equity curve</p><h2>Simulated account value vs. buy &amp; hold</h2></div>
         </div>
-        <%= line_chart [{ name: "Equity", data: @simulation.equity_curve.map { |point| [point.date.to_s, point.equity] } }], height: "320px", points: false %>
+        <%
+          chart_series = [{ name: "Strategy", data: @simulation.equity_curve.map { |point| [point.date.to_s, point.equity] } }]
+          chart_series << { name: "Index (buy & hold)", data: @benchmark_series } if @benchmark.available
+        %>
+        <%= line_chart chart_series, height: "320px", points: false %>
       </div>
 
       <div class="table-scroll">

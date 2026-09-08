@@ -19,7 +19,7 @@ class StockStrategySimulationTest < ActiveSupport::TestCase
       snapshot(stock: "sz000001", date: date, price: price, year_signal: year_signal, lohas_signal: lohas_signal)
     end
 
-    result = Stock::StrategySimulation.new(Stock::SZSTK).call
+    result = Stock::StrategySimulation.new(Stock::SZSTK, buy_cost_rate: 0.0, sell_cost_rate: 0.0).call
 
     assert result.ready
     assert_equal 1, result.trades.size
@@ -58,7 +58,9 @@ class StockStrategySimulationTest < ActiveSupport::TestCase
       snapshot(stock: "sz000002", date: date, price: 20.0 + index * 1.0, year_signal: signals[0], lohas_signal: signals[1])
     end
 
-    result = Stock::StrategySimulation.new(Stock::SZSTK, starting_cash: 100_000.0, max_hold_days: 20).call
+    result = Stock::StrategySimulation.new(
+      Stock::SZSTK, starting_cash: 100_000.0, max_hold_days: 20, buy_cost_rate: 0.0, sell_cost_rate: 0.0
+    ).call
 
     assert_equal 100_000.0, result.equity_curve.first.equity
     assert_equal 2, result.trades.size
@@ -82,6 +84,47 @@ class StockStrategySimulationTest < ActiveSupport::TestCase
     assert_empty result.trades
     assert_equal 100_000.0, result.final_equity
     assert_equal 0.0, result.total_return
+  end
+
+  test "buy and sell costs reduce the realized return and final equity" do
+    dates = 22.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates.each_with_index do |date, index|
+      year_signal, lohas_signal, price = case index
+      when 0 then ["BUY5", "BUY5", 10.0]
+      when 3 then ["SEL7", "SEL7", 12.0]
+      else ["WAT9", "WAT9", 10.0 + index * 0.1]
+      end
+      snapshot(stock: "sz000001", date: date, price: price, year_signal: year_signal, lohas_signal: lohas_signal)
+    end
+
+    result = Stock::StrategySimulation.new(Stock::SZSTK, buy_cost_rate: 0.01, sell_cost_rate: 0.02).call
+
+    trade = result.trades.first
+    # entry: 100_000 * (1 - 0.01) = 99_000 net exposure bought at 10.0
+    # exit: 99_000 * (12.0 / 10.0) = 118_800 raw, * (1 - 0.02) = 116_424 net
+    # return_pct/total_return are rounded to 2 decimals: 16.424 -> 16.42
+    assert_equal 116_424.0, result.final_equity
+    assert_equal 16.42, trade.return_pct
+    assert_equal 16.42, result.total_return
+  end
+
+  test "a position bought today can never be exited on that same day (T+1)" do
+    dates = 22.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates.each_with_index do |date, index|
+      year_signal, lohas_signal = index.zero? ? ["BUY5", "BUY5"] : ["WAT9", "WAT9"]
+      snapshot(stock: "sz000001", date: date, price: 10.0, year_signal: year_signal, lohas_signal: lohas_signal)
+    end
+
+    # max_hold_days: 0 would, if same-day exits were possible, close the
+    # position the instant it opens. The loop order in #call makes that
+    # structurally impossible: the earliest a position can be evaluated for
+    # exit is the day after it was entered.
+    result = Stock::StrategySimulation.new(Stock::SZSTK, max_hold_days: 0).call
+
+    trade = result.trades.first
+    assert_equal dates[0], trade.entry_date
+    assert_equal dates[1], trade.exit_date
+    refute_equal trade.entry_date, trade.exit_date
   end
 
   test "reports not ready when there is no signal history" do

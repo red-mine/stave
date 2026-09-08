@@ -224,11 +224,18 @@ task :simulate_strategy, [:area] => :environment do |_task, args|
   puts "=" * 60
 
   if result.ready
+    benchmark = Stock::IndexBenchmark.new(area, result.equity_curve.map(&:date)).call
+
     puts "Trading dates:     #{result.dates}"
     puts "Starting cash:     #{format('%.2f', result.starting_cash)}"
     puts "Final equity:      #{format('%.2f', result.final_equity)}"
     puts "Total return:      #{result.total_return}%"
     puts "Max drawdown:      #{result.max_drawdown}%"
+    if benchmark.available
+      puts "Benchmark (#{benchmark.index_code}): #{benchmark.total_return}% buy & hold (strategy #{(result.total_return - benchmark.total_return).round(2) >= 0 ? "+" : ""}#{(result.total_return - benchmark.total_return).round(2)}pp vs. index)"
+    else
+      puts "Benchmark:         no index data available for #{area.upcase}"
+    end
     puts
 
     if result.trades.any?
@@ -263,14 +270,17 @@ task :simulate_strategy, [:area] => :environment do |_task, args|
   end
 
   puts "\n" + "=" * 60
-  puts "Note: Equal-weight sizing, no transaction costs, forced exit after"
-  puts "      #{Stock::StrategySimulation::MAX_HOLD_DAYS} trading days without a sell signal."
+  puts "Note: Equal-weight sizing, forced exit after #{Stock::StrategySimulation::MAX_HOLD_DAYS} trading"
+  puts "      days without a sell signal. Assumes #{(Stock::StrategySimulation::BUY_COST_RATE * 100).round(2)}% commission on buys and"
+  puts "      #{(Stock::StrategySimulation::SELL_COST_RATE * 100).round(2)}% commission + stamp duty on sells."
 end
 
 desc "Backfill historical signal snapshots for backtesting by replaying LOHAS/YEARS/STAVE against trimmed price history"
-task :backfill_signal_history, [:days] => :environment do |_task, args|
-  days = (args.days || 63).to_i
-  abort "days must be a positive integer" unless days.positive?
+task :backfill_signal_history, [:to, :from] => :environment do |_task, args|
+  to = (args.to || 63).to_i
+  from = (args.from || 1).to_i
+  abort "to must be a positive integer" unless to.positive?
+  abort "from must be a positive integer no greater than to" unless from.positive? && from <= to
 
   original_config = ActiveRecord::Base.connection_db_config
   production_database = original_config.database
@@ -287,7 +297,7 @@ task :backfill_signal_history, [:days] => :environment do |_task, args|
     ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: scratch_path.to_s)
 
     Stock::AREAS.each do |area|
-      (1..days).each do |trim|
+      (from..to).each do |trim|
         StocksCoefsLoha.where(area: area).delete_all
         StocksCoefsYear.where(area: area).delete_all
         StocksCoefsStav.where(area: area).delete_all
@@ -303,7 +313,7 @@ task :backfill_signal_history, [:days] => :environment do |_task, args|
         Stock::Stock.new(area, Stock::STAVE).good_result
         captured = Stock::SignalSnapshot.capture!(area)
 
-        puts "#{area.upcase} trim=#{trim}/#{days}: captured #{captured} row(s)"
+        puts "#{area.upcase} trim=#{trim}/#{to}: captured #{captured} row(s)"
       end
     end
   ensure
