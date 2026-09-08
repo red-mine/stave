@@ -1,10 +1,11 @@
 module Stock
   class Stock
 
-    def initialize(good_area, good_years)
+    def initialize(good_area, good_years, trim: 0)
       @good_area    = good_area
       @good_years   = good_years
       @good_days    = good_years + STAVE
+      @good_trim    = trim
       @good_models  = []
       @good_data_cache = {}
     end
@@ -350,14 +351,14 @@ module Stock
 
     def _read_good_data(good_stock)
       good_path     = _good_path(good_stock)
-      return [] unless File.file?(good_path) && File.size(good_path) > @good_days * 32
+      return [] unless File.file?(good_path) && File.size(good_path) > (@good_days + @good_trim) * 32
 
       File.open(good_path, "rb") do |good_file|
-        good_file.seek(-32, IO::SEEK_END)
+        good_file.seek(-(1 + @good_trim) * 32, IO::SEEK_END)
         good_last = _good_stock(good_file, -1)
         return [] if good_last[:price] > STAVE
 
-        good_file.seek(-@good_days * 32, IO::SEEK_END)
+        good_file.seek(-(@good_days + @good_trim) * 32, IO::SEEK_END)
         good_binary = good_file.read(@good_days * 32)
         return Array.new(@good_days) do |good_index|
           _good_record(good_binary, good_index * 32, good_index)
@@ -399,10 +400,10 @@ module Stock
 
     def _good_model_data(good_stock)
       good_path = _good_path(good_stock)
-      return [[], nil] unless File.file?(good_path) && File.size(good_path) > @good_days * 32
+      return [[], nil] unless File.file?(good_path) && File.size(good_path) > (@good_days + @good_trim) * 32
 
       File.open(good_path, "rb") do |good_file|
-        good_file.seek(-@good_days * 32, IO::SEEK_END)
+        good_file.seek(-(@good_days + @good_trim) * 32, IO::SEEK_END)
         good_binary = good_file.read(@good_days * 32)
         good_last_offset = (@good_days - 1) * 32
         good_last = _good_record(good_binary, good_last_offset, -1)
@@ -417,10 +418,10 @@ module Stock
 
     def _good_last_date(good_stock)
       good_path = _good_path(good_stock)
-      return nil unless File.file?(good_path) && File.size(good_path) >= 32
+      return nil unless File.file?(good_path) && File.size(good_path) >= (1 + @good_trim) * 32
 
       File.open(good_path, "rb") do |good_file|
-        good_file.seek(-32, IO::SEEK_END)
+        good_file.seek(-(1 + @good_trim) * 32, IO::SEEK_END)
         _good_stock(good_file, -1)[:date]
       end
     end
@@ -464,7 +465,7 @@ module Stock
     def _good_files
       Dir.children(_good_base).select do |good_file|
         good_path = _good_path(good_file[0, 8])
-        File.file?(good_path) && File.size(good_path) > @good_days * 32
+        File.file?(good_path) && File.size(good_path) > (@good_days + @good_trim) * 32
       end
     end
 

@@ -213,3 +213,63 @@ task :backtest, [:area] => :environment do |_task, args|
   puts "Note: Returns are not annualized. Transaction costs are not deducted."
   puts "      Overlapping holding periods are included in the sample."
 end
+
+desc "Backfill historical signal snapshots for backtesting by replaying LOHAS/YEARS/STAVE against trimmed price history"
+task :backfill_signal_history, [:days] => :environment do |_task, args|
+  days = (args.days || 63).to_i
+  abort "days must be a positive integer" unless days.positive?
+
+  original_config = ActiveRecord::Base.connection_db_config
+  production_database = original_config.database
+  abort "No active SQLite database found to back up" unless production_database && File.file?(production_database)
+
+  scratch_dir = Rails.root.join("tmp", "backfill")
+  FileUtils.mkdir_p(scratch_dir)
+  scratch_path = scratch_dir.join("scratch-#{Time.current.strftime('%Y%m%d-%H%M%S-%L')}.sqlite3")
+
+  puts "Cloning #{production_database} to #{scratch_path}..."
+  Stock::DatabaseBackup.new.call(scratch_path)
+
+  begin
+    ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: scratch_path.to_s)
+
+    Stock::AREAS.each do |area|
+      (1..days).each do |trim|
+        StocksCoefsLoha.where(area: area).delete_all
+        StocksCoefsYear.where(area: area).delete_all
+        StocksCoefsStav.where(area: area).delete_all
+
+        lohas = Stock::Stock.new(area, Stock::LOHAS, trim: trim)
+        lohas.good_models(StocksCoefsLoha)
+        lohas.good_staves(StocksCoefsLoha)
+
+        years = Stock::Stock.new(area, Stock::YEARS, trim: trim)
+        years.good_models(StocksCoefsYear)
+        years.good_staves(StocksCoefsYear)
+
+        Stock::Stock.new(area, Stock::STAVE).good_result
+        captured = Stock::SignalSnapshot.capture!(area)
+
+        puts "#{area.upcase} trim=#{trim}/#{days}: captured #{captured} row(s)"
+      end
+    end
+  ensure
+    ActiveRecord::Base.establish_connection(original_config)
+  end
+
+  puts "Merging backfilled snapshots into #{production_database}..."
+  connection = ActiveRecord::Base.connection
+  connection.execute("ATTACH DATABASE #{connection.quote(scratch_path.to_s)} AS backfill")
+  inserted = connection.exec_update(<<~SQL)
+    INSERT OR IGNORE INTO stock_signal_snapshots
+      (stock, area, signal_date, price, long_trend, year_trend, lohas_signal, year_signal,
+       lohas_channel, lohas_stave, year_channel, year_stave, created_at, updated_at)
+    SELECT stock, area, signal_date, price, long_trend, year_trend, lohas_signal, year_signal,
+           lohas_channel, lohas_stave, year_channel, year_stave, created_at, updated_at
+    FROM backfill.stock_signal_snapshots
+  SQL
+  connection.execute("DETACH DATABASE backfill")
+  File.delete(scratch_path)
+
+  puts "Backfill complete. Inserted #{inserted} new signal snapshot row(s)."
+end

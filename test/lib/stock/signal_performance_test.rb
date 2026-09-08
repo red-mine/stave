@@ -33,6 +33,35 @@ class StockSignalPerformanceTest < ActiveSupport::TestCase
     assert_operator cohort.average_drawdown, :<, 0
   end
 
+  test "sorts tied cohorts that mix a missing signal code with a present one" do
+    dates = 20.times.map { |index| Date.new(2026, 1, 1) + index }
+
+    5.times do |stock_index|
+      dates.each_with_index do |date, date_index|
+        StockSignalSnapshot.create!(
+          stock: format("sza%06d", stock_index), area: Stock::SZSTK,
+          signal_date: date, price: 100 - date_index,
+          year_signal: nil, lohas_signal: "SEL7"
+        )
+      end
+    end
+    5.times do |stock_index|
+      dates.each_with_index do |date, date_index|
+        StockSignalSnapshot.create!(
+          stock: format("szb%06d", stock_index), area: Stock::SZSTK,
+          signal_date: date, price: 100 - date_index,
+          year_signal: "SEL3", lohas_signal: nil
+        )
+      end
+    end
+
+    report = Stock::SignalPerformance.new(Stock::SZSTK, horizon: 5).call(signal_type: :sell)
+
+    assert report.ready
+    assert_equal 2, report.cohorts.size
+    assert_equal [75, 75], report.cohorts.map(&:sample_size)
+  end
+
   test "withholds results until twenty distinct market dates exist" do
     19.times do |index|
       StockSignalSnapshot.create!(

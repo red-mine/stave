@@ -28,8 +28,8 @@ class StockCalculationTest < ActiveSupport::TestCase
   end
 
   class StockWithFile < Stock::Stock
-    def initialize(path)
-      super(Stock::SZSTK, Stock::STAVE)
+    def initialize(path, trim: 0)
+      super(Stock::SZSTK, Stock::STAVE, trim: trim)
       @path = path
     end
 
@@ -97,6 +97,51 @@ class StockCalculationTest < ActiveSupport::TestCase
       assert_equal start_date + 1, data.first[:date]
       assert_equal 10.01, data.first[:price]
       assert_equal start_date + Stock::STAVE * 2, data.last[:date]
+    end
+  end
+
+  test "trim reproduces the result of a physically truncated file" do
+    Tempfile.create(["stock", ".day"], binmode: true) do |file|
+      start_date = Date.new(2025, 1, 1)
+      total_records = Stock::STAVE * 2 + 10
+      total_records.times do |index|
+        date = start_date + index
+        encoded_date = date.year * 10_000 + date.month * 100 + date.day
+        file.write([encoded_date, 0, 0, 0, 1_000 + index].pack("L<5") + "\0" * 12)
+      end
+      file.flush
+
+      trim = 7
+      truncated_path = "#{file.path}.truncated"
+      File.binwrite(truncated_path, File.binread(file.path, (total_records - trim) * 32))
+
+      begin
+        trimmed = StockWithFile.new(file.path, trim: trim).send(:_good_data, "TEST")
+        truncated = StockWithFile.new(truncated_path).send(:_good_data, "TEST")
+
+        refute_empty trimmed
+        assert_equal truncated, trimmed
+      ensure
+        File.delete(truncated_path)
+      end
+    end
+  end
+
+  test "trim beyond available history returns no data instead of raising" do
+    Tempfile.create(["stock", ".day"], binmode: true) do |file|
+      start_date = Date.new(2025, 1, 1)
+      total_records = Stock::STAVE * 2 + 5
+      total_records.times do |index|
+        date = start_date + index
+        encoded_date = date.year * 10_000 + date.month * 100 + date.day
+        file.write([encoded_date, 0, 0, 0, 1_000 + index].pack("L<5") + "\0" * 12)
+      end
+      file.flush
+
+      assert_equal Stock::STAVE * 2, StockWithFile.new(file.path, trim: 4).send(:_good_data, "TEST").length
+      assert_empty StockWithFile.new(file.path, trim: 5).send(:_good_data, "TEST")
+      assert_equal [[], nil], StockWithFile.new(file.path, trim: 10).send(:_good_model_data, "TEST")
+      assert_nil StockWithFile.new(file.path, trim: total_records).send(:_good_last_date, "TEST")
     end
   end
 

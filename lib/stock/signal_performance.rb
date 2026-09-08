@@ -70,7 +70,7 @@ module Stock
           average_drawdown: rounded(values.sum { |value| value[:drawdown] }.fdiv(values.size)),
           trend_group: trend_group
         )
-      end.sort_by { |cohort| [-cohort.sample_size, cohort.year_signal, cohort.lohas_signal, cohort.trend_group.to_s] }
+      end.sort_by { |cohort| [-cohort.sample_size, cohort.year_signal.to_s, cohort.lohas_signal.to_s, cohort.trend_group.to_s] }
 
       Report.new(ready: true, dates: dates.size, horizon: @horizon, cohorts: cohorts)
     end
