@@ -81,7 +81,7 @@ gem "bootsnap", require: false
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "brakeman", "~> 8.0", ">= 8.0.5", require: false
+  gem "brakeman", "~> 8.0", require: false
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
   gem "bundler-audit", require: false
   gem "fiddle", require: false
