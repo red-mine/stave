@@ -27,6 +27,12 @@ bundle exec rails daily_refresh
 
 - **交易日每天一次** — 收盘后、次日开盘前运行
 - **不要重复运行** — `daily_refresh` 有锁机制，同一天不会重复处理
+- **只装一个调度器** — systemd 定时器和旧版 cron 安装器二选一。两者同时存在会在
+  同一时刻启动两次刷新，互相覆盖 `tmp/tdx-update/hsjday.zip.part`，导致下载的
+  压缩包损坏。`bin/daily-refresh.sh` 现在用 `flock`（锁文件
+  `tmp/daily-refresh.lock`）串行化整个流程，重复启动会打印
+  `Another Stock Stave refresh already holds the lock` 后直接跳过；
+  安装 systemd 定时器时也会自动删掉遗留的 cron 条目
 
 ## 什么时候可以回测
 

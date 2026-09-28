@@ -5,11 +5,13 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
   setup do
     Rails.application.load_tasks unless Rake::Task.task_defined?("daily_refresh")
     Rake::Task["daily_refresh"].reenable
+    Rake::Task["record_refresh_failure"].reenable if Rake::Task.task_defined?("record_refresh_failure")
     @refresh_directory = Dir.mktmpdir("daily-refresh-test")
   end
 
   teardown do
     Rake::Task["daily_refresh"].reenable
+    Rake::Task["record_refresh_failure"].reenable if Rake::Task.task_defined?("record_refresh_failure")
     FileUtils.remove_entry(@refresh_directory) if File.exist?(@refresh_directory)
   end
 
@@ -77,6 +79,27 @@ class DailyRefreshTaskTest < ActiveSupport::TestCase
         end
       end
     end
+  end
+
+  test "records a failed status when the runner aborts before the Rails stage" do
+    refresh_run = Stock::RefreshRun.new(
+      lock_path: File.join(@refresh_directory, "refresh.lock"),
+      status_path: File.join(@refresh_directory, "status.json"),
+      scheduled_status_path: File.join(@refresh_directory, "scheduled-status.json")
+    )
+    ENV["STOCK_REFRESH_ERROR"] = "TongdaXin data update failed (exit code 1)"
+
+    Stock::RefreshRun.stub(:new, ->(*) { refresh_run }) do
+      output, = capture_io { Rake::Task["record_refresh_failure"].invoke }
+      assert_match(/Recorded refresh failure: TongdaXin data update failed/, output)
+    end
+
+    status = JSON.parse(File.read(File.join(@refresh_directory, "status.json")))
+    assert_equal "failed", status["state"]
+    assert_equal "TongdaXin data update failed (exit code 1)", status["error"]
+    assert status["finished_at"].present?
+  ensure
+    ENV.delete("STOCK_REFRESH_ERROR")
   end
 
   test "backs up before capturing snapshots even when no recalculation is needed" do

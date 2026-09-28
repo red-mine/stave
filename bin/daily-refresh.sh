@@ -4,6 +4,10 @@
 # environment contract the Rake task and RefreshRun status files expect.
 set -euo pipefail
 
+# Captured before the option loop below consumes "$@", so the flock re-exec can
+# hand the original arguments to the child that actually does the work.
+ORIGINAL_ARGS=("$@")
+
 DATABASE_PATH=""
 RUN_SOURCE="manual"
 LOG_RETENTION=30
@@ -27,6 +31,32 @@ while [[ $# -gt 0 ]]; do
 done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+export STOCK_REFRESH_STARTED_AT="$STARTED_AT"
+
+# The whole run has to be serialized. Two schedulers (or a manual run racing a
+# scheduled one) used to share tmp/tdx-update/hsjday.zip.part and corrupt each
+# other's archive, and the lock the Rails task takes is only held once Rails has
+# already booted — too late to protect the download. Re-exec under flock so a
+# second copy skips instead of racing the first one.
+LOCK_PATH="${STOCK_REFRESH_LOCK:-$REPO_ROOT/tmp/daily-refresh.lock}"
+if [[ -z "${STAVE_REFRESH_LOCK_HELD:-}" ]]; then
+  if command -v flock >/dev/null 2>&1; then
+    mkdir -p "$(dirname "$LOCK_PATH")"
+    export STAVE_REFRESH_LOCK_HELD=1
+    set +e
+    flock --exclusive --nonblock --conflict-exit-code 99 "$LOCK_PATH" "$0" "${ORIGINAL_ARGS[@]}"
+    lock_status=$?
+    set -e
+    if [[ "$lock_status" -ne 99 ]]; then
+      exit "$lock_status"
+    fi
+    echo "[$STARTED_AT] Another Stock Stave refresh already holds the lock; skipping this run" >&2
+    exit 0
+  fi
+  echo "[$STARTED_AT] flock is unavailable; running without the concurrency lock" >&2
+fi
+
 DATABASE_PATH="${DATABASE_PATH:-$REPO_ROOT/db/stock.sqlite3}"
 TDX_DATA_PATH="${TDX_DATA_PATH:-$REPO_ROOT/vipdoc}"
 LOG_DIR="$REPO_ROOT/log/daily-refresh"
@@ -55,6 +85,20 @@ if [[ ! -f "$DATABASE_PATH" ]]; then
   exit 1
 fi
 
+# Keep the status files honest when a run dies before Rails ever boots. The
+# Rails stage writes "failed" itself, but it never runs when the download fails,
+# and leaving the previous "succeeded" in place made the website report healthy
+# data while it silently aged.
+record_refresh_failure() {
+  local message="$1"
+  export STOCK_REFRESH_ERROR="$message"
+  if "$RUBY_BIN" bin/rails record_refresh_failure >/dev/null 2>&1; then
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Recorded refresh failure in the status files" | tee -a "$LOG_FILE"
+  else
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Could not record the refresh failure in the status files" | tee -a "$LOG_FILE"
+  fi
+}
+
 mkdir -p "$LOG_DIR"
 export STOCK_DATABASE="$DATABASE_PATH"
 export STOCK_REFRESH_SOURCE="$RUN_SOURCE"
@@ -75,6 +119,7 @@ else
   update_status="${PIPESTATUS[0]}"
   if [[ "$update_status" -ne 0 ]]; then
     echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] TongdaXin update failed with exit code $update_status" | tee -a "$LOG_FILE"
+    record_refresh_failure "TongdaXin data update failed (exit code $update_status)"
     cp "$LOG_FILE" "$ARCHIVE_LOG"
     exit "$update_status"
   fi

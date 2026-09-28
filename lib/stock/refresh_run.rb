@@ -40,6 +40,19 @@ module Stock
       end
     end
 
+    # Records a failure that happened outside `call`, for example when the shell
+    # runner aborts on a TongdaXin download error before `daily_refresh` ever
+    # boots. Without this the previous "succeeded" status would stay on screen
+    # while the data silently ages.
+    def record_failure!(message, started_at: nil)
+      write_status(run_status(
+        state: "failed",
+        started_at: started_at || shell_started_at || @clock.call,
+        finished_at: @clock.call,
+        error: message.to_s
+      ))
+    end
+
     def status
       read_status(@status_path)
     end
@@ -75,6 +88,17 @@ module Stock
       attributes.merge(source: @source, environment: @environment).tap do |status|
         status[:recovered_stale_lock] = true if @recovered_stale_lock
       end
+    end
+
+    # The shell runners export the moment they started so a pre-Rails failure
+    # still reports an accurate duration.
+    def shell_started_at
+      raw = ENV["STOCK_REFRESH_STARTED_AT"]
+      return nil if raw.blank?
+
+      Time.zone.parse(raw)
+    rescue ArgumentError, TypeError
+      nil
     end
 
     def write_status(attributes)

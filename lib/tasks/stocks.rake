@@ -129,6 +129,13 @@ task daily_refresh: :environment do
   end
 end
 
+desc "Record a refresh failure for runs that abort before the Rails stage"
+task record_refresh_failure: :environment do
+  message = ENV.fetch("STOCK_REFRESH_ERROR", "Refresh aborted before the Rails stage started")
+  Stock::RefreshRun.new.record_failure!(message)
+  puts "Recorded refresh failure: #{message}"
+end
+
 desc "Preview which markets daily_refresh would recalculate without changing data"
 task refresh_plan: :environment do
   checker = Stock::DataStatus.new

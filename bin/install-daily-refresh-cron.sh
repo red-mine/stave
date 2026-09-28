@@ -7,6 +7,16 @@ set -euo pipefail
 
 echo "Warning: cron installation is deprecated; prefer bin/install-daily-refresh-timer.sh." >&2
 
+# Refuse when the systemd timer owns the schedule. Two schedulers start the
+# runner twice within seconds of each other, and the concurrent runs corrupt the
+# shared download in tmp/tdx-update even though the runner now locks the rest.
+if systemctl --user is-active --quiet stave-daily-refresh.timer 2>/dev/null; then
+  echo "Refusing to install: the systemd timer stave-daily-refresh.timer is active." >&2
+  echo "Disable it with 'systemctl --user disable --now stave-daily-refresh.timer' first," >&2
+  echo "or install the timer instead with bin/install-daily-refresh-timer.sh." >&2
+  exit 1
+fi
+
 AT="20:30"
 TASK_NAME="Stock Stave Daily Refresh"
 MARKER="# stock-stave-daily-refresh"

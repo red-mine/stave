@@ -16,6 +16,50 @@ class StockRefreshRunTest < ActiveSupport::TestCase
     end
   end
 
+  test "records a failure that happened before the Rails stage" do
+    Dir.mktmpdir do |directory|
+      now = Time.zone.parse("2026-09-27 12:35:30")
+      runner = build_runner(directory, clock: -> { now })
+      runner.record_failure!("TongdaXin data update failed (exit code 1)")
+
+      assert_equal "failed", runner.status[:state]
+      assert_equal "TongdaXin data update failed (exit code 1)", runner.status[:error]
+      assert_equal "scheduled", runner.status[:source]
+      assert_equal now.iso8601, runner.status[:started_at]
+      assert_equal now.iso8601, runner.status[:finished_at]
+      assert_equal "failed", runner.scheduled_status[:state]
+    end
+  end
+
+  test "uses the runner start time from the environment for a pre-Rails failure" do
+    Dir.mktmpdir do |directory|
+      now = Time.zone.parse("2026-09-27 12:35:30")
+      runner = build_runner(directory, clock: -> { now })
+      ENV["STOCK_REFRESH_STARTED_AT"] = "2026-09-27T12:30:01Z"
+
+      runner.record_failure!("TongdaXin data update failed (exit code 1)")
+
+      assert_equal "2026-09-27T12:30:01Z", runner.status[:started_at]
+      assert_equal now.iso8601, runner.status[:finished_at]
+    ensure
+      ENV.delete("STOCK_REFRESH_STARTED_AT")
+    end
+  end
+
+  test "falls back to the current time when the runner start time is not a timestamp" do
+    Dir.mktmpdir do |directory|
+      now = Time.zone.parse("2026-09-27 12:35:30")
+      runner = build_runner(directory, clock: -> { now })
+      ENV["STOCK_REFRESH_STARTED_AT"] = "not-a-timestamp"
+
+      runner.record_failure!("TongdaXin data update failed (exit code 1)")
+
+      assert_equal now.iso8601, runner.status[:started_at]
+    ensure
+      ENV.delete("STOCK_REFRESH_STARTED_AT")
+    end
+  end
+
   test "refuses a concurrent refresh" do
     Dir.mktmpdir do |directory|
       runner = build_runner(directory)

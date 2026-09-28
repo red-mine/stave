@@ -18,6 +18,8 @@ $database = if ($DatabasePath) {
 $logDirectory = Join-Path $repository "log\daily-refresh"
 $logFile = Join-Path $logDirectory "latest.log"
 $archiveLog = Join-Path $logDirectory "refresh-$(Get-Date -Format 'yyyyMMdd-HHmmss-fff').log"
+# Let a failure that happens before Rails boots still report when the run began.
+$env:STOCK_REFRESH_STARTED_AT = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
 if (-not (Test-Path -LiteralPath $RubyPath -PathType Leaf)) {
   throw "Ruby executable not found: $RubyPath"
@@ -53,6 +55,16 @@ try {
   "[$(Get-Date -Format o)] Daily refresh succeeded" | Tee-Object -FilePath $logFile -Append
 } catch {
   "[$(Get-Date -Format o)] $($_.Exception.Message)" | Tee-Object -FilePath $logFile -Append
+  # Rails records failures itself once it boots; without this a TongdaXin
+  # download error would leave the previous success on the website while the
+  # data silently aged.
+  $env:STOCK_REFRESH_ERROR = $_.Exception.Message
+  try {
+    & $RubyPath bin\rails record_refresh_failure 2>&1 | Tee-Object -FilePath $logFile -Append
+  } catch {
+    "[$(Get-Date -Format o)] Could not record the refresh failure in the status files: $($_.Exception.Message)" |
+      Tee-Object -FilePath $logFile -Append
+  }
   exit 1
 } finally {
   if (Test-Path -LiteralPath $logFile) {

@@ -146,6 +146,22 @@ systemd user timers and records the installed refresh schedule in
 and view refresh logs with
 `journalctl --user -u stave-daily-refresh.service`.
 
+The whole run is serialized with `flock` on `tmp/daily-refresh.lock`, covering the
+TongdaXin download as well as the recalculation. Two copies of the runner used to
+share `tmp/tdx-update/hsjday.zip.part` and corrupt each other's archive, so a
+manual run that starts while the timer is running now skips with
+`Another Stock Stave refresh already holds the lock` instead of racing it. Keep a
+single scheduler for this reason: installing the timer removes a leftover
+`daily-refresh.sh` cron entry left by the deprecated installer. Set
+`STOCK_REFRESH_LOCK` to use a different lock file.
+
+A failure that happens before Rails ever boots — a TongdaXin download error, for
+instance — is still written to the status files by the `record_refresh_failure`
+task, so a broken download makes the front page report
+`Last scheduled refresh failed` instead of leaving an older success on screen
+while the data ages. The status records the runner's own start time in
+`started_at`, so the reported duration covers the failed download too.
+
 `bin/install-daily-refresh-cron.sh` remains available as a deprecated fallback
 for Linux systems without systemd user services.
 
