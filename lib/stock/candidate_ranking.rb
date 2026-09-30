@@ -14,7 +14,7 @@ module Stock
     }.freeze
 
     Candidate = Data.define(:record, :score, :confidence, :reasons, :history_state) do
-      delegate :stock, :price, :date, :years, :lohas, :year, :loha, to: :record
+      delegate :stock, :price, :date, :year_signal, :lohas_signal, :year, :loha, to: :record
     end
 
     def initialize(area)
@@ -27,7 +27,7 @@ module Stock
       return [] unless market_date
 
       records = market
-        .where(date: market_date, years: BUY_SIGNALS, lohas: BUY_SIGNALS)
+        .where(date: market_date, year_signal: BUY_SIGNALS, lohas_signal: BUY_SIGNALS)
         .where(a_share_condition, *A_SHARE_CODE_PATTERNS.fetch(@area))
         .where("year > 0 AND loha > 0")
 
@@ -46,7 +46,7 @@ module Stock
     end
 
     def evaluate(record)
-      score = SIGNAL_POINTS.fetch(record.years) + SIGNAL_POINTS.fetch(record.lohas)
+      score = SIGNAL_POINTS.fetch(record.year_signal) + SIGNAL_POINTS.fetch(record.lohas_signal)
       reasons = ["Both horizons are in a buy-family signal"]
 
       positive_trends = [record.year, record.loha].count { |trend| trend.to_f.positive? }
@@ -57,7 +57,7 @@ module Stock
       score += supported_positions * 4
       reasons << "Price position is supported on both horizons" if supported_positions == 4
 
-      if record.years == record.lohas
+      if record.year_signal == record.lohas_signal
         score += 6
         reasons << "The two horizons show the same signal"
       end

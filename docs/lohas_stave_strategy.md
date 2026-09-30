@@ -57,7 +57,7 @@ long-term, low-maintenance investing (no daily monitoring needed), hence the
 | Combined stave+channel signal | `Stock::Stock#_good_price` (private) |
 | Per-stock five-line series | `StocksStaveLoha` / `StocksStaveYear` tables |
 | Per-stock channel series | `StocksBollsLoha` / `StocksBollsYear` tables |
-| Combined LOHAS+Year signal | `StocksCoefsStav` table (`loha`/`year` = slope, `lohas`/`years` = signal code, `boll3`/`stav3`/`boll1`/`stav1` = zone codes) |
+| Combined LOHAS+Year signal | `StocksCoefsStav` table (`loha`/`year` = slope, `lohas_signal`/`year_signal` = signal code, `boll3`/`stav3`/`boll1`/`stav1` = zone codes) |
 
 ## Signal codes (`_good_price`) — current status
 

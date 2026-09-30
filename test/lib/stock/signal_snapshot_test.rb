@@ -4,7 +4,7 @@ class StockSignalSnapshotTest < ActiveSupport::TestCase
   test "captures latest signals without rewriting earlier history" do
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, date: Date.new(2026, 7, 31), price: 12.5,
-      loha: 0.03, year: 0.02, lohas: "BUY5", years: "SAF1",
+      loha: 0.03, year: 0.02, lohas_signal: "BUY5", year_signal: "SAF1",
       boll3: 1, stav3: 1, boll1: 0, stav1: -1
     )
     StockSignalSnapshot.create!(
@@ -31,7 +31,7 @@ class StockSignalSnapshotTest < ActiveSupport::TestCase
   test "does not rewrite unchanged snapshots" do
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, date: Date.new(2026, 7, 31), price: 12.5,
-      loha: 0.03, year: 0.02, lohas: "BUY5", years: "SAF1",
+      loha: 0.03, year: 0.02, lohas_signal: "BUY5", year_signal: "SAF1",
       boll3: 1, stav3: 1, boll1: 0, stav1: -1
     )
 
@@ -50,14 +50,14 @@ class StockSignalSnapshotTest < ActiveSupport::TestCase
   test "updates snapshots when the underlying signal changes" do
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, date: Date.new(2026, 7, 31), price: 12.5,
-      loha: 0.03, year: 0.02, lohas: "BUY5", years: "SAF1",
+      loha: 0.03, year: 0.02, lohas_signal: "BUY5", year_signal: "SAF1",
       boll3: 1, stav3: 1, boll1: 0, stav1: -1
     )
 
     Stock::SignalSnapshot.capture!(Stock::SZSTK)
     original_updated_at = StockSignalSnapshot.find_by!(stock: "sz000001").updated_at
 
-    StocksCoefsStav.find_by!(stock: "sz000001").update!(price: 13.0, lohas: "CHP0")
+    StocksCoefsStav.find_by!(stock: "sz000001").update!(price: 13.0, lohas_signal: "CHP0")
 
     travel_to(1.hour.from_now) do
       assert_equal 1, Stock::SignalSnapshot.capture!(Stock::SZSTK)

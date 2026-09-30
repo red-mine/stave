@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_01_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_000000) do
   create_table "stave_staves", force: :cascade do |t|
     t.string "area"
     t.date "date"
@@ -92,13 +92,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_01_010000) do
     t.date "date"
     t.boolean "good"
     t.float "loha"
-    t.string "lohas"
+    t.string "lohas_signal"
     t.float "price"
     t.integer "stav1"
     t.integer "stav3"
     t.string "stock"
     t.float "year"
-    t.string "years"
+    t.string "year_signal"
     t.index ["area", "price"], name: "index_stocks_coefs_stavs_on_area_and_price"
     t.index ["area", "stock"], name: "index_stocks_coefs_stavs_on_area_and_stock", unique: true
   end

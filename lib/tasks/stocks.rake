@@ -167,7 +167,7 @@ task stale_stocks: :environment do
     total = StocksCoefsStav.where(area: area).count
     puts "#{area.upcase}: #{lagging.count} of #{total} stocks trail #{market_date}"
     lagging.each do |record|
-      puts "  #{record.stock} date=#{record.date} lohas=#{record.lohas.inspect} years=#{record.years.inspect}"
+      puts "  #{record.stock} date=#{record.date} lohas_signal=#{record.lohas_signal.inspect} year_signal=#{record.year_signal.inspect}"
     end
   end
 end

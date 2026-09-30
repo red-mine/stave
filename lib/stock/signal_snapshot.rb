@@ -10,7 +10,7 @@ module Stock
         {
           stock: record.stock, area: record.area, signal_date: signal_date,
           price: record.price, long_trend: record.loha, year_trend: record.year,
-          lohas_signal: record.lohas, year_signal: record.years,
+          lohas_signal: record.lohas_signal, year_signal: record.year_signal,
           lohas_channel: record.boll3, lohas_stave: record.stav3,
           year_channel: record.boll1, year_stave: record.stav1,
         }

@@ -164,21 +164,22 @@ class StocksController < ApplicationController
 
       case filter
       when "buy"
-        scope.where(years: Stock::SignalFamily::BUY, lohas: Stock::SignalFamily::BUY)
+        scope.where(year_signal: Stock::SignalFamily::BUY, lohas_signal: Stock::SignalFamily::BUY)
       when "sell"
-        scope.where(years: Stock::SignalFamily::SELL).or(scope.where(lohas: Stock::SignalFamily::SELL))
+        scope.where(year_signal: Stock::SignalFamily::SELL)
+          .or(scope.where(lohas_signal: Stock::SignalFamily::SELL))
       when "watch"
         scope
-          .where.not(years: Stock::SignalFamily::SELL)
-          .where.not(lohas: Stock::SignalFamily::SELL)
-          .where.not(years: Stock::SignalFamily::BUY, lohas: Stock::SignalFamily::BUY)
+          .where.not(year_signal: Stock::SignalFamily::SELL)
+          .where.not(lohas_signal: Stock::SignalFamily::SELL)
+          .where.not(year_signal: Stock::SignalFamily::BUY, lohas_signal: Stock::SignalFamily::BUY)
       else
         scope
       end
     end
 
     def signal_group(record)
-      Stock::SignalFamily.classify(record.years, record.lohas)
+      Stock::SignalFamily.classify(record.year_signal, record.lohas_signal)
     end
 
     def signal_group_counts(scope)

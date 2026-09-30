@@ -351,7 +351,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   test "full prefixed search switches to the encoded market" do
     StocksCoefsStav.create!(
       stock: "sh600000", area: Stock::SHSTK, price: 12.34,
-      years: "SAF1", lohas: "BUY5", date: Date.new(2026, 7, 31)
+      year_signal: "SAF1", lohas_signal: "BUY5", date: Date.new(2026, 7, 31)
     )
 
     get stocks_by_area_path(Stock::SZSTK), params: { stock: "SH600000" }
@@ -371,7 +371,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       loha: 1.2,
       year: 0.8,
       price: 12.34,
-      lohas: "BUY5",
+      lohas_signal: "BUY5",
       date: Date.new(2026, 7, 31)
     )
 
@@ -387,11 +387,11 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
   test "market page labels stocks whose data ended before the market date" do
     StocksCoefsStav.create!(
       stock: "sz000522", area: Stock::SZSTK, price: 10,
-      lohas: "BUY5", date: Date.new(2013, 3, 13)
+      lohas_signal: "BUY5", date: Date.new(2013, 3, 13)
     )
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, price: 11,
-      lohas: "BUY5", date: Date.new(2026, 7, 31)
+      lohas_signal: "BUY5", date: Date.new(2026, 7, 31)
     )
 
     get stocks_by_area_path(Stock::SZSTK)
@@ -418,22 +418,22 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     recent_date = Date.current
     StocksCoefsStav.create!(
       stock: "sz002653", area: Stock::SZSTK, price: 62.38,
-      years: "BUY5", lohas: "BUY5", date: recent_date,
+      year_signal: "BUY5", lohas_signal: "BUY5", date: recent_date,
       year: 0.04, loha: 0.03
     )
     StocksCoefsStav.create!(
       stock: "sz000001", area: Stock::SZSTK, price: 11,
-      years: "SAF1", lohas: "BUY5", date: recent_date,
+      year_signal: "SAF1", lohas_signal: "BUY5", date: recent_date,
       year: 0.01, loha: 0.02
     )
     StocksCoefsStav.create!(
       stock: "sz000002", area: Stock::SZSTK, price: 10,
-      years: "BUY5", lohas: "BUY5", date: recent_date - 1,
+      year_signal: "BUY5", lohas_signal: "BUY5", date: recent_date - 1,
       year: 0.05, loha: 0.04
     )
     StocksCoefsStav.create!(
       stock: "sz880016", area: Stock::SZSTK, price: 89,
-      years: "BUY5", lohas: "BUY5", date: recent_date,
+      year_signal: "BUY5", lohas_signal: "BUY5", date: recent_date,
       year: 0.03, loha: 0.02
     )
 
@@ -471,10 +471,10 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       "sz000001" => ["BUY5", "SAF1"],
       "sz000002" => ["BUY5", "SEL7"],
       "sz000003" => ["WAT9", "BUY5"]
-    }.each do |stock, (years, lohas)|
+    }.each do |stock, (year_signal, lohas_signal)|
       StocksCoefsStav.create!(
         stock: stock, area: Stock::SZSTK, price: 10,
-        years: years, lohas: lohas, date: Date.new(2026, 7, 31)
+        year_signal: year_signal, lohas_signal: lohas_signal, date: Date.new(2026, 7, 31)
       )
     end
 

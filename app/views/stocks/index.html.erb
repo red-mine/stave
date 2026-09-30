@@ -75,7 +75,7 @@
                 <div class="candidate-labels">
                   <span class="candidate-history candidate-history-<%= candidate.history_state.parameterize %>"><%= candidate.history_state %></span>
                   <span class="candidate-trend trend-<%= classify_trend(candidate.year) %>"><%= trend_status_label(classify_trend(candidate.year)) %></span>
-                  <span><%= candidate.years %> + <%= candidate.lohas %></span>
+                  <span><%= candidate.year_signal %> + <%= candidate.lohas_signal %></span>
                 </div>
               </div>
               <div class="candidate-score-row">
@@ -168,8 +168,8 @@
                     <span class="historical-date">Ended <%= stock.date %></span>
                   <% end %>
                 </td>
-                <td class="signal-cell"><%= linked_signal_badge(stock.years, return_filter: @signal_filter) %></td>
-                <td class="signal-cell"><%= linked_signal_badge(stock.lohas, return_filter: @signal_filter) %></td>
+                <td class="signal-cell"><%= linked_signal_badge(stock.year_signal, return_filter: @signal_filter) %></td>
+                <td class="signal-cell"><%= linked_signal_badge(stock.lohas_signal, return_filter: @signal_filter) %></td>
                 <td class="metric-column"><%= formatted_number(stock.loha) %></td>
                 <td class="metric-column"><%= formatted_number(stock.year) %></td>
                 <td class="price metric-column"><%= formatted_number(stock.price) %></td>
