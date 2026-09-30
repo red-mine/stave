@@ -2,6 +2,7 @@ module Stock
   class StrategySimulation
     STARTING_CASH = 100_000.0
     MAX_HOLD_DAYS = 20
+    MAX_POSITIONS = 10
     MINIMUM_DATES = SignalPerformance::MINIMUM_DATES
     # ~0.03% broker commission on buys; ~0.03% commission + 0.05% PRC stamp
     # duty (levied on sells only) on sells.
@@ -16,10 +17,11 @@ module Stock
     Position = Struct.new(:stock, :entry_index, :entry_date, :entry_price, :entry_cash, :allocated_capital, :last_price)
 
     def initialize(area, starting_cash: STARTING_CASH, max_hold_days: MAX_HOLD_DAYS,
-                   buy_cost_rate: BUY_COST_RATE, sell_cost_rate: SELL_COST_RATE)
+                   max_positions: MAX_POSITIONS, buy_cost_rate: BUY_COST_RATE, sell_cost_rate: SELL_COST_RATE)
       @area = area
       @starting_cash = starting_cash.to_f
       @max_hold_days = max_hold_days
+      @max_positions = max_positions
       @buy_cost_rate = buy_cost_rate
       @sell_cost_rate = sell_cost_rate
     end
@@ -36,14 +38,17 @@ module Stock
       positions = {}
       trades = []
       equity_curve = []
+      # Stocks that showed a buy signal at the previous close. They are filled
+      # at the *next* close, because the signal is derived from the close that
+      # produced it — trading that same close would spend information the
+      # decision did not have yet.
+      queued = []
 
       dates.each_with_index do |date, index|
         today = snapshots_by_date[date] || {}
 
-        # A position only ever appears in `positions` starting from the
-        # iteration *after* it was opened (entries are added further below,
-        # after this loop runs) — so a stock bought today cannot be
-        # evaluated for exit today. T+1 is enforced by this ordering alone.
+        # 1. Exits, priced at today's close. A position filled today is not in
+        #    `positions` yet, so it cannot be evaluated for exit today.
         positions.keys.each do |stock|
           position = positions[stock]
           snapshot = today[stock]
@@ -56,17 +61,12 @@ module Stock
           positions.delete(stock)
         end
 
-        candidates = today.reject { |stock, _| positions.key?(stock) }
-          .select { |_stock, snapshot| snapshot.price.to_f.positive? && SignalFamily.classify(snapshot.year_signal, snapshot.lohas_signal) == "buy" }
+        # 2. Yesterday's signals are filled at today's close.
+        cash = fill_entries(cash, queued, today, positions, index, date)
 
-        if cash.positive? && candidates.any?
-          per_position = cash / candidates.size
-          net_exposure = per_position * (1 - @buy_cost_rate)
-          candidates.each do |stock, snapshot|
-            positions[stock] = Position.new(stock, index, date, snapshot.price, per_position, net_exposure, snapshot.price)
-          end
-          cash = 0.0
-        end
+        # 3. Today's signals queue up for tomorrow's fill. The last recorded
+        #    date is scanned but never traded, because it has no tomorrow.
+        queued = queue_entries(today, positions)
 
         equity = cash + positions.values.sum { |position| position.allocated_capital * (position.last_price / position.entry_price) }
         equity_curve << EquityPoint.new(date: date, equity: rounded(equity))
@@ -95,6 +95,42 @@ module Stock
         ready: false, dates: dates_count, starting_cash: @starting_cash, final_equity: @starting_cash,
         total_return: 0.0, max_drawdown: 0.0, trades: [], equity_curve: []
       )
+    end
+
+    def fill_entries(cash, queued, today, positions, index, date)
+      slots = @max_positions - positions.size
+      return cash if cash <= 0 || slots <= 0 || queued.empty?
+
+      fillable = queued
+        .reject { |stock| positions.key?(stock) }
+        .select { |stock| tradable?(today[stock]) }
+        .first(slots)
+      return cash if fillable.empty?
+
+      per_position = cash / fillable.size
+      net_exposure = per_position * (1 - @buy_cost_rate)
+
+      fillable.each do |stock|
+        price = today[stock].price
+        positions[stock] = Position.new(stock, index, date, price, per_position, net_exposure, price)
+      end
+
+      cash - per_position * fillable.size
+    end
+
+    # Selection is by stock code when there are more signals than slots. That is
+    # arbitrary, but it is blind to what happens next, so it cannot smuggle
+    # future performance into the result.
+    def queue_entries(today, positions)
+      today
+        .reject { |stock, _| positions.key?(stock) }
+        .select { |_stock, snapshot| tradable?(snapshot) && SignalFamily.classify(snapshot.year_signal, snapshot.lohas_signal) == "buy" }
+        .keys
+        .sort
+    end
+
+    def tradable?(snapshot)
+      snapshot && snapshot.price.to_f.positive?
     end
 
     def exit_reason(snapshot, position, index)

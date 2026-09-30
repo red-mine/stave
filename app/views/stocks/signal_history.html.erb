@@ -64,7 +64,7 @@
         </div>
         <span><%= @simulation.dates %> trading dates recorded</span>
       </div>
-      <p class="performance-warning">Equal-weight buys on every "Buy agreement" day, forced exit after <%= Stock::StrategySimulation::MAX_HOLD_DAYS %> trading days without a "Sell alert". Assumes <%= number_to_percentage(Stock::StrategySimulation::BUY_COST_RATE * 100, precision: 2) %> commission on buys and <%= number_to_percentage(Stock::StrategySimulation::SELL_COST_RATE * 100, precision: 2) %> commission + stamp duty on sells.</p>
+      <p class="performance-warning">Buys are filled at the close <em>after</em> the "Buy agreement" appears — the signal is derived from the close that produced it, so that same close is not tradable. Equal-weight across at most <%= Stock::StrategySimulation::MAX_POSITIONS %> concurrent positions, forced exit after <%= Stock::StrategySimulation::MAX_HOLD_DAYS %> trading days without a "Sell alert". Assumes <%= number_to_percentage(Stock::StrategySimulation::BUY_COST_RATE * 100, precision: 2) %> commission on buys and <%= number_to_percentage(Stock::StrategySimulation::SELL_COST_RATE * 100, precision: 2) %> commission + stamp duty on sells. When more stocks signal than there are slots, selection is by stock code, not by expected return.</p>
 
       <div class="performance-grid">
         <article class="performance-card">
