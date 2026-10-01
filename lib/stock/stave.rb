@@ -22,7 +22,7 @@ module Stock
     end
 
     def good_result
-      puts "Store'in... #{STAVE} #{@good_area}"
+      Rails.logger.info "Store'in... #{STAVE} #{@good_area}"
       staves_arel   = StocksCoefsStav.arel_table
       staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
       staves_area.with_progress do |stock_stav|

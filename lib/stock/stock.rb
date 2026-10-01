@@ -11,7 +11,7 @@ module Stock
     end
 
     def good_result
-      puts "Stave'in... #{STAVE} #{@good_area}"
+      Rails.logger.info "Stave'in... #{STAVE} #{@good_area}"
       lohas_arel    = StocksCoefsLoha.arel_table
       lohas_area    = StocksCoefsLoha.where(lohas_arel[:area].eq(@good_area))
       years_by_stock = StocksCoefsYear.where(area: @good_area).index_by(&:stock)
@@ -50,7 +50,7 @@ module Stock
       else
         {}
       end
-      puts "Stock'in... #{@good_years} #{@good_area}"
+      Rails.logger.info "Stock'in... #{@good_years} #{@good_area}"
       good_stocks.with_progress do |good_stock|
         Progress.note   = good_stock.upcase
         next if good_complete[good_stock] == _good_last_date(good_stock)
@@ -64,7 +64,7 @@ module Stock
     end
 
     def good_staves(good_table)
-      puts "Stave'in... #{@good_years} #{@good_area}"
+      Rails.logger.info "Stave'in... #{@good_years} #{@good_area}"
       @good_models.with_progress do |good_model|
         Progress.note   = good_model[:stock].upcase
         good_price, good_stave, good_boll, good_stav = _good_price(good_model)
