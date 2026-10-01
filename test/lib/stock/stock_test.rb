@@ -243,3 +243,109 @@ class StockCalculationTest < ActiveSupport::TestCase
     assert_equal 1, engine.data_reads
   end
 end
+
+class StockResultTest < ActiveSupport::TestCase
+  LOHAS_DATE = Date.new(2026, 8, 31)
+
+  # staves writes from the models models() built, so it needs a price history.
+  # This supplies one in place of the .day files that result never reads.
+  class StockForStaves < Stock::Stock
+    def initialize(prices)
+      super(Stock::SZSTK, Stock::STAVE)
+      start_date = Date.new(2024, 1, 1)
+      @data = prices.each_with_index.map do |price, index|
+        { date: start_date + index, price: price, index: index }
+      end
+    end
+
+    private
+
+    def _stocks
+      ["sz000001"]
+    end
+
+    def _data(_stock)
+      @data.map(&:dup)
+    end
+
+    def _model_data(_stock)
+      [@data.map { |record| record[:price] }, @data.last&.fetch(:date)]
+    end
+  end
+
+  private
+
+  # result pairs a stock's LOHAS row with its year row and writes one
+  # StocksCoefsStav, so both halves have to exist for the stock to appear.
+  def pair(stock, area: Stock::SZSTK)
+    StocksCoefsLoha.create!(stock: stock, area: area, coef: 0.05, price: 12.5,
+      stave: "BUY4", boll: 3, stav: 2, date: LOHAS_DATE, years: Stock::LOHAS)
+    StocksCoefsYear.create!(stock: stock, area: area, coef: 0.08, price: 12.5,
+      stave: "SEL3", boll: 1, stav: 4, date: LOHAS_DATE, years: Stock::YEARS)
+  end
+
+  test "result joins a stock's LOHAS row and year row into one signal row" do
+    pair("sz000001")
+
+    Stock::Stock.new(Stock::SZSTK, Stock::STAVE).result
+
+    stav = StocksCoefsStav.find_by(stock: "sz000001", area: Stock::SZSTK)
+    assert_equal 0.05, stav.loha
+    assert_equal 0.08, stav.year
+    assert_equal "BUY4", stav.lohas_signal
+    assert_equal "SEL3", stav.year_signal
+    assert_equal 3, stav.boll3
+    assert_equal 2, stav.stav3
+    assert_equal 1, stav.boll1
+    assert_equal 4, stav.stav1
+    assert_equal 12.5, stav.price
+    assert_equal LOHAS_DATE, stav.date
+  end
+
+  test "result leaves out a stock that has no year row" do
+    StocksCoefsLoha.create!(stock: "sz000002", area: Stock::SZSTK, coef: 0.05,
+      price: 12.5, date: LOHAS_DATE)
+
+    Stock::Stock.new(Stock::SZSTK, Stock::STAVE).result
+
+    assert_nil StocksCoefsStav.find_by(stock: "sz000002", area: Stock::SZSTK)
+  end
+
+  test "result writes only for its own market" do
+    pair("sz000001", area: Stock::SZSTK)
+    pair("sh600000", area: Stock::SHSTK)
+
+    Stock::Stock.new(Stock::SZSTK, Stock::STAVE).result
+
+    assert StocksCoefsStav.exists?(stock: "sz000001", area: Stock::SZSTK)
+    assert_empty StocksCoefsStav.where(stock: "sh600000")
+  end
+
+  test "a second result run updates the row instead of adding one" do
+    pair("sz000001")
+
+    Stock::Stock.new(Stock::SZSTK, Stock::STAVE).result
+    StocksCoefsLoha.find_by!(stock: "sz000001", area: Stock::SZSTK).update!(stave: "WAT9", coef: 0.06)
+    Stock::Stock.new(Stock::SZSTK, Stock::STAVE).result
+
+    assert_equal 1, StocksCoefsStav.where(stock: "sz000001", area: Stock::SZSTK).count
+    stav = StocksCoefsStav.find_by(stock: "sz000001", area: Stock::SZSTK)
+    assert_equal "WAT9", stav.lohas_signal
+    assert_equal 0.06, stav.loha
+  end
+
+  test "staves writes each model's own values to the table" do
+    prices = Array.new(Stock::STAVE * 2) { |index| 30.0 + index * 0.08 + Math.sin(index.fdiv(7)) * 2 }
+    engine = StockForStaves.new(prices)
+
+    engine.models
+    engine.staves(StocksCoefsLoha)
+
+    model = engine.models.first
+    row = StocksCoefsLoha.find_by(stock: "sz000001", area: Stock::SZSTK)
+    assert_equal Stock::STAVE, row.years
+    assert_equal model[:price], row.price
+    assert_equal model[:date], row.date
+    assert_equal model[:coef], row.coef
+  end
+end

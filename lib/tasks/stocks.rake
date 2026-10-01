@@ -22,8 +22,8 @@ task :stave, [:area, :days] => :environment do |task, args|
   days = unless args.days.nil? then args.days else Stock::STAVE end
   stock = Stock::Stock.new(area, days)
   stave = Stock::Stave.new(area, days)
-  stock.result()
-  stave.result()
+  stock.result
+  stave.result
 end
 
 desc "Create and verify a retained backup of the active SQLite database"
