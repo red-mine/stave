@@ -106,15 +106,6 @@ module Stock
       return stave_lohas, stave_years, bolls_lohas, bolls_years
     end
 
-    def chart_file(good_stock)
-      stave_lohas = _stave_file(good_stock, LOHAS)
-      stave_years = _stave_file(good_stock, YEARS)
-      bolls_lohas = _bolls_file(good_stock, LOHAS)
-      bolls_years = _bolls_file(good_stock, YEARS)
-
-      return stave_lohas, stave_years, bolls_lohas, bolls_years
-    end
-
     def search(good_stock)
       staves_arel   = StocksCoefsStav.arel_table
       staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
@@ -243,32 +234,6 @@ module Stock
         .order(arel[:date])
         .pluck(arel[:date], arel[:price])
       stave
-    end
-
-    def _stave_file(stock, years)
-      engine      = _engin(@good_area, years)
-      stave_price, stave_trend, stave_up1, stave_dn1, stave_top, stave_bot = _stave(engine, years, stock)
-      stave_file  = [
-        { name: STAVE_SERIES_NAMES[:price], data: stave_price },
-        { name: STAVE_SERIES_NAMES[:trend], data: stave_trend },
-        { name: STAVE_SERIES_NAMES[:up1],   data: stave_up1   },
-        { name: STAVE_SERIES_NAMES[:dn1],   data: stave_dn1   },
-        { name: STAVE_SERIES_NAMES[:top],   data: stave_top   },
-        { name: STAVE_SERIES_NAMES[:bot],   data: stave_bot   }
-      ]
-      return stave_file
-    end
-
-    def _bolls_file(stock, years)
-      engine      = _engin(@good_area, years)
-      bolls_price, bolls_bolls, bolls_mup, bolls_mdn = _bolls(engine, years, stock)
-      bolls_file  = [
-        { name: BOLLS_SERIES_NAMES[:price], data: bolls_price },
-        { name: BOLLS_SERIES_NAMES[:bolls], data: bolls_bolls },
-        { name: BOLLS_SERIES_NAMES[:mup],   data: bolls_mup   },
-        { name: BOLLS_SERIES_NAMES[:mdn],   data: bolls_mdn   }
-      ]
-      return bolls_file
     end
 
     def _stave_data(stock, table)
