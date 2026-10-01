@@ -28,6 +28,16 @@ class StocksHelperTest < ActionView::TestCase
     assert_includes signal_badge("BUY9"), "signal-badge signal-neutral"
   end
 
+  test "renders every known badge from the shared signal catalog" do
+    Stock::SignalCatalog::ENTRIES.each do |signal|
+      badge = signal_badge(signal.fetch(:code))
+
+      assert_includes badge, %(title="#{signal.fetch(:detail)}")
+      assert_includes badge, "signal-#{signal.fetch(:tone)}"
+      assert_includes badge, signal.fetch(:badge_action)
+    end
+  end
+
   test "labels recent and stale model dates without implying live prices" do
     travel_to Time.zone.local(2026, 8, 2, 12) do
       assert_equal({ label: "Recent", tone: "recent" }, data_recency(Date.new(2026, 7, 31)))

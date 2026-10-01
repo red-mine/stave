@@ -1,47 +1,4 @@
 module StocksHelper
-  SIGNAL_DETAILS = {
-    "SAF1" => "Safe buy zone",
-    "SOX2" => "Strong rise",
-    "SEL3" => "Sell after both upper boundaries are crossed downward",
-    "BUY4" => "Buy zone without falling moving-average confirmation",
-    "BUY5" => "Positive buy zone",
-    "SEL6" => "Partial sell after returning inside the channel",
-    "SEL7" => "Sell zone",
-    "WAT8" => "Wait for confirmation",
-    "WAT9" => "Avoid buying",
-    "CHP0" => "Recovery buy zone"
-  }.freeze
-
-  SIGNAL_ACTIONS = {
-    "SAF1" => "Buy",
-    "SOX2" => "Hold",
-    "SEL3" => "Sell",
-    "BUY4" => "Buy",
-    "BUY5" => "Buy",
-    "SEL6" => "Sell",
-    "SEL7" => "Sell",
-    "WAT8" => "Wait",
-    "WAT9" => "Avoid",
-    "CHP0" => "Buy"
-  }.freeze
-
-  # Tone used to be inferred from the code's prefix, which left WAT9 neutral
-  # while the guide card around it -- and the engine's own meaning, a break
-  # below the lower channel boundary -- both treat it as negative. Stated per
-  # code so a badge cannot disagree with the card it sits on.
-  SIGNAL_TONES = {
-    "SAF1" => "positive",
-    "SOX2" => "strong",
-    "SEL3" => "negative",
-    "BUY4" => "positive",
-    "BUY5" => "positive",
-    "SEL6" => "negative",
-    "SEL7" => "negative",
-    "WAT8" => "neutral",
-    "WAT9" => "negative",
-    "CHP0" => "positive"
-  }.freeze
-
   def market_navigation(current_area)
     safe_join(Stock::AREAS.map do |area|
       classes = ["market-tab", ("is-active" if area == current_area)].compact
@@ -53,11 +10,12 @@ module StocksHelper
     normalized = code.presence
     return content_tag(:span, "No signal", class: "signal-badge signal-neutral") unless normalized
 
-    tone = SIGNAL_TONES.fetch(normalized, "neutral")
-    content_tag(:span, class: "signal-badge signal-#{tone}", title: SIGNAL_DETAILS.fetch(normalized, normalized)) do
+    signal = Stock::SignalCatalog::BY_CODE[normalized]
+    tone = signal&.fetch(:tone, nil) || "neutral"
+    content_tag(:span, class: "signal-badge signal-#{tone}", title: signal&.fetch(:detail, nil) || normalized) do
       safe_join([
         content_tag(:span, normalized, class: "signal-code"),
-        content_tag(:span, SIGNAL_ACTIONS.fetch(normalized, "Signal"), class: "signal-action")
+        content_tag(:span, signal&.fetch(:badge_action, nil) || "Signal", class: "signal-action")
       ])
     end
   end
