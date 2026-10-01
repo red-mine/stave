@@ -47,6 +47,10 @@ class StocksController < ApplicationController
       @benchmark = Stock::IndexBenchmark.new(@area, @simulation.equity_curve.map(&:date)).call
       @benchmark_series = benchmark_series(@benchmark, @simulation) if @benchmark.available
     end
+    # The report's own readiness rule lives in SignalPerformance. Reading it
+    # here rather than restating 20 keeps this card from claiming a market is
+    # ready on a date the report itself would still refuse to run on.
+    @minimum_dates = Stock::SignalPerformance::MINIMUM_DATES
     @history = Stock::AREAS.to_h do |area|
       snapshots = StockSignalSnapshot.where(area: area)
       dates = snapshots.distinct.count(:signal_date)
@@ -56,7 +60,7 @@ class StocksController < ApplicationController
         dates: dates,
         first_date: snapshots.minimum(:signal_date),
         latest_date: snapshots.maximum(:signal_date),
-        ready: dates >= 20
+        ready: dates >= @minimum_dates
       }]
     end
   end

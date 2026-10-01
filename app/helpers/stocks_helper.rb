@@ -25,6 +25,23 @@ module StocksHelper
     "CHP0" => "Buy"
   }.freeze
 
+  # Tone used to be inferred from the code's prefix, which left WAT9 neutral
+  # while the guide card around it -- and the engine's own meaning, a break
+  # below the lower channel boundary -- both treat it as negative. Stated per
+  # code so a badge cannot disagree with the card it sits on.
+  SIGNAL_TONES = {
+    "SAF1" => "positive",
+    "SOX2" => "strong",
+    "SEL3" => "negative",
+    "BUY4" => "positive",
+    "BUY5" => "positive",
+    "SEL6" => "negative",
+    "SEL7" => "negative",
+    "WAT8" => "neutral",
+    "WAT9" => "negative",
+    "CHP0" => "positive"
+  }.freeze
+
   def market_navigation(current_area)
     safe_join(Stock::AREAS.map do |area|
       classes = ["market-tab", ("is-active" if area == current_area)].compact
@@ -36,12 +53,7 @@ module StocksHelper
     normalized = code.presence
     return content_tag(:span, "No signal", class: "signal-badge signal-neutral") unless normalized
 
-    tone = case normalized
-    when /\A(?:BUY|SAF|CHP)/ then "positive"
-    when /\ASEL/ then "negative"
-    when /\ASOX/ then "strong"
-    else "neutral"
-    end
+    tone = SIGNAL_TONES.fetch(normalized, "neutral")
     content_tag(:span, class: "signal-badge signal-#{tone}", title: SIGNAL_DETAILS.fetch(normalized, normalized)) do
       safe_join([
         content_tag(:span, normalized, class: "signal-code"),

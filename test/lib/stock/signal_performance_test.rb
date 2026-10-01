@@ -90,6 +90,24 @@ class StockSignalPerformanceTest < ActiveSupport::TestCase
     assert_equal [15, 15, 15], report.cohorts.map(&:sample_size)
   end
 
+  # CHP0 counts as a buy signal only because SignalFamily lists it. This pins
+  # the report to that list rather than to a private copy: remove CHP0 from
+  # SignalFamily::BUY and this stops finding the cohort.
+  test "counts a signal as buy because SignalFamily lists it" do
+    dates = 20.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates.each do |date|
+      StockSignalSnapshot.create!(
+        stock: "sz000001", area: Stock::SZSTK, signal_date: date, price: 10.0,
+        year_signal: "CHP0", lohas_signal: "CHP0"
+      )
+    end
+
+    report = Stock::SignalPerformance.new(Stock::SZSTK).call
+
+    assert report.ready
+    assert_equal [["CHP0", "CHP0"]], report.cohorts.map { |cohort| [cohort.year_signal, cohort.lohas_signal] }
+  end
+
   test "withholds results until twenty distinct market dates exist" do
     19.times do |index|
       StockSignalSnapshot.create!(

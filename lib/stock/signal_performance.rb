@@ -2,8 +2,6 @@ module Stock
   class SignalPerformance
     MINIMUM_DATES = 20
     MINIMUM_SAMPLE = 5
-    BUY_SIGNALS = %w[SAF1 BUY4 BUY5 CHP0].freeze
-    SELL_SIGNALS = %w[SEL3 SEL6 SEL7].freeze
 
     Report = Data.define(:ready, :dates, :horizon, :cohorts)
     Cohort = Data.define(
@@ -77,12 +75,14 @@ module Stock
 
     private
 
+    # Membership used to be spelled out here as its own BUY_SIGNALS and
+    # SELL_SIGNALS lists, and the buy/sell test restated SignalFamily.classify's
+    # rule. Both could drift from the family the rest of the app filters and
+    # labels by, so this asks SignalFamily directly.
     def signal_match?(snapshot, signal_type)
-      case signal_type
-      when :buy then snapshot.year_signal.in?(BUY_SIGNALS) && snapshot.lohas_signal.in?(BUY_SIGNALS)
-      when :sell then snapshot.year_signal.in?(SELL_SIGNALS) || snapshot.lohas_signal.in?(SELL_SIGNALS)
-      else true
-      end
+      return true unless signal_type == :buy || signal_type == :sell
+
+      SignalFamily.classify(snapshot.year_signal, snapshot.lohas_signal) == signal_type.to_s
     end
 
     def trend_group(year_trend, long_trend)

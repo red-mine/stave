@@ -23,7 +23,7 @@
         <% if status[:ready] %>
           <p>There is enough initial history to begin short-horizon outcome reporting.</p>
         <% else %>
-          <p><strong><%= 20 - status[:dates] %></strong> more trading-date snapshots are needed before showing an initial win-rate report.</p>
+          <p><strong><%= @minimum_dates - status[:dates] %></strong> more trading-date snapshots are needed before showing an initial win-rate report.</p>
         <% end %>
       </article>
     <% end %>
@@ -137,6 +137,6 @@
 
   <section class="history-note">
     <h2>Why wait?</h2>
-    <p>A single successful stock does not prove that a signal works. The system will wait for at least 20 trading dates, then report sample size, average return, win rate, and drawdown together—not just the best outcomes.</p>
+    <p>A single successful stock does not prove that a signal works. The system will wait for at least <%= @minimum_dates %> trading dates, then report sample size, average return, win rate, and drawdown together—not just the best outcomes.</p>
   </section>
 </main>

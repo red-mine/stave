@@ -621,6 +621,25 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{stocks_by_area_path(Stock::SHSTK, anchor: "current-signals")}']", text: /Back to SH signals/
   end
 
+  # The guide colours a card from its own tone field while the badge inside it
+  # is toned by the helper. WAT9 was negative on the card and neutral on the
+  # badge, so this asserts the two agree for every signal rather than trusting
+  # either list to be updated alongside the other.
+  test "each guide card is toned the same as the badge it carries" do
+    get signal_guide_path(area: Stock::SHSTK)
+
+    assert_response :success
+    {
+      "SAF1" => "positive", "SOX2" => "strong", "SEL3" => "negative",
+      "BUY4" => "positive", "BUY5" => "positive", "SEL6" => "negative",
+      "SEL7" => "negative", "WAT8" => "neutral", "WAT9" => "negative",
+      "CHP0" => "positive"
+    }.each do |code, tone|
+      assert_select "#signal-#{code.downcase}.guide-card-#{tone}", 1, "card #{code}"
+      assert_select "#signal-#{code.downcase} .signal-badge.signal-#{tone}", 1, "badge #{code}"
+    end
+  end
+
   test "signal guide returns to the originating signal filter" do
     get signal_guide_path(area: Stock::SZSTK, return_signal: "sell", anchor: "signal-sel7")
 
@@ -646,6 +665,41 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".performance-panel", count: 0
     assert_select ".history-note", text: /sample size, average return, win rate, and drawdown/
     assert_select "a[href='#{stocks_by_area_path(Stock::SZSTK)}']", text: /Back to SZ signals/
+  end
+
+  # The card's readiness used to be the literal 20 while the report read
+  # MINIMUM_DATES, so the two could disagree. These pin the card to the report:
+  # one date short of the minimum must still read as collecting, and reaching
+  # the minimum must read as ready.
+  test "signal history still collects one date short of the report's minimum" do
+    (Stock::SignalPerformance::MINIMUM_DATES - 1).times do |index|
+      StockSignalSnapshot.create!(
+        stock: "sz000001", area: Stock::SZSTK,
+        signal_date: Date.new(2026, 1, 1) + index, price: 10.0
+      )
+    end
+
+    get signal_history_path(area: Stock::SZSTK)
+
+    assert_response :success
+    assert_select ".history-state.is-ready", count: 0
+    assert_select ".history-state.is-collecting", count: 3
+    assert_select ".history-note", text: /at least #{Stock::SignalPerformance::MINIMUM_DATES} trading dates/
+  end
+
+  test "signal history marks a market ready at the report's minimum" do
+    Stock::SignalPerformance::MINIMUM_DATES.times do |index|
+      StockSignalSnapshot.create!(
+        stock: "sz000001", area: Stock::SZSTK,
+        signal_date: Date.new(2026, 1, 1) + index, price: 10.0
+      )
+    end
+
+    get signal_history_path(area: Stock::SZSTK)
+
+    assert_response :success
+    assert_select ".history-state.is-ready", count: 1
+    assert_select ".history-state.is-collecting", count: 2
   end
 
   test "signal history displays qualified forward performance with warnings" do

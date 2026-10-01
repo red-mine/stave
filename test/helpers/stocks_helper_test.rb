@@ -11,6 +11,23 @@ class StocksHelperTest < ActionView::TestCase
     assert_includes signal_badge("WAT9"), '<span class="signal-action">Avoid</span>'
   end
 
+  test "tones each badge so it cannot disagree with the guide card around it" do
+    expected = {
+      "SAF1" => "positive", "SOX2" => "strong", "SEL3" => "negative",
+      "BUY4" => "positive", "BUY5" => "positive", "SEL6" => "negative",
+      "SEL7" => "negative", "WAT8" => "neutral", "WAT9" => "negative",
+      "CHP0" => "positive"
+    }
+
+    expected.each do |code, tone|
+      assert_includes signal_badge(code), "signal-badge signal-#{tone}", "badge #{code}"
+    end
+  end
+
+  test "tones an unrecognized code as neutral instead of guessing from its prefix" do
+    assert_includes signal_badge("BUY9"), "signal-badge signal-neutral"
+  end
+
   test "labels recent and stale model dates without implying live prices" do
     travel_to Time.zone.local(2026, 8, 2, 12) do
       assert_equal({ label: "Recent", tone: "recent" }, data_recency(Date.new(2026, 7, 31)))
