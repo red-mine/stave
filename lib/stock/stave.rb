@@ -16,26 +16,26 @@ module Stock
       mdn: "通道下轨"
     }.freeze
 
-    def initialize(good_area, good_years)
-      @good_area    = good_area
-      @good_years   = good_years
+    def initialize(area, years)
+      @area    = area
+      @years   = years
     end
 
     def result
-      Rails.logger.info "Store'in... #{STAVE} #{@good_area}"
+      Rails.logger.info "Store'in... #{STAVE} #{@area}"
       staves_arel   = StocksCoefsStav.arel_table
-      staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
+      staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@area))
       staves_area.with_progress do |stock_stav|
-        good_stock  = stock_stav.stock
-        Progress.note = good_stock.upcase
+        stock  = stock_stav.stock
+        Progress.note = stock.upcase
         ActiveRecord::Base.transaction do
-          [StocksStaveLoha, StocksStaveYear, StocksBollsLoha, StocksBollsYear].each do |good_table|
-            good_table.where(stock: good_stock, area: @good_area).delete_all
+          [StocksStaveLoha, StocksStaveYear, StocksBollsLoha, StocksBollsYear].each do |table|
+            table.where(stock: stock, area: @area).delete_all
           end
-        loha_engine = _engin(@good_area, LOHAS)
-        year_engine = _engin(@good_area, YEARS)
-        unless loha_engine.valid_model?(good_stock) && year_engine.valid_model?(good_stock)
-          StocksCoefsStav.where(stock: good_stock, area: @good_area).delete_all
+        loha_engine = _engin(@area, LOHAS)
+        year_engine = _engin(@area, YEARS)
+        unless loha_engine.valid_model?(stock) && year_engine.valid_model?(stock)
+          StocksCoefsStav.where(stock: stock, area: @area).delete_all
           next
         end
 
@@ -48,12 +48,12 @@ module Stock
         }
         # A stock's stave rows and its channel rows plot the same price series,
         # so build it once per engine instead of once per series.
-        loha_price  = _series_price(loha_engine, LOHAS, good_stock)
-        year_price  = _series_price(year_engine, YEARS, good_stock)
-        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, good_stock, price: loha_price)
-        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, good_stock, price: year_price)
-        _, data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, good_stock, price: loha_price)
-        _, data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, good_stock, price: year_price)
+        loha_price  = _series_price(loha_engine, LOHAS, stock)
+        year_price  = _series_price(year_engine, YEARS, stock)
+        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, stock, price: loha_price)
+        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, stock, price: year_price)
+        _, data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, stock, price: loha_price)
+        _, data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, stock, price: year_price)
 
         stave_series = [
           { table: StocksStaveLoha, prefix: :lohas, keys: %w[price trend up1 dn1 top bot] },
@@ -64,54 +64,54 @@ module Stock
         stave_series.each do |series|
           series[:keys].each do |key|
             column_name = "#{series[:prefix]}_#{key}"
-            staves(series[:table], data[column_name.to_sym], good_stock, key)
+            staves(series[:table], data[column_name.to_sym], stock, key)
           end
         end
         end
       end
-      SignalSnapshot.capture!(@good_area)
+      SignalSnapshot.capture!(@area)
     end
 
-    def staves(good_table, good_stave, good_stock, good_years)
-      good_rows = good_stave.map do |good_stave_|
+    def staves(table, stave, stock, years)
+      rows = stave.map do |stave_|
         {
-          stock:    good_stock,
-          area:     @good_area,
-          price:    good_stave_[1].round(2),
-          date:     good_stave_[0],
-          years:    good_years
+          stock:    stock,
+          area:     @area,
+          price:    stave_[1].round(2),
+          date:     stave_[0],
+          years:    years
         }
       end
-      good_table.insert_all(good_rows) unless good_rows.empty?
+      table.insert_all(rows) unless rows.empty?
     end
 
-    def known_stock?(good_stock)
-      StocksCoefsStav.exists?(stock: good_stock, area: @good_area)
+    def known_stock?(stock)
+      StocksCoefsStav.exists?(stock: stock, area: @area)
     end
 
-    def data_dates(good_stock)
-      market_stocks = StocksCoefsStav.where(area: @good_area)
+    def data_dates(stock)
+      market_stocks = StocksCoefsStav.where(area: @area)
       [
-        market_stocks.where(stock: good_stock).maximum(:date),
+        market_stocks.where(stock: stock).maximum(:date),
         market_stocks.maximum(:date)
       ]
     end
 
-    def chart_data(good_stock)
-      stave_lohas = _stave_data(good_stock, StocksStaveLoha)
-      stave_years = _stave_data(good_stock, StocksStaveYear)
-      bolls_lohas = _bolls_data(good_stock, StocksBollsLoha)
-      bolls_years = _bolls_data(good_stock, StocksBollsYear)
+    def chart_data(stock)
+      stave_lohas = _stave_data(stock, StocksStaveLoha)
+      stave_years = _stave_data(stock, StocksStaveYear)
+      bolls_lohas = _bolls_data(stock, StocksBollsLoha)
+      bolls_years = _bolls_data(stock, StocksBollsYear)
 
       return stave_lohas, stave_years, bolls_lohas, bolls_years
     end
 
-    def search(good_stock)
+    def search(stock)
       staves_arel   = StocksCoefsStav.arel_table
-      staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
+      staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@area))
       stavs_date    = staves_area.maximum(:date)
-      stocks_stavs  = if !good_stock.nil? and !good_stock.empty?
-        staves_area.where(staves_arel[:stock].matches_any(["%" + good_stock + "%"]))
+      stocks_stavs  = if !stock.nil? and !stock.empty?
+        staves_area.where(staves_arel[:stock].matches_any(["%" + stock + "%"]))
       else
         staves_area.where(staves_arel[:lohas_signal].not_eq(""))
       end
@@ -120,11 +120,11 @@ module Stock
     end
 
     def strongest_buy_candidates(limit: 6)
-      CandidateRanking.new(@good_area).call(limit: limit)
+      CandidateRanking.new(@area).call(limit: limit)
     end
 
-    def trend_health(good_stock)
-      record = StocksCoefsStav.where(stock: good_stock, area: @good_area).order(date: :desc).first
+    def trend_health(stock)
+      record = StocksCoefsStav.where(stock: stock, area: @area).order(date: :desc).first
       return nil unless record
 
       {
@@ -228,7 +228,7 @@ module Stock
     def _filter(table, filter, stock)
       arel  = table.arel_table
       stave = table
-        .where(arel[:area].eq(@good_area))
+        .where(arel[:area].eq(@area))
         .where(arel[:stock].eq(stock))
         .where(arel[:years].eq(filter))
         .order(arel[:date])

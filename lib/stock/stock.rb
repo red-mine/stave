@@ -1,29 +1,29 @@
 module Stock
   class Stock
 
-    def initialize(good_area, good_years, trim: 0)
-      @good_area    = good_area
-      @good_years   = good_years
-      @good_days    = good_years + STAVE
-      @good_trim    = trim
-      @good_models  = []
-      @good_data_cache = {}
+    def initialize(area, years, trim: 0)
+      @area    = area
+      @years   = years
+      @days    = years + STAVE
+      @trim    = trim
+      @models  = []
+      @data_cache = {}
     end
 
     def result
-      Rails.logger.info "Stave'in... #{STAVE} #{@good_area}"
+      Rails.logger.info "Stave'in... #{STAVE} #{@area}"
       lohas_arel    = StocksCoefsLoha.arel_table
-      lohas_area    = StocksCoefsLoha.where(lohas_arel[:area].eq(@good_area))
-      years_by_stock = StocksCoefsYear.where(area: @good_area).index_by(&:stock)
+      lohas_area    = StocksCoefsLoha.where(lohas_arel[:area].eq(@area))
+      years_by_stock = StocksCoefsYear.where(area: @area).index_by(&:stock)
       lohas_area.with_progress do |stock_loha|
         Progress.note   = stock_loha.stock.upcase
         stock_year = years_by_stock[stock_loha.stock]
         if stock_year
-          good_stock  = StocksCoefsStav.find_or_initialize_by(
+          stock  = StocksCoefsStav.find_or_initialize_by(
             stock: stock_loha.stock,
             area: stock_loha.area
           )
-          good_stock.assign_attributes(
+          stock.assign_attributes(
             stock:      stock_loha.stock,
             area:       stock_loha.area,
             loha:       stock_loha.coef,
@@ -38,158 +38,158 @@ module Stock
             stav1:      stock_year.stav,
             date:       stock_loha.date,
           )
-          good_stock.save
+          stock.save
         end
       end
     end
 
-    def models(good_table = nil)
-      good_stocks   = _good_stocks
-      good_complete = if good_table
-        good_table.where(area: @good_area, years: @good_years).pluck(:stock, :date).to_h
+    def models(table = nil)
+      stocks   = _stocks
+      complete = if table
+        table.where(area: @area, years: @years).pluck(:stock, :date).to_h
       else
         {}
       end
-      Rails.logger.info "Stock'in... #{@good_years} #{@good_area}"
-      good_stocks.with_progress do |good_stock|
-        Progress.note   = good_stock.upcase
-        next if good_complete[good_stock] == _good_last_date(good_stock)
-        good_model      = _good_model(good_stock)
-        next if           good_model.empty?
-        @good_models.push good_model
+      Rails.logger.info "Stock'in... #{@years} #{@area}"
+      stocks.with_progress do |stock|
+        Progress.note   = stock.upcase
+        next if complete[stock] == _last_date(stock)
+        model = _model(stock)
+        next if model.empty?
+        @models.push model
       end
-      @good_models.sort_by! {
-        |good_model|      -good_model[:coef]
+      @models.sort_by! {
+        |model|      -model[:coef]
       }
     end
 
-    def staves(good_table)
-      Rails.logger.info "Stave'in... #{@good_years} #{@good_area}"
-      @good_models.with_progress do |good_model|
-        Progress.note   = good_model[:stock].upcase
-        good_price, good_stave, good_boll, good_stav = _good_price(good_model)
-        good_stock      = good_table.find_or_initialize_by(
-          stock:        good_model[:stock],
-          area:         good_model[:area]
+    def staves(table)
+      Rails.logger.info "Stave'in... #{@years} #{@area}"
+      @models.with_progress do |model|
+        Progress.note   = model[:stock].upcase
+        price, stave, boll, stav = _price(model)
+        stock      = table.find_or_initialize_by(
+          stock:        model[:stock],
+          area:         model[:area]
         )
-        good_stock.assign_attributes(
-          coef:         good_model[:coef],
-          inter:        good_model[:inter],
-          price:        good_model[:price],
-          good:         good_price,
-          stave:        good_stave,
-          boll:         good_boll,
-          stav:         good_stav,
-          date:         good_model[:date],
-          years:        @good_years
+        stock.assign_attributes(
+          coef:         model[:coef],
+          inter:        model[:inter],
+          price:        model[:price],
+          good:         price,
+          stave:        stave,
+          boll:         boll,
+          stav:         stav,
+          date:         model[:date],
+          years:        @years
         )
-        good_stock.save
+        stock.save
       end
     end
 
-    def aver(good_stock, good_days)
-      good_aver   = _good_aver(good_stock, good_days)
-      good_start  = good_days - 1
-      good_end    = good_aver.size - 1
-      good_aver   = good_aver.slice(good_start, good_end - good_start + 1)
-      good_aver
+    def aver(stock, days)
+      aver   = _aver(stock, days)
+      start  = days - 1
+      last   = aver.size - 1
+      aver   = aver.slice(start, last - start + 1)
+      aver
     end
 
-    def valid_model?(good_stock)
-      _good_model(good_stock).present?
+    def valid_model?(stock)
+      _model(stock).present?
     end
 
-    def trend(good_stock)
-      good_trend  = _good_trend(good_stock)
-      good_trend  = good_trend.pluck(:date, :price)
-      good_trend
+    def trend(stock)
+      trend  = _trend(stock)
+      trend  = trend.pluck(:date, :price)
+      trend
     end
 
-    def stave_band(good_stock, good_stave, good_multi)
-      good_data       = trend(good_stock)
-      good_sqrt       = _good_sqrt(good_stock)
-      if good_stave
-        good_data.map! { |good_date, good_price|
-          good_price  = good_price + good_sqrt * good_multi
-          good_stave_ = [good_date, good_price.round(2)]
-          good_stave_
+    def stave_band(stock, stave, multi)
+      data       = trend(stock)
+      sqrt       = _sqrt(stock)
+      if stave
+        data.map! { |date, price|
+          price  = price + sqrt * multi
+          stave_ = [date, price.round(2)]
+          stave_
         }
       else
-        good_data.map! { |good_date, good_price|
-          good_price  = good_price - good_sqrt * good_multi
-          good_stave_ = [good_date, good_price.round(2)]
-          good_stave_
+        data.map! { |date, price|
+          price  = price - sqrt * multi
+          stave_ = [date, price.round(2)]
+          stave_
         }
       end
-      good_data
+      data
     end
 
-    def boll(good_stock, good_days, good_boll)
-      good_aver     = _good_aver(good_stock, good_days)
-      good_sqrt     = _good_boll(good_stock, good_days)
-      good_start    = good_aver.size - good_sqrt.size
-      good_end      = good_aver.size - 1
-      for good_index in good_start..good_end
-        good_boll_  = good_aver[good_index][1]
-        good_double = good_sqrt[good_index - good_start] * 2
-        good_boll_  = if good_boll
-          good_boll_ + good_double
+    def boll(stock, days, boll)
+      aver     = _aver(stock, days)
+      sqrt     = _boll(stock, days)
+      start    = aver.size - sqrt.size
+      last     = aver.size - 1
+      for index in start..last
+        boll_  = aver[index][1]
+        double = sqrt[index - start] * 2
+        boll_  = if boll
+          boll_ + double
         else
-          good_boll_ - good_double
+          boll_ - double
         end
-        good_aver[good_index][1] = good_boll_.round(2)
+        aver[index][1] = boll_.round(2)
       end
-      good_boll     = good_aver.slice(good_start, good_end - good_start + 1)
-      good_boll
+      boll     = aver.slice(start, last - start + 1)
+      boll
     end
 
     private
 
-    def _good_price(good_model)
-      good_stock      = good_model[:stock]
-      good_last       = good_model[:price]
-      good_data       = _good_data(good_stock)
-      good_prices     = good_data.pluck(:price)
-      current_bands   = _good_signal_bands(good_prices, good_model)
-      previous        = if good_prices.length > STAVE
-        { price: good_prices[-2] }.merge(
-          _good_signal_bands(good_prices[0...-1], good_model)
+    def _price(model)
+      stock      = model[:stock]
+      last       = model[:price]
+      data       = _data(stock)
+      prices     = data.pluck(:price)
+      current_bands   = _signal_bands(prices, model)
+      previous        = if prices.length > STAVE
+        { price: prices[-2] }.merge(
+          _signal_bands(prices[0...-1], model)
         )
       end
 
-      _good_signal(
-        good_last,
+      _signal(
+        last,
         **current_bands,
         previous: previous,
-        falling_averages: _falling_averages?(good_prices)
+        falling_averages: _falling_averages?(prices)
       )
     end
 
-    def _good_signal(good_last, boll:, mup:, mdn:, trend:, up1:, dn1:, up2:, dn2:,
+    def _signal(last, boll:, mup:, mdn:, trend:, up1:, dn1:, up2:, dn2:,
                      previous: nil, falling_averages: false)
       # price
-      good_price      = good_last > trend && good_last > boll
+      price      = last > trend && last > boll
       # trend
-      good_up1_trend  = good_last < up1 && good_last > trend
-      good_up1_up2    = good_last > up1 && good_last < up2
-      good_up2_top    = good_last > up2
-      good_dn1_trend  = good_last > dn1 && good_last < trend
-      good_dn1_dn2    = good_last < dn1 && good_last > dn2
-      good_dn2_bot    = good_last < dn2
+      up1_trend  = last < up1 && last > trend
+      up1_up2    = last > up1 && last < up2
+      up2_top    = last > up2
+      dn1_trend  = last > dn1 && last < trend
+      dn1_dn2    = last < dn1 && last > dn2
+      dn2_bot    = last < dn2
       # boll
-      good_mup_boll   = good_last < mup && good_last > boll
-      good_mup_top    = good_last > mup
-      good_mdn_boll   = good_last > mdn && good_last < boll
-      good_mdn_bot    = good_last < mdn
+      mup_boll   = last < mup && last > boll
+      mup_top    = last > mup
+      mdn_boll   = last > mdn && last < boll
+      mdn_bot    = last < mdn
       # direction
-      crossed_stave_top = previous && previous[:price] > previous[:up2] && good_last < up2
-      crossed_channel_top = previous && previous[:price] > previous[:mup] && good_last < mup
+      crossed_stave_top = previous && previous[:price] > previous[:up2] && last < up2
+      crossed_channel_top = previous && previous[:price] > previous[:mup] && last < mup
       # stave
-      good_stave      = "SAF1"  if  good_dn1_dn2    &&  good_mdn_boll # 1. SAFE - BUY !
-      good_stave      = "SOX2"  if  good_up1_up2    &&  good_mup_top  # 2. SOAR - KEEP !!!
-      good_stave      = "BUY5"  if  good_up1_trend  &&  good_mup_boll # 5. BUY  - more - positive ?
-      if good_up1_up2 && good_mup_boll
-        good_stave = if crossed_stave_top && crossed_channel_top
+      stave      = "SAF1"  if  dn1_dn2    &&  mdn_boll # 1. SAFE - BUY !
+      stave      = "SOX2"  if  up1_up2    &&  mup_top  # 2. SOAR - KEEP !!!
+      stave      = "BUY5"  if  up1_trend  &&  mup_boll # 5. BUY  - more - positive ?
+      if up1_up2 && mup_boll
+        stave = if crossed_stave_top && crossed_channel_top
           "SEL3" # 3. Fell back inside both upper boundaries - sell
         elsif crossed_channel_top
           "SEL6" # 6. Fell back inside the channel - sell part
@@ -197,285 +197,285 @@ module Stock
           "SEL7" # 7. Extended sell zone / stave-top return
         end
       end
-      if good_dn1_dn2 && good_mup_boll
-        good_stave = falling_averages ? "WAT8" : "BUY4"
+      if dn1_dn2 && mup_boll
+        stave = falling_averages ? "WAT8" : "BUY4"
       end
-      good_stave      = "WAT9"  if  good_dn2_bot    &&  good_mdn_bot  # 9. WAIT - can not buy !
-      good_stave      = "CHP0"  if  good_dn2_bot    &&  good_mdn_boll # 0. CHIP - BUY ! (price recovered back into the channel)
+      stave      = "WAT9"  if  dn2_bot    &&  mdn_bot  # 9. WAIT - can not buy !
+      stave      = "CHP0"  if  dn2_bot    &&  mdn_boll # 0. CHIP - BUY ! (price recovered back into the channel)
       # boll
-      good_boll       = boll
-      good_boll       = +1   if good_mup_boll
-      good_boll       = +2   if good_mup_top
-      good_boll       = -1   if good_mdn_boll
-      good_boll       = -2   if good_mdn_bot
+      boll       = boll
+      boll       = +1   if mup_boll
+      boll       = +2   if mup_top
+      boll       = -1   if mdn_boll
+      boll       = -2   if mdn_bot
       # stave
-      good_stav       = +1 if good_up1_trend
-      good_stav       = +2 if good_up1_up2
-      good_stav       = +3 if good_up2_top
-      good_stav       = -1 if good_dn1_trend
-      good_stav       = -2 if good_dn1_dn2
-      good_stav       = -3 if good_dn2_bot
-      return          good_price, good_stave, good_boll, good_stav
+      stav       = +1 if up1_trend
+      stav       = +2 if up1_up2
+      stav       = +3 if up2_top
+      stav       = -1 if dn1_trend
+      stav       = -2 if dn1_dn2
+      stav       = -3 if dn2_bot
+      return          price, stave, boll, stav
     end
 
-    def _good_signal_bands(good_prices, good_model)
-      return {} if good_prices.empty? || good_model.empty?
+    def _signal_bands(prices, model)
+      return {} if prices.empty? || model.empty?
 
-      good_boll       = good_prices.last(STAVE).sum.fdiv(STAVE).round(2)
+      boll       = prices.last(STAVE).sum.fdiv(STAVE).round(2)
 
       # Preserve the legacy Bollinger alignment while calculating only its
       # final value instead of rebuilding the complete series three times.
-      good_averages   = _good_move(good_prices, STAVE)
-      good_distances  = good_averages.each_with_index.map do |good_average, good_index|
-        (good_prices[good_index] - good_average) ** 2
+      averages   = _move(prices, STAVE)
+      distances  = averages.each_with_index.map do |average, index|
+        (prices[index] - average) ** 2
       end
-      good_deviation  = Math.sqrt(good_distances.last(STAVE).sum.fdiv(STAVE)).round(2)
+      deviation  = Math.sqrt(distances.last(STAVE).sum.fdiv(STAVE)).round(2)
 
-      good_last_index = good_prices.length - 1
-      good_trend      = (good_model[:coef] * good_last_index + good_model[:inter]).round(2)
-      good_residuals  = good_prices.each_with_index.drop(STAVE - 1).map do |good_price, good_index|
-        good_expected = good_model[:coef] * (good_index + STAVE - 1) + good_model[:inter]
-        (good_price - good_expected.round(2)) ** 2
+      last_index = prices.length - 1
+      trend      = (model[:coef] * last_index + model[:inter]).round(2)
+      residuals  = prices.each_with_index.drop(STAVE - 1).map do |price, index|
+        expected = model[:coef] * (index + STAVE - 1) + model[:inter]
+        (price - expected.round(2)) ** 2
       end
-      good_sqrt       = if good_residuals.empty?
+      sqrt       = if residuals.empty?
         0.0
       else
-        Math.sqrt(good_residuals.sum.fdiv(good_residuals.length))
+        Math.sqrt(residuals.sum.fdiv(residuals.length))
       end
 
       {
-        boll: good_boll,
-        mup: (good_boll + good_deviation * 2).round(2),
-        mdn: (good_boll - good_deviation * 2).round(2),
-        trend: good_trend,
-        up1: (good_trend + good_sqrt).round(2),
-        dn1: (good_trend - good_sqrt).round(2),
-        up2: (good_trend + good_sqrt * 2).round(2),
-        dn2: (good_trend - good_sqrt * 2).round(2)
+        boll: boll,
+        mup: (boll + deviation * 2).round(2),
+        mdn: (boll - deviation * 2).round(2),
+        trend: trend,
+        up1: (trend + sqrt).round(2),
+        dn1: (trend - sqrt).round(2),
+        up2: (trend + sqrt * 2).round(2),
+        dn2: (trend - sqrt * 2).round(2)
       }
     end
 
-    def _falling_averages?(good_prices)
+    def _falling_averages?(prices)
       lookback = 20
       [5, 10, 20, 40].all? do |window|
-        next false if good_prices.length < window + lookback
+        next false if prices.length < window + lookback
 
-        current = good_prices.last(window).sum.fdiv(window)
-        previous = good_prices[0...-lookback].last(window).sum.fdiv(window)
+        current = prices.last(window).sum.fdiv(window)
+        previous = prices[0...-lookback].last(window).sum.fdiv(window)
         current < previous
       end
     end
 
-    def _good_move(good_price, good_days)
-      good_move   = good_price.each_cons(good_days).map {
-        |good_aver| good_aver.reduce(&:+).fdiv(good_days).round(2)
+    def _move(price, days)
+      move   = price.each_cons(days).map {
+        |aver| aver.reduce(&:+).fdiv(days).round(2)
       }
-      good_move
+      move
     end
 
-    def _good_aver(good_stock, good_days)
-      good_data   = _good_data(good_stock)
-      good_price  = good_data.pluck(:price)
-      good_aver   = _good_move(good_price, good_days)
-      good_start  = good_price.size - good_aver.size
-      good_end    = good_price.size - 1
-      for good_index in good_start..good_end
-        good_data[good_index][:price] = good_aver[good_index - good_start]
+    def _aver(stock, days)
+      data   = _data(stock)
+      price  = data.pluck(:price)
+      aver   = _move(price, days)
+      start  = price.size - aver.size
+      last   = price.size - 1
+      for index in start..last
+        data[index][:price] = aver[index - start]
       end
-      good_data.pluck(:date, :price)
+      data.pluck(:date, :price)
     end
 
-    def _good_dist(good_stock, good_days)
-      good_data   = _good_days(good_stock, good_days).pluck(:date, :price)
-      good_aver   = _good_aver(good_stock, good_days)
-      good_data.each_with_index do |good_data_, good_index|
-        _good_data = good_data_[1] - good_aver[good_index][1]
-        good_data[good_index][1] = _good_data ** 2
+    def _dist(stock, days)
+      data   = _days(stock, days).pluck(:date, :price)
+      aver   = _aver(stock, days)
+      data.each_with_index do |data_, index|
+        distance = data_[1] - aver[index][1]
+        data[index][1] = distance ** 2
       end
-      good_data
+      data
     end
 
-    def _good_boll(good_stock, good_days)
-      good_dist   = _good_dist(good_stock, good_days)
-      good_dist.map! { |good_date, good_price| good_price }
-      good_sqrt   = _good_move(good_dist, good_days)
-      good_sqrt.each_with_index do |good_data, good_index|
-        good_sqrt[good_index] = Math.sqrt(good_data).round(2)
+    def _boll(stock, days)
+      dist   = _dist(stock, days)
+      dist.map! { |date, price| price }
+      sqrt   = _move(dist, days)
+      sqrt.each_with_index do |data, index|
+        sqrt[index] = Math.sqrt(data).round(2)
       end
-      good_sqrt
+      sqrt
     end
 
-    def _good_days(good_stock, good_days)
-      good_data   = _good_data(good_stock)
-      good_start  = STAVE - good_days
-      good_end    = good_data.size - 1
-      good_data   = good_data.slice(good_start, good_end - good_start + 1)
-      good_data
+    def _days(stock, days)
+      data   = _data(stock)
+      start  = STAVE - days
+      last   = data.size - 1
+      data   = data.slice(start, last - start + 1)
+      data
     end
 
-    def _good_stave(good_stock)
-      good_data   = _good_data(good_stock)
-      good_start  = STAVE - 1
-      good_end    = good_data.size - 1
-      good_data   = good_data.slice(good_start, good_end - good_start + 1)
-      good_data
+    def _stave(stock)
+      data   = _data(stock)
+      start  = STAVE - 1
+      last   = data.size - 1
+      data   = data.slice(start, last - start + 1)
+      data
     end
 
-    def _good_stock(good_file, good_index)
-      _good_record(good_file.read(32), 0, good_index)
+    def _read_record(file, index)
+      _record(file.read(32), 0, index)
     end
 
-    def _good_record(good_binary, good_offset, good_index)
-      good_values = good_binary.unpack("L<5", offset: good_offset)
-      good_date   = good_values[0]
-      good_year   = good_date / 10_000
-      good_month  = good_date / 100 % 100
-      good_day    = good_date % 100
-      good_price  = good_values[4].fdiv(STAVE)
-      good_stock  = {
-        date:       Date.new(good_year, good_month, good_day),
-        price:      good_price,
-        index:      good_index
+    def _record(binary, offset, index)
+      values = binary.unpack("L<5", offset: offset)
+      date   = values[0]
+      year   = date / 10_000
+      month  = date / 100 % 100
+      day    = date % 100
+      price  = values[4].fdiv(STAVE)
+      stock  = {
+        date:       Date.new(year, month, day),
+        price:      price,
+        index:      index
       }
-      good_stock
+      stock
     end
 
-    def _good_data(good_stock)
-      good_data = @good_data_cache[good_stock]
-      unless good_data
-        good_data = _read_good_data(good_stock)
-        @good_data_cache[good_stock] = good_data
+    def _data(stock)
+      data = @data_cache[stock]
+      unless data
+        data = _read_data(stock)
+        @data_cache[stock] = data
       end
-      good_data.map(&:dup)
+      data.map(&:dup)
     end
 
-    def _read_good_data(good_stock)
-      good_path     = _good_path(good_stock)
-      return [] unless File.file?(good_path) && File.size(good_path) > (@good_days + @good_trim) * 32
+    def _read_data(stock)
+      path     = _path(stock)
+      return [] unless File.file?(path) && File.size(path) > (@days + @trim) * 32
 
-      File.open(good_path, "rb") do |good_file|
-        good_file.seek(-(1 + @good_trim) * 32, IO::SEEK_END)
-        good_last = _good_stock(good_file, -1)
-        return [] if good_last[:price] > STAVE
+      File.open(path, "rb") do |file|
+        file.seek(-(1 + @trim) * 32, IO::SEEK_END)
+        last = _read_record(file, -1)
+        return [] if last[:price] > STAVE
 
-        good_file.seek(-(@good_days + @good_trim) * 32, IO::SEEK_END)
-        good_binary = good_file.read(@good_days * 32)
-        return Array.new(@good_days) do |good_index|
-          _good_record(good_binary, good_index * 32, good_index)
+        file.seek(-(@days + @trim) * 32, IO::SEEK_END)
+        binary = file.read(@days * 32)
+        return Array.new(@days) do |index|
+          _record(binary, index * 32, index)
         end
       end
     end
 
-    def _good_model(good_stock)
-      good_price, good_date = _good_model_data(good_stock)
-      return {} if good_price.empty?
-      return {} if good_price.length < 2
-      return {} if good_price.uniq.size < 2
+    def _model(stock)
+      price, date = _model_data(stock)
+      return {} if price.empty?
+      return {} if price.length < 2
+      return {} if price.uniq.size < 2
 
-      good_index  = (0...good_price.length).to_a
-      good_count  = good_index.length
-      good_sum_x  = good_index.sum
-      good_sum_y  = good_price.sum
-      good_sum_xx = good_index.sum { |value| value * value }
-      good_sum_xy = good_index.zip(good_price).sum { |x, y| x * y }
-      good_div    = good_count * good_sum_xx - good_sum_x * good_sum_x
-      return {} if good_div.zero?
-      good_coef   = (good_count * good_sum_xy - good_sum_x * good_sum_y).fdiv(good_div)
-      return {} unless good_coef.finite?
-      return {} if  good_coef < 1.0 / STAVE
-      good_inter  = (good_sum_y - good_coef * good_sum_x).fdiv(good_count)
-      return {} unless good_inter.finite?
-      good_last   = good_price[-1]
-      return {} unless good_last.finite?
-      good_model  = {
-        stock:      good_stock,
-        area:       @good_area,
-        coef:       good_coef,
-        inter:      good_inter,
-        price:      good_last,
-        date:       good_date
+      index  = (0...price.length).to_a
+      count  = index.length
+      sum_x  = index.sum
+      sum_y  = price.sum
+      sum_xx = index.sum { |value| value * value }
+      sum_xy = index.zip(price).sum { |x, y| x * y }
+      div    = count * sum_xx - sum_x * sum_x
+      return {} if div.zero?
+      coef   = (count * sum_xy - sum_x * sum_y).fdiv(div)
+      return {} unless coef.finite?
+      return {} if  coef < 1.0 / STAVE
+      inter  = (sum_y - coef * sum_x).fdiv(count)
+      return {} unless inter.finite?
+      last   = price[-1]
+      return {} unless last.finite?
+      model  = {
+        stock:      stock,
+        area:       @area,
+        coef:       coef,
+        inter:      inter,
+        price:      last,
+        date:       date
       }
-      good_model
+      model
     end
 
-    def _good_model_data(good_stock)
-      good_path = _good_path(good_stock)
-      return [[], nil] unless File.file?(good_path) && File.size(good_path) > (@good_days + @good_trim) * 32
+    def _model_data(stock)
+      path = _path(stock)
+      return [[], nil] unless File.file?(path) && File.size(path) > (@days + @trim) * 32
 
-      File.open(good_path, "rb") do |good_file|
-        good_file.seek(-(@good_days + @good_trim) * 32, IO::SEEK_END)
-        good_binary = good_file.read(@good_days * 32)
-        good_last_offset = (@good_days - 1) * 32
-        good_last = _good_record(good_binary, good_last_offset, -1)
-        return [[], nil] if good_last[:price] > STAVE
+      File.open(path, "rb") do |file|
+        file.seek(-(@days + @trim) * 32, IO::SEEK_END)
+        binary = file.read(@days * 32)
+        last_offset = (@days - 1) * 32
+        last = _record(binary, last_offset, -1)
+        return [[], nil] if last[:price] > STAVE
 
-        good_prices = Array.new(@good_days) do |good_index|
-          good_binary.unpack1("L<", offset: good_index * 32 + 16).fdiv(STAVE)
+        prices = Array.new(@days) do |index|
+          binary.unpack1("L<", offset: index * 32 + 16).fdiv(STAVE)
         end
-        [good_prices, good_last[:date]]
+        [prices, last[:date]]
       end
     end
 
-    def _good_last_date(good_stock)
-      good_path = _good_path(good_stock)
-      return nil unless File.file?(good_path) && File.size(good_path) >= (1 + @good_trim) * 32
+    def _last_date(stock)
+      path = _path(stock)
+      return nil unless File.file?(path) && File.size(path) >= (1 + @trim) * 32
 
-      File.open(good_path, "rb") do |good_file|
-        good_file.seek(-(1 + @good_trim) * 32, IO::SEEK_END)
-        _good_stock(good_file, -1)[:date]
+      File.open(path, "rb") do |file|
+        file.seek(-(1 + @trim) * 32, IO::SEEK_END)
+        _read_record(file, -1)[:date]
       end
     end
 
-    def _good_trend(good_stock)
-      good_stave  = _good_stave(good_stock)
-      good_model  = _good_model(good_stock)
-      return [] if good_model.empty?
-      good_stave.each do |good_data|
-        good_price = good_model[:coef] * good_data[:index] + good_model[:inter]
-        good_data[:price] = good_price.round(2)
+    def _trend(stock)
+      stave  = _stave(stock)
+      model  = _model(stock)
+      return [] if model.empty?
+      stave.each do |data|
+        price = model[:coef] * data[:index] + model[:inter]
+        data[:price] = price.round(2)
       end
-      good_stave
+      stave
     end
 
-    def _good_sqrt(good_stock)
-      good_stave  = _good_stave(good_stock)
-      good_trend  = _good_trend(good_stock)
-      return 0.0 if good_trend.empty?
-      good_stave.each_with_index do |good_data, good_index|
-        good_price = good_stave[good_index][:price] - good_trend[good_index][:price]
-        good_stave[good_index][:price] = good_price ** 2
+    def _sqrt(stock)
+      stave  = _stave(stock)
+      trend  = _trend(stock)
+      return 0.0 if trend.empty?
+      stave.each_with_index do |data, index|
+        price = stave[index][:price] - trend[index][:price]
+        stave[index][:price] = price ** 2
       end
-      good_price  = good_stave.pluck(:price)
-      good_sum    = good_price.sum
-      good_div    = good_sum / good_trend.size
-      good_sqrt   = Math.sqrt(good_div)
-      good_sqrt
+      price  = stave.pluck(:price)
+      sum    = price.sum
+      div    = sum / trend.size
+      sqrt   = Math.sqrt(div)
+      sqrt
     end
 
-    def _good_stocks
-      good_stocks = []
-      good_files  = _good_files
-      good_files.each do |good_file|
-        good_stock = good_file[0,8]
-        good_stocks.push good_stock
+    def _stocks
+      stocks = []
+      files  = _files
+      files.each do |file|
+        stock = file[0,8]
+        stocks.push stock
       end
-      good_stocks
+      stocks
     end
 
-    def _good_files
-      Dir.children(_good_base).select do |good_file|
-        good_path = _good_path(good_file[0, 8])
-        File.file?(good_path) && File.size(good_path) > (@good_days + @good_trim) * 32
+    def _files
+      Dir.children(_base).select do |file|
+        path = _path(file[0, 8])
+        File.file?(path) && File.size(path) > (@days + @trim) * 32
       end
     end
 
-    def _good_path(good_stock)
-      good_path   = _good_base + good_stock + ".day"
-      good_path
+    def _path(stock)
+      path   = _base + stock + ".day"
+      path
     end
 
-    def _good_base
-      File.join(::Stock.data_root, @good_area, "lday") + File::SEPARATOR
+    def _base
+      File.join(::Stock.data_root, @area, "lday") + File::SEPARATOR
     end
 
   end

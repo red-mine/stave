@@ -17,12 +17,12 @@ class StockCalculationTest < ActiveSupport::TestCase
 
     private
 
-    def _good_data(_stock)
+    def _data(_stock)
       @data_reads += 1
       @data.map(&:dup)
     end
 
-    def _good_model_data(_stock)
+    def _model_data(_stock)
       [@data.map { |record| record[:price] }, @data.last&.fetch(:date)]
     end
   end
@@ -35,7 +35,7 @@ class StockCalculationTest < ActiveSupport::TestCase
 
     private
 
-    def _good_path(_stock)
+    def _path(_stock)
       @path
     end
   end
@@ -50,15 +50,15 @@ class StockCalculationTest < ActiveSupport::TestCase
 
     private
 
-    def _good_stocks
+    def _stocks
       ["current", "pending"]
     end
 
-    def _good_last_date(_stock)
+    def _last_date(_stock)
       Date.new(2026, 7, 31)
     end
 
-    def _good_model(stock)
+    def _model(stock)
       @model_calls << stock
       { stock: stock, coef: 1.0 }
     end
@@ -67,14 +67,14 @@ class StockCalculationTest < ActiveSupport::TestCase
   test "moving average uses each complete window" do
     engine = StockWithData.new([])
 
-    assert_equal [2.0, 3.0, 4.0], engine.send(:_good_move, [1, 2, 3, 4, 5], 3)
+    assert_equal [2.0, 3.0, 4.0], engine.send(:_move, [1, 2, 3, 4, 5], 3)
   end
 
   test "decodes TongdaXin date and closing price from a binary record" do
     engine = StockWithData.new([])
     record = [20_260_731, 1_234, 1_300, 1_200, 1_255].pack("L<5") + "\0" * 12
 
-    decoded = engine.send(:_good_stock, StringIO.new(record), 7)
+    decoded = engine.send(:_read_record, StringIO.new(record), 7)
 
     assert_equal Date.new(2026, 7, 31), decoded[:date]
     assert_equal 12.55, decoded[:price]
@@ -91,7 +91,7 @@ class StockCalculationTest < ActiveSupport::TestCase
       end
       file.flush
 
-      data = StockWithFile.new(file.path).send(:_good_data, "TEST")
+      data = StockWithFile.new(file.path).send(:_data, "TEST")
 
       assert_equal Stock::STAVE * 2, data.length
       assert_equal start_date + 1, data.first[:date]
@@ -116,8 +116,8 @@ class StockCalculationTest < ActiveSupport::TestCase
       File.binwrite(truncated_path, File.binread(file.path, (total_records - trim) * 32))
 
       begin
-        trimmed = StockWithFile.new(file.path, trim: trim).send(:_good_data, "TEST")
-        truncated = StockWithFile.new(truncated_path).send(:_good_data, "TEST")
+        trimmed = StockWithFile.new(file.path, trim: trim).send(:_data, "TEST")
+        truncated = StockWithFile.new(truncated_path).send(:_data, "TEST")
 
         refute_empty trimmed
         assert_equal truncated, trimmed
@@ -138,10 +138,10 @@ class StockCalculationTest < ActiveSupport::TestCase
       end
       file.flush
 
-      assert_equal Stock::STAVE * 2, StockWithFile.new(file.path, trim: 4).send(:_good_data, "TEST").length
-      assert_empty StockWithFile.new(file.path, trim: 5).send(:_good_data, "TEST")
-      assert_equal [[], nil], StockWithFile.new(file.path, trim: 10).send(:_good_model_data, "TEST")
-      assert_nil StockWithFile.new(file.path, trim: total_records).send(:_good_last_date, "TEST")
+      assert_equal Stock::STAVE * 2, StockWithFile.new(file.path, trim: 4).send(:_data, "TEST").length
+      assert_empty StockWithFile.new(file.path, trim: 5).send(:_data, "TEST")
+      assert_equal [[], nil], StockWithFile.new(file.path, trim: 10).send(:_model_data, "TEST")
+      assert_nil StockWithFile.new(file.path, trim: total_records).send(:_last_date, "TEST")
     end
   end
 
@@ -151,7 +151,7 @@ class StockCalculationTest < ActiveSupport::TestCase
     Stock.stub(:data_root, Pathname.new("C:/market-data/vipdoc")) do
       expected = File.join("C:/market-data/vipdoc", Stock::SZSTK, "lday") + File::SEPARATOR
 
-      assert_equal expected, engine.send(:_good_base)
+      assert_equal expected, engine.send(:_base)
     end
   end
 
@@ -201,15 +201,15 @@ class StockCalculationTest < ActiveSupport::TestCase
     falling_prices = Array.new(Stock::STAVE * 2) { |index| 200.0 - index * 0.25 }
     engine = StockWithData.new(falling_prices)
 
-    assert_empty engine.send(:_good_model, "TEST")
+    assert_empty engine.send(:_model, "TEST")
   end
 
   test "latest signal is calculated from one history read" do
     prices = Array.new(Stock::STAVE * 2) { |index| 20.0 + index * 0.25 }
     engine = StockWithData.new(prices)
-    model = engine.send(:_good_model, "TEST")
+    model = engine.send(:_model, "TEST")
 
-    result = engine.send(:_good_price, model)
+    result = engine.send(:_price, model)
 
     assert_equal false, result[0]
     assert_equal 1, result[2]
@@ -222,7 +222,7 @@ class StockCalculationTest < ActiveSupport::TestCase
       30.0 + index * 0.08 + Math.sin(index.fdiv(7)) * 2
     end
     engine = StockWithData.new(prices)
-    model = engine.send(:_good_model, "TEST")
+    model = engine.send(:_model, "TEST")
     legacy = StockWithData.new(prices)
     stock = "TEST"
     boll = legacy.aver(stock, Stock::STAVE)[-1][1]
@@ -234,12 +234,12 @@ class StockCalculationTest < ActiveSupport::TestCase
     up2 = legacy.stave_band(stock, true, 2)[-1][1]
     dn2 = legacy.stave_band(stock, false, 2)[-1][1]
     expected = legacy.send(
-      :_good_signal, model[:price],
+      :_signal, model[:price],
       boll: boll, mup: mup, mdn: mdn, trend: trend,
       up1: up1, dn1: dn1, up2: up2, dn2: dn2
     )
 
-    assert_equal expected, engine.send(:_good_price, model)
+    assert_equal expected, engine.send(:_price, model)
     assert_equal 1, engine.data_reads
   end
 end

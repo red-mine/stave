@@ -46,7 +46,7 @@ class StockSignalTest < ActiveSupport::TestCase
 
   def classify(price, **overrides)
     options = @bands.merge(overrides)
-    @engine.send(:_good_signal, price, **options)
+    @engine.send(:_signal, price, **options)
   end
 
   def assert_signal(expected, price, **overrides)

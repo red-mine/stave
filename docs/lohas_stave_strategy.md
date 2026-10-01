@@ -51,17 +51,17 @@ long-term, low-maintenance investing (no daily monitoring needed), hence the
 |---|---|
 | 3.5-year window | `LOHAS = 3 * YEARS + YEARS / 2` ([lib/stock.rb](../lib/stock.rb)) |
 | 20-week MA (LOHAS Channel) | `STAVE = 20 * WEEKS` ([lib/stock.rb](../lib/stock.rb)) |
-| Trend line (TL/价值线) | `Stock::Stock#good_trend` ([lib/stock/stock.rb](../lib/stock/stock.rb)) |
-| ±1SD / ±2SD lines | `Stock::Stock#good_stave(stock, up/down, 1 or 2)` |
-| LOHAS Channel (MA + bands) | `Stock::Stock#good_aver` / `#good_boll` |
-| Combined stave+channel signal | `Stock::Stock#_good_price` (private) |
+| Trend line (TL/价值线) | `Stock::Stock#trend` ([lib/stock/stock.rb](../lib/stock/stock.rb)) |
+| ±1SD / ±2SD lines | `Stock::Stock#stave_band(stock, up/down, 1 or 2)` |
+| LOHAS Channel (MA + bands) | `Stock::Stock#aver` / `#boll` |
+| Combined stave+channel signal | `Stock::Stock#_price` (private) |
 | Per-stock five-line series | `StocksStaveLoha` / `StocksStaveYear` tables |
 | Per-stock channel series | `StocksBollsLoha` / `StocksBollsYear` tables |
 | Combined LOHAS+Year signal | `StocksCoefsStav` table (`loha`/`year` = slope, `lohas_signal`/`year_signal` = signal code, `boll3`/`stav3`/`boll1`/`stav1` = zone codes) |
 
-## Signal codes (`_good_price`) — current status
+## Signal codes (`_price`) — current status
 
-`_good_price` combines "position vs. five-line stave" with "position vs. LOHAS channel"
+`_price` combines "position vs. five-line stave" with "position vs. LOHAS channel"
 into a single code.
 
 **Historical note:** Earlier versions of this code used sequential `if` assignments
@@ -79,9 +79,9 @@ technically reachable, no public source confirms whether the `crossed_*` and
 `falling_averages` distinctions match 薛兆亨's original decision table. The exact
 rules likely reside only in the paid CMoney tool.
 
-`_good_model` ([lib/stock/stock.rb](../lib/stock/stock.rb), `return {} if good_coef < 1.0/STAVE`)
+`_model` ([lib/stock/stock.rb](../lib/stock/stock.rb), `return {} if coef < 1.0 / STAVE`)
 already filters out any stock with a non-positive/near-zero slope before it reaches
-`_good_price`. Web research (see Sources below) confirms this matches 薛兆亨's actual
+`_price`. Web research (see Sources below) confirms this matches 薛兆亨's actual
 methodology — the five-line method assumes a stock in a confirmed uptrend, and multiple
 independent sources describe negative slope as undermining the whole mean-reversion
 premise, with no indication that negative-slope stocks are meant to still generate
@@ -102,13 +102,13 @@ channel has recovered back into normal range while price is still in the extreme
 pessimistic five-line zone → **buy**. Fixed in code:
 
 ```ruby
-good_stave = "WAT9" if good_dn2_bot && good_mdn_bot   # unchanged: still below channel
-good_stave = "CHP0" if good_dn2_bot && good_mdn_boll  # fixed: was good_mdn_bot (dup of WAT9)
+stave = "WAT9" if dn2_bot && mdn_bot   # unchanged: still below channel
+stave = "CHP0" if dn2_bot && mdn_boll  # fixed: was mdn_bot (dup of WAT9)
 ```
 
 **Caveat:** every dated example in the sources describes a *breakout-then-reversion
 event* (price broke through the channel edge and has *since* returned to normal range) as
-the actual trigger — not merely "currently sitting in the normal range." `_good_price`
+the actual trigger — not merely "currently sitting in the normal range." `_price`
 only evaluates the current day's snapshot, with no memory of whether the channel was
 recently breached, so this fix is a reasonable static approximation of the real rule, not
 a fully faithful implementation of it. A fully faithful version would need to track the

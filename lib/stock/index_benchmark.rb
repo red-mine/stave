@@ -1,7 +1,7 @@
 module Stock
   class IndexBenchmark
     # TongdaXin price records store the close price as an integer scaled by
-    # 100 (matching the decode in Stock::Stock#_good_record); kept as its
+    # 100 (matching the decode in Stock::Stock#_record); kept as its
     # own constant here since it's a data-format detail, not the same thing
     # as the unrelated Stock::STAVE window-size constant.
     PRICE_SCALE = 100.0
