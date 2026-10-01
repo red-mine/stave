@@ -3,8 +3,8 @@ task :lohas, [:area, :days] => :environment do |task, args|
   area = unless args.area.nil? then args.area else Stock::SZSTK end
   days = unless args.days.nil? then args.days else Stock::LOHAS end
   stock = Stock::Stock.new(area, days)
-  stock.good_models(StocksCoefsLoha)
-  stock.good_staves(StocksCoefsLoha)
+  stock.models(StocksCoefsLoha)
+  stock.staves(StocksCoefsLoha)
 end
 
 desc "years"
@@ -12,8 +12,8 @@ task :years, [:area, :days] => :environment do |task, args|
   area = unless args.area.nil? then args.area else Stock::SZSTK end
   days = unless args.days.nil? then args.days else Stock::YEARS end
   stock = Stock::Stock.new(area, days)
-  stock.good_models(StocksCoefsYear)
-  stock.good_staves(StocksCoefsYear)
+  stock.models(StocksCoefsYear)
+  stock.staves(StocksCoefsYear)
 end
 
 desc "stave"
@@ -22,8 +22,8 @@ task :stave, [:area, :days] => :environment do |task, args|
   days = unless args.days.nil? then args.days else Stock::STAVE end
   stock = Stock::Stock.new(area, days)
   stave = Stock::Stave.new(area, days)
-  stock.good_result()
-  stave.good_result()
+  stock.result()
+  stave.result()
 end
 
 desc "Create and verify a retained backup of the active SQLite database"
@@ -62,15 +62,15 @@ task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
   areas.each do |area|
     puts "Refreshing #{area}..."
     lohas = Stock::Stock.new(area, Stock::LOHAS)
-    lohas.good_models(StocksCoefsLoha)
-    lohas.good_staves(StocksCoefsLoha)
+    lohas.models(StocksCoefsLoha)
+    lohas.staves(StocksCoefsLoha)
 
     years = Stock::Stock.new(area, Stock::YEARS)
-    years.good_models(StocksCoefsYear)
-    years.good_staves(StocksCoefsYear)
+    years.models(StocksCoefsYear)
+    years.staves(StocksCoefsYear)
 
-    Stock::Stock.new(area, Stock::STAVE).good_result
-    Stock::Stave.new(area, Stock::STAVE).good_result
+    Stock::Stock.new(area, Stock::STAVE).result
+    Stock::Stave.new(area, Stock::STAVE).result
     puts "Finished #{area}."
   end
 end
@@ -310,14 +310,14 @@ task :backfill_signal_history, [:to, :from] => :environment do |_task, args|
         StocksCoefsStav.where(area: area).delete_all
 
         lohas = Stock::Stock.new(area, Stock::LOHAS, trim: trim)
-        lohas.good_models(StocksCoefsLoha)
-        lohas.good_staves(StocksCoefsLoha)
+        lohas.models(StocksCoefsLoha)
+        lohas.staves(StocksCoefsLoha)
 
         years = Stock::Stock.new(area, Stock::YEARS, trim: trim)
-        years.good_models(StocksCoefsYear)
-        years.good_staves(StocksCoefsYear)
+        years.models(StocksCoefsYear)
+        years.staves(StocksCoefsYear)
 
-        Stock::Stock.new(area, Stock::STAVE).good_result
+        Stock::Stock.new(area, Stock::STAVE).result
         captured = Stock::SignalSnapshot.capture!(area)
 
         puts "#{area.upcase} trim=#{trim}/#{to}: captured #{captured} row(s)"

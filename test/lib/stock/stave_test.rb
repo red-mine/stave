@@ -17,7 +17,7 @@ class StaveDataTest < ActiveSupport::TestCase
     StocksStaveYear.create!(stock: stock, area: Stock::SZSTK, years: "price", date: Date.new(2026, 5, 1), price: 10)
     StocksStaveYear.create!(stock: stock, area: Stock::SHSTK, years: "price", date: Date.new(2026, 6, 1), price: 99)
 
-    _lohas, years, = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).good_data(stock)
+    _lohas, years, = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).chart_data(stock)
 
     assert_equal [
       [Date.new(2026, 5, 1), 10.0],
@@ -26,7 +26,7 @@ class StaveDataTest < ActiveSupport::TestCase
   end
 
   test "chart series have unique descriptive labels" do
-    lohas, _years, bolls, = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).good_data("labels001")
+    lohas, _years, bolls, = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).chart_data("labels001")
 
     assert_equal ["收盘价", "趋势线", "+1SD", "-1SD", "乐观线 (+2SD)", "悲观线 (-2SD)"], lohas.pluck(:name)
     assert_equal ["通道中轨", "通道上轨", "通道下轨"], bolls.drop(1).pluck(:name)

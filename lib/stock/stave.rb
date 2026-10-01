@@ -21,7 +21,7 @@ module Stock
       @good_years   = good_years
     end
 
-    def good_result
+    def result
       Rails.logger.info "Store'in... #{STAVE} #{@good_area}"
       staves_arel   = StocksCoefsStav.arel_table
       staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
@@ -64,7 +64,7 @@ module Stock
         stave_series.each do |series|
           series[:keys].each do |key|
             column_name = "#{series[:prefix]}_#{key}"
-            good_staves(series[:table], data[column_name.to_sym], good_stock, key)
+            staves(series[:table], data[column_name.to_sym], good_stock, key)
           end
         end
         end
@@ -72,7 +72,7 @@ module Stock
       SignalSnapshot.capture!(@good_area)
     end
 
-    def good_staves(good_table, good_stave, good_stock, good_years)
+    def staves(good_table, good_stave, good_stock, good_years)
       good_rows = good_stave.map do |good_stave_|
         {
           stock:    good_stock,
@@ -83,11 +83,6 @@ module Stock
         }
       end
       good_table.insert_all(good_rows) unless good_rows.empty?
-    end
-
-    def good_show(good_stock)
-      good_show   = good_data(good_stock)
-      good_show
     end
 
     def known_stock?(good_stock)
@@ -102,7 +97,7 @@ module Stock
       ]
     end
 
-    def good_data(good_stock)
+    def chart_data(good_stock)
       stave_lohas = _stave_data(good_stock, StocksStaveLoha)
       stave_years = _stave_data(good_stock, StocksStaveYear)
       bolls_lohas = _bolls_data(good_stock, StocksBollsLoha)
@@ -111,7 +106,7 @@ module Stock
       return stave_lohas, stave_years, bolls_lohas, bolls_years
     end
 
-    def good_file(good_stock)
+    def chart_file(good_stock)
       stave_lohas = _stave_file(good_stock, LOHAS)
       stave_years = _stave_file(good_stock, YEARS)
       bolls_lohas = _bolls_file(good_stock, LOHAS)
@@ -120,7 +115,7 @@ module Stock
       return stave_lohas, stave_years, bolls_lohas, bolls_years
     end
 
-    def good_index(good_stock)
+    def search(good_stock)
       staves_arel   = StocksCoefsStav.arel_table
       staves_area   = StocksCoefsStav.where(staves_arel[:area].eq(@good_area))
       stavs_date    = staves_area.maximum(:date)
@@ -231,7 +226,7 @@ module Stock
     def _price(stocks, years, stock)
       start         = STAVE - SMUTH
       length        = years + 1
-      price         = stocks.good_aver(stock, SMUTH).slice(start, length)
+      price         = stocks.aver(stock, SMUTH).slice(start, length)
       price
     end
 
@@ -315,11 +310,11 @@ module Stock
     def _stave(stocks, years, stock, price: nil)
       stave_price   = price || _series_price(stocks, years, stock)
 
-      stave_trend   = stocks.good_trend(stock             )
-      stave_up1     = stocks.good_stave(stock,  true,   1 )
-      stave_dn1     = stocks.good_stave(stock,  false,  1 )
-      stave_top     = stocks.good_stave(stock,  true,   2 )
-      stave_bot     = stocks.good_stave(stock,  false,  2 )
+      stave_trend   = stocks.trend(stock             )
+      stave_up1     = stocks.stave_band(stock,  true,   1 )
+      stave_dn1     = stocks.stave_band(stock,  false,  1 )
+      stave_top     = stocks.stave_band(stock,  true,   2 )
+      stave_bot     = stocks.stave_band(stock,  false,  2 )
 
       stave_trend   = _better(stave_trend,  years )
       stave_up1     = _better(stave_up1,    years )
@@ -334,9 +329,9 @@ module Stock
     def _bolls(stocks, years, stock, price: nil)
       bolls_price   = price || _series_price(stocks, years, stock)
 
-      bolls_bolls   = stocks.good_aver(stock, STAVE         )
-      bolls_mup     = stocks.good_boll(stock, STAVE,  true  )
-      bolls_mdn     = stocks.good_boll(stock, STAVE,  false )
+      bolls_bolls   = stocks.aver(stock, STAVE         )
+      bolls_mup     = stocks.boll(stock, STAVE,  true  )
+      bolls_mdn     = stocks.boll(stock, STAVE,  false )
 
       bolls_bolls   = _better(bolls_bolls,  years )
       bolls_mup     = _better(bolls_mup,    years )

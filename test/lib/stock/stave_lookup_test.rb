@@ -19,7 +19,7 @@ class StaveLookupTest < ActiveSupport::TestCase
       lohas_signal: "BUY5", date: Date.new(2026, 7, 30)
     )
 
-    results, date = Stock::Stave.new(Stock::SHSTK, Stock::STAVE).good_index(nil)
+    results, date = Stock::Stave.new(Stock::SHSTK, Stock::STAVE).search(nil)
 
     assert_equal %w[sh600001 sh600002], results.pluck(:stock)
     assert_equal Date.new(2026, 7, 31), date
@@ -35,7 +35,7 @@ class StaveLookupTest < ActiveSupport::TestCase
       lohas_signal: "BUY5", date: Date.new(2026, 7, 31)
     )
 
-    results, date = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).good_index("000522")
+    results, date = Stock::Stave.new(Stock::SZSTK, Stock::STAVE).search("000522")
 
     assert_equal ["sz000522"], results.pluck(:stock)
     assert_equal Date.new(2026, 7, 31), date

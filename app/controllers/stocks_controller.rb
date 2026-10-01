@@ -18,7 +18,7 @@ class StocksController < ApplicationController
 
     @stock  = stock
     stave   = Stock::Stave.new(area, Stock::STAVE)
-    @stocks_stavs, @stavs_date = stave.good_index(stock)
+    @stocks_stavs, @stavs_date = stave.search(stock)
     @signal_filter = normalized_signal_filter
     unless stock
       @signal_counts = signal_group_counts(@stocks_stavs)
@@ -88,7 +88,7 @@ class StocksController < ApplicationController
     stave   = Stock::Stave.new(area, Stock::STAVE)
     return render_not_found unless stave.known_stock?(stock)
 
-    @stave_lohas, @stave_years, @bolls_lohas, @bolls_years = stave.good_show(stock)
+    @stave_lohas, @stave_years, @bolls_lohas, @bolls_years = stave.chart_data(stock)
     @stock_date, @market_date = stave.data_dates(stock)
     @trend_health = stave.trend_health(stock)
     @historical_data = @stock_date.present? && @market_date.present? && @stock_date < @market_date

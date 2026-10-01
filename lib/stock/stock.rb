@@ -10,7 +10,7 @@ module Stock
       @good_data_cache = {}
     end
 
-    def good_result
+    def result
       Rails.logger.info "Stave'in... #{STAVE} #{@good_area}"
       lohas_arel    = StocksCoefsLoha.arel_table
       lohas_area    = StocksCoefsLoha.where(lohas_arel[:area].eq(@good_area))
@@ -43,7 +43,7 @@ module Stock
       end
     end
 
-    def good_models(good_table = nil)
+    def models(good_table = nil)
       good_stocks   = _good_stocks
       good_complete = if good_table
         good_table.where(area: @good_area, years: @good_years).pluck(:stock, :date).to_h
@@ -63,7 +63,7 @@ module Stock
       }
     end
 
-    def good_staves(good_table)
+    def staves(good_table)
       Rails.logger.info "Stave'in... #{@good_years} #{@good_area}"
       @good_models.with_progress do |good_model|
         Progress.note   = good_model[:stock].upcase
@@ -87,7 +87,7 @@ module Stock
       end
     end
 
-    def good_aver(good_stock, good_days)
+    def aver(good_stock, good_days)
       good_aver   = _good_aver(good_stock, good_days)
       good_start  = good_days - 1
       good_end    = good_aver.size - 1
@@ -99,14 +99,14 @@ module Stock
       _good_model(good_stock).present?
     end
 
-    def good_trend(good_stock)
+    def trend(good_stock)
       good_trend  = _good_trend(good_stock)
       good_trend  = good_trend.pluck(:date, :price)
       good_trend
     end
 
-    def good_stave(good_stock, good_stave, good_multi)
-      good_data       = good_trend(good_stock)
+    def stave_band(good_stock, good_stave, good_multi)
+      good_data       = trend(good_stock)
       good_sqrt       = _good_sqrt(good_stock)
       if good_stave
         good_data.map! { |good_date, good_price|
@@ -124,7 +124,7 @@ module Stock
       good_data
     end
 
-    def good_boll(good_stock, good_days, good_boll)
+    def boll(good_stock, good_days, good_boll)
       good_aver     = _good_aver(good_stock, good_days)
       good_sqrt     = _good_boll(good_stock, good_days)
       good_start    = good_aver.size - good_sqrt.size

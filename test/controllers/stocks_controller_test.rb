@@ -16,7 +16,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       @known
     end
 
-    def good_index(_stock)
+    def search(_stock)
       [[], nil]
     end
 
@@ -24,7 +24,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
       []
     end
 
-    def good_show(_stock)
+    def chart_data(_stock)
       [[], [], [], []]
     end
 
@@ -198,7 +198,7 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     stave = FakeStave.new
     long_series = [{ name: "Price", data: [[Date.new(2023, 1, 3), 10], [Date.new(2026, 7, 31), 12]] }]
     year_series = [{ name: "Price", data: [[Date.new(2025, 8, 1), 11], [Date.new(2026, 7, 31), 12]] }]
-    stave.define_singleton_method(:good_show) { |_stock| [long_series, year_series, long_series, year_series] }
+    stave.define_singleton_method(:chart_data) { |_stock| [long_series, year_series, long_series, year_series] }
 
     Stock::Stave.stub(:new, ->(*) { stave }) do
       get stock_analysis_path("000522", area: Stock::SZSTK)

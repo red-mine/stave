@@ -172,7 +172,7 @@ class StockCalculationTest < ActiveSupport::TestCase
     table.expect(:where, relation, [], area: Stock::SZSTK, years: Stock::STAVE)
     engine = StockForResume.new
 
-    engine.good_models(table)
+    engine.models(table)
 
     assert_equal ["pending"], engine.model_calls
     table.verify
@@ -182,7 +182,7 @@ class StockCalculationTest < ActiveSupport::TestCase
   test "positive linear prices produce an aligned regression trend" do
     prices = Array.new(Stock::STAVE * 2) { |index| 10.0 + index * 0.2 }
     engine = StockWithData.new(prices)
-    trend = engine.good_trend("TEST")
+    trend = engine.trend("TEST")
 
     assert_equal Stock::STAVE + 1, trend.length
     assert_in_delta prices[Stock::STAVE - 1], trend.first.last, 0.01
@@ -193,8 +193,8 @@ class StockCalculationTest < ActiveSupport::TestCase
     prices = Array.new(Stock::STAVE * 2) { |index| 20.0 + index * 0.25 }
     engine = StockWithData.new(prices)
 
-    assert_equal engine.good_trend("TEST"), engine.good_stave("TEST", true, 2)
-    assert_equal engine.good_trend("TEST"), engine.good_stave("TEST", false, 2)
+    assert_equal engine.trend("TEST"), engine.stave_band("TEST", true, 2)
+    assert_equal engine.trend("TEST"), engine.stave_band("TEST", false, 2)
   end
 
   test "non-positive trends are excluded from eligible models" do
@@ -225,14 +225,14 @@ class StockCalculationTest < ActiveSupport::TestCase
     model = engine.send(:_good_model, "TEST")
     legacy = StockWithData.new(prices)
     stock = "TEST"
-    boll = legacy.good_aver(stock, Stock::STAVE)[-1][1]
-    mup = legacy.good_boll(stock, Stock::STAVE, true)[-1][1]
-    mdn = legacy.good_boll(stock, Stock::STAVE, false)[-1][1]
-    trend = legacy.good_trend(stock)[-1][1]
-    up1 = legacy.good_stave(stock, true, 1)[-1][1]
-    dn1 = legacy.good_stave(stock, false, 1)[-1][1]
-    up2 = legacy.good_stave(stock, true, 2)[-1][1]
-    dn2 = legacy.good_stave(stock, false, 2)[-1][1]
+    boll = legacy.aver(stock, Stock::STAVE)[-1][1]
+    mup = legacy.boll(stock, Stock::STAVE, true)[-1][1]
+    mdn = legacy.boll(stock, Stock::STAVE, false)[-1][1]
+    trend = legacy.trend(stock)[-1][1]
+    up1 = legacy.stave_band(stock, true, 1)[-1][1]
+    dn1 = legacy.stave_band(stock, false, 1)[-1][1]
+    up2 = legacy.stave_band(stock, true, 2)[-1][1]
+    dn2 = legacy.stave_band(stock, false, 2)[-1][1]
     expected = legacy.send(
       :_good_signal, model[:price],
       boll: boll, mup: mup, mdn: mdn, trend: trend,
