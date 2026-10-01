@@ -13,6 +13,20 @@ $logDirectory = Join-Path $repository "log\public-preview"
 $logFile = Join-Path $logDirectory "monitor.log"
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 
+# Mirror the flock bin/ensure-public-preview.sh takes: a monitor firing while
+# the previous check is still running must not start a second recovery. The
+# stream is kept in a variable on purpose -- an unreferenced FileStream can be
+# finalized and closed while the monitor is still working -- and the handle is
+# released when this process exits, as the bash file descriptor is.
+$lockPath = Join-Path $repository "tmp\public-preview-monitor.lock"
+New-Item -ItemType Directory -Path (Split-Path -Parent $lockPath) -Force | Out-Null
+try {
+  $monitorLock = [System.IO.File]::Open($lockPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+} catch {
+  Write-Output "Public preview monitor is already running"
+  exit 0
+}
+
 function Limit-MonitorLog {
   if (-not (Test-Path -LiteralPath $logFile)) {
     return

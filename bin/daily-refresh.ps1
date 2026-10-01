@@ -13,13 +13,34 @@ $repository = Split-Path -Parent $PSScriptRoot
 $database = if ($DatabasePath) {
   [System.IO.Path]::GetFullPath($DatabasePath)
 } else {
-  Join-Path $repository "tmp\ui-stock.sqlite3"
+  Join-Path $repository "db\stock.sqlite3"
 }
 $logDirectory = Join-Path $repository "log\daily-refresh"
 $logFile = Join-Path $logDirectory "latest.log"
 $archiveLog = Join-Path $logDirectory "refresh-$(Get-Date -Format 'yyyyMMdd-HHmmss-fff').log"
 # Let a failure that happens before Rails boots still report when the run began.
 $env:STOCK_REFRESH_STARTED_AT = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+# The whole run has to be serialized, for the same reason bin/daily-refresh.sh
+# re-execs under flock: two runs used to share tmp/tdx-update/hsjday.zip.part
+# and corrupt each other's archive, and the lock the Rails task takes is only
+# held once Rails has booted, too late to protect the download. Windows has no
+# flock, so hold the lock file with FileShare.None instead; a second copy then
+# fails to open it and skips rather than racing the first one.
+$lockPath = if ($env:STOCK_REFRESH_LOCK) { $env:STOCK_REFRESH_LOCK } else { Join-Path $repository "tmp\daily-refresh.lock" }
+New-Item -ItemType Directory -Path (Split-Path -Parent $lockPath) -Force | Out-Null
+$lockStream = $null
+try {
+  $lockStream = [System.IO.File]::Open($lockPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+  $lockStream.SetLength(0)
+  $lockNote = [System.Text.Encoding]::UTF8.GetBytes("pid=$PID started=$((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))`n")
+  $lockStream.Write($lockNote, 0, $lockNote.Length)
+  $lockStream.Flush()
+} catch {
+  if ($null -ne $lockStream) { $lockStream.Dispose(); $lockStream = $null }
+  Write-Output "[$(Get-Date -Format o)] Another Stock Stave refresh already holds $lockPath; skipping this run"
+  exit 0
+}
 
 if (-not (Test-Path -LiteralPath $RubyPath -PathType Leaf)) {
   throw "Ruby executable not found: $RubyPath"
@@ -67,6 +88,7 @@ try {
   }
   exit 1
 } finally {
+  if ($null -ne $lockStream) { $lockStream.Dispose() }
   if (Test-Path -LiteralPath $logFile) {
     Copy-Item -LiteralPath $logFile -Destination $archiveLog -Force
   }

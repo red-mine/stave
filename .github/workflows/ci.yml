@@ -41,6 +41,9 @@ jobs:
         shell: pwsh
         run: ./bin/check-powershell-syntax.ps1
 
+      - name: Check Windows and Linux automation parity
+        run: ./bin/check-ops-parity.sh
+
       - name: Audit Ruby dependencies
         run: bundle exec bundler-audit check --update
 
