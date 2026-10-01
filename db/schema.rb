@@ -10,22 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_000000) do
-  create_table "stave_staves", force: :cascade do |t|
-    t.string "area"
-    t.date "date"
-    t.float "price"
-    t.string "stock"
-    t.integer "years"
-  end
-
-  create_table "staves", force: :cascade do |t|
-    t.date "date"
-    t.float "price"
-    t.string "stock"
-    t.integer "years"
-  end
-
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_010000) do
   create_table "stock_signal_snapshots", force: :cascade do |t|
     t.string "area", null: false
     t.datetime "created_at", null: false
@@ -43,13 +28,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_000000) do
     t.float "year_trend"
     t.index ["area", "signal_date"], name: "index_stock_signal_snapshots_on_area_and_signal_date"
     t.index ["area", "stock", "signal_date"], name: "index_signal_snapshots_on_area_stock_date", unique: true
-  end
-
-  create_table "stocks", force: :cascade do |t|
-    t.string "area"
-    t.date "date"
-    t.float "price"
-    t.string "stock"
   end
 
   create_table "stocks_bolls_lohas", force: :cascade do |t|

@@ -34,10 +34,10 @@ bundle install
 bundle exec rails db:migrate
 ```
 
-> **Security note:** This repository includes `config/master.key` and
-> `config/credentials.yml.enc` for local development convenience. Before deploying
-> to production, generate a new master key (`bin/rails credentials:edit`) and keep
-> the key out of version control.
+> **Security note:** `config/master.key` is git-ignored and is not in this
+> repository — only the encrypted `config/credentials.yml.enc` is tracked, and it
+> cannot be read without the key. Keep the key out of version control, and generate
+> a fresh one (`bin/rails credentials:edit`) before deploying to production.
 
 The environments use separate databases:
 
