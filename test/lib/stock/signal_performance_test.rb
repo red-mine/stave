@@ -62,6 +62,34 @@ class StockSignalPerformanceTest < ActiveSupport::TestCase
     assert_equal [75, 75], report.cohorts.map(&:sample_size)
   end
 
+  # trend_group is the only caller of the slope bands here, and it is reached
+  # just by passing group_by_trend. It used to keep its own copy of those
+  # thresholds, so this pins it to whatever Stock::Trend now says.
+  test "groups cohorts by the shared trend bands" do
+    dates = 20.times.map { |index| Date.new(2026, 1, 1) + index }
+    slopes = {
+      "sza000000" => [0.03, 0.03],    # both uptrend -> uptrend
+      "szb000000" => [0.03, -0.05],   # disagree     -> mixed
+      "szc000000" => [nil, nil]       # neither      -> unknown
+    }
+
+    slopes.each do |stock, (year_trend, long_trend)|
+      dates.each do |date|
+        StockSignalSnapshot.create!(
+          stock: stock, area: Stock::SZSTK, signal_date: date, price: 10.0,
+          year_signal: "BUY5", lohas_signal: "BUY5",
+          year_trend: year_trend, long_trend: long_trend
+        )
+      end
+    end
+
+    report = Stock::SignalPerformance.new(Stock::SZSTK).call(group_by_trend: true)
+
+    assert report.ready
+    assert_equal ["mixed", "unknown", "uptrend"], report.cohorts.map(&:trend_group).sort
+    assert_equal [15, 15, 15], report.cohorts.map(&:sample_size)
+  end
+
   test "withholds results until twenty distinct market dates exist" do
     19.times do |index|
       StockSignalSnapshot.create!(

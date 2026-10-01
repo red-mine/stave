@@ -86,20 +86,12 @@ module Stock
     end
 
     def trend_group(year_trend, long_trend)
-      trends = [year_trend, long_trend].compact.map { |c| classify_slope(c) }
+      # A third copy of the slope thresholds used to live here. The values it
+      # produced were identical to Stock::Trend's: nil slopes are dropped by
+      # compact before this map, so Trend.classify's "unknown" never fires.
+      trends = [year_trend, long_trend].compact.map { |c| Trend.classify(c) }
       return "mixed" if trends.uniq.size > 1
       trends.first || "unknown"
-    end
-
-    def classify_slope(coef)
-      return nil if coef.nil?
-
-      c = coef.to_f
-      return "strong_uptrend" if c >= 0.05
-      return "uptrend" if c >= 0.02
-      return "weak_uptrend" if c > 0.01
-      return "flat" if c >= -0.01
-      "downtrend"
     end
 
     def valid_prices?(entry, exit_snapshot)

@@ -103,27 +103,14 @@ module StocksHelper
     nil
   end
 
-  TREND_LABELS = {
-    "strong_uptrend" => "Strong uptrend",
-    "uptrend" => "Uptrend",
-    "weak_uptrend" => "Weak uptrend",
-    "flat" => "Flat",
-    "downtrend" => "Downtrend",
-    "unknown" => "Unknown"
-  }.freeze
-
+  # Both of these used to keep their own copy of the slope thresholds and the
+  # band labels, so the buy-candidate list on the market page and a stock's own
+  # trend health could drift apart. Stock::Trend now owns both.
   def trend_status_label(status)
-    TREND_LABELS.fetch(status.to_s, status.to_s.humanize)
+    Stock::Trend.label(status)
   end
 
   def classify_trend(coef)
-    return "unknown" if coef.nil?
-
-    c = coef.to_f
-    return "strong_uptrend" if c >= 0.05
-    return "uptrend" if c >= 0.02
-    return "weak_uptrend" if c > 0.01
-    return "flat" if c >= -0.01
-    "downtrend"
+    Stock::Trend.classify(coef)
   end
 end

@@ -37,6 +37,22 @@ class StocksHelperTest < ActionView::TestCase
     assert_nil refresh_duration(started_at: nil, finished_at: nil)
   end
 
+  # The helper classifies slopes for the market page's buy candidates while the
+  # engine classifies them for a stock's own trend health. Both must agree, so
+  # these pin the helper to the shared rule: a local copy drifting back into
+  # StocksHelper shows up here rather than as two pages disagreeing.
+  test "classify_trend agrees with the shared rule across every band" do
+    [nil, 1.0, 0.05, 0.049, 0.02, 0.019, 0.011, 0.01, -0.01, -0.011, -0.05].each do |slope|
+      assert_equal Stock::Trend.classify(slope), classify_trend(slope), "slope #{slope.inspect}"
+    end
+  end
+
+  test "trend_status_label agrees with the shared labels" do
+    Stock::Trend::LABELS.each_key do |status|
+      assert_equal Stock::Trend.label(status), trend_status_label(status), "status #{status}"
+    end
+  end
+
   test "reports the actual first and last chart dates" do
     series = [
       { name: "Price", data: [[Date.new(2026, 7, 29), 10], [Date.new(2026, 7, 31), 11]] },
