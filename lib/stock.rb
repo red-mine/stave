@@ -1,6 +1,5 @@
 require_relative "stock/version"
 require_relative "stock/railtie"
-require_relative "stock/core_ext"
 require_relative "stock/database_backup"
 require_relative "stock/data_status"
 require_relative "stock/refresh_run"

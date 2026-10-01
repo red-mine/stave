@@ -247,9 +247,10 @@ end
 class StockResultTest < ActiveSupport::TestCase
   LOHAS_DATE = Date.new(2026, 8, 31)
 
-  # staves writes from the models models() built, so it needs a price history.
-  # This supplies one in place of the .day files that result never reads.
-  class StockForStaves < Stock::Stock
+  # staves writes from the models models() built, and valid_model? judges one,
+  # so both need a price history. This supplies one in place of .day files,
+  # which lets _model's branches be reached without binary fixtures.
+  class StockWithPrices < Stock::Stock
     def initialize(prices)
       super(Stock::SZSTK, Stock::STAVE)
       start_date = Date.new(2024, 1, 1)
@@ -336,7 +337,7 @@ class StockResultTest < ActiveSupport::TestCase
 
   test "staves writes each model's own values to the table" do
     prices = Array.new(Stock::STAVE * 2) { |index| 30.0 + index * 0.08 + Math.sin(index.fdiv(7)) * 2 }
-    engine = StockForStaves.new(prices)
+    engine = StockWithPrices.new(prices)
 
     engine.models
     engine.staves(StocksCoefsLoha)
@@ -347,5 +348,27 @@ class StockResultTest < ActiveSupport::TestCase
     assert_equal model[:price], row.price
     assert_equal model[:date], row.date
     assert_equal model[:coef], row.coef
+  end
+
+  # valid_model? is the gate Stave#result uses to decide whether a stock is
+  # worth a signal row at all, so its thresholds are what keep the index from
+  # filling up with stocks that are going nowhere.
+  test "a stock trending up steeply enough is a valid model" do
+    prices = Array.new(Stock::STAVE * 2) { |index| 20.0 + index * 0.05 }
+    assert StockWithPrices.new(prices).valid_model?("sz000001")
+  end
+
+  test "a stock rising too slowly is not a valid model" do
+    prices = Array.new(Stock::STAVE * 2) { |index| 20.0 + index * 0.0001 }
+    refute StockWithPrices.new(prices).valid_model?("sz000001")
+  end
+
+  test "a flat series is not a valid model" do
+    prices = Array.new(Stock::STAVE * 2) { 20.0 }
+    refute StockWithPrices.new(prices).valid_model?("sz000001")
+  end
+
+  test "a stock with no price history is not a valid model" do
+    refute StockWithPrices.new([]).valid_model?("sz000001")
   end
 end
