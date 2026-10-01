@@ -46,10 +46,14 @@ module Stock
           lohas_bolls:  nil, lohas_mup:    nil, lohas_mdn:   nil,
           years_bolls:  nil, years_mup:    nil, years_mdn:   nil
         }
-        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, good_stock)
-        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, good_stock)
-        data[:lohas_price], data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, good_stock)
-        data[:years_price], data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, good_stock)
+        # A stock's stave rows and its channel rows plot the same price series,
+        # so build it once per engine instead of once per series.
+        loha_price  = _series_price(loha_engine, LOHAS, good_stock)
+        year_price  = _series_price(year_engine, YEARS, good_stock)
+        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, good_stock, price: loha_price)
+        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, good_stock, price: year_price)
+        _, data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, good_stock, price: loha_price)
+        _, data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, good_stock, price: year_price)
 
         stave_series = [
           { table: StocksStaveLoha, prefix: :lohas, keys: %w[price trend up1 dn1 top bot] },
@@ -231,6 +235,10 @@ module Stock
       price
     end
 
+    def _series_price(stocks, years, stock)
+      _better(_price(stocks, years, stock), years)
+    end
+
     def _filter(table, filter, stock)
       arel  = table.arel_table
       stave = table
@@ -304,8 +312,8 @@ module Stock
       return bolls_data
     end
 
-    def _stave(stocks, years, stock)
-      stave_price   = _price(stocks, years, stock)
+    def _stave(stocks, years, stock, price: nil)
+      stave_price   = price || _series_price(stocks, years, stock)
 
       stave_trend   = stocks.good_trend(stock             )
       stave_up1     = stocks.good_stave(stock,  true,   1 )
@@ -313,7 +321,6 @@ module Stock
       stave_top     = stocks.good_stave(stock,  true,   2 )
       stave_bot     = stocks.good_stave(stock,  false,  2 )
 
-      stave_price   = _better(stave_price,  years )
       stave_trend   = _better(stave_trend,  years )
       stave_up1     = _better(stave_up1,    years )
       stave_dn1     = _better(stave_dn1,    years )
@@ -324,14 +331,13 @@ module Stock
     end
 
 
-    def _bolls(stocks, years, stock)
-      bolls_price   = _price(stocks, years, stock)
+    def _bolls(stocks, years, stock, price: nil)
+      bolls_price   = price || _series_price(stocks, years, stock)
 
       bolls_bolls   = stocks.good_aver(stock, STAVE         )
       bolls_mup     = stocks.good_boll(stock, STAVE,  true  )
       bolls_mdn     = stocks.good_boll(stock, STAVE,  false )
 
-      bolls_price   = _better(bolls_price,  years )
       bolls_bolls   = _better(bolls_bolls,  years )
       bolls_mup     = _better(bolls_mup,    years )
       bolls_mdn     = _better(bolls_mdn,    years )
