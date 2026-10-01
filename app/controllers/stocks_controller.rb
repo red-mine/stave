@@ -169,10 +169,20 @@ class StocksController < ApplicationController
         scope.where(year_signal: Stock::SignalFamily::SELL)
           .or(scope.where(lohas_signal: Stock::SignalFamily::SELL))
       when "watch"
-        scope
-          .where.not(year_signal: Stock::SignalFamily::SELL)
-          .where.not(lohas_signal: Stock::SignalFamily::SELL)
-          .where.not(year_signal: Stock::SignalFamily::BUY, lohas_signal: Stock::SignalFamily::BUY)
+        # Spelled out rather than written as where.not: in SQL, NOT (x = 'SEL7')
+        # is NULL rather than true when x is NULL, so a stock with one horizon
+        # unrecorded was dropped here while SignalFamily.classify called it
+        # watch. It showed under All and under no filter at all. Each test
+        # below therefore treats NULL as "neither sell nor buy", as classify does.
+        arel     = scope.arel_table
+        not_sell = ->(name) { arel[name].not_in(Stock::SignalFamily::SELL).or(arel[name].eq(nil)) }
+        not_buy  = ->(name) { arel[name].not_in(Stock::SignalFamily::BUY).or(arel[name].eq(nil)) }
+
+        scope.where(
+          not_sell.call(:year_signal)
+            .and(not_sell.call(:lohas_signal))
+            .and(not_buy.call(:year_signal).or(not_buy.call(:lohas_signal)))
+        )
       else
         scope
       end

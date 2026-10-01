@@ -113,7 +113,14 @@ module Stock
       stocks_stavs  = if !stock.nil? and !stock.empty?
         staves_area.where(staves_arel[:stock].matches_any(["%" + stock + "%"]))
       else
-        staves_area.where(staves_arel[:lohas_signal].not_eq(""))
+        # Either horizon alone is enough to list a stock. Checking only
+        # lohas_signal hid a stock whose LOHAS reading was nil but whose year
+        # reading was a sell alert -- the one signal a reader most needs to see.
+        # NULL <> '' is NULL, not true, so a row with no signal on either
+        # horizon is still left out.
+        staves_area.where(
+          staves_arel[:lohas_signal].not_eq("").or(staves_arel[:year_signal].not_eq(""))
+        )
       end
       stocks_stavs  = stocks_stavs.order(staves_arel[:price])
       return stocks_stavs, stavs_date

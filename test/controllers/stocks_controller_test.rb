@@ -497,6 +497,64 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     assert_select ".stock-code", count: 1, text: /SZ000003/
   end
 
+  # A stock is listed when either horizon produced a signal; checking only the
+  # LOHAS one hid stocks whose year reading was a sell alert.
+  test "a stock is listed when either horizon produced a signal" do
+    StocksCoefsStav.create!(
+      stock: "sz000001", area: Stock::SZSTK, price: 10,
+      year_signal: "SEL7", lohas_signal: nil, date: Date.new(2026, 7, 31)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz000002", area: Stock::SZSTK, price: 11,
+      year_signal: nil, lohas_signal: "BUY5", date: Date.new(2026, 7, 31)
+    )
+    StocksCoefsStav.create!(
+      stock: "sz000003", area: Stock::SZSTK, price: 12,
+      year_signal: nil, lohas_signal: nil, date: Date.new(2026, 7, 31)
+    )
+
+    get stocks_by_area_path(Stock::SZSTK)
+    assert_response :success
+    assert_select ".stock-code", count: 2
+    assert_select ".stock-code", text: /SZ000001/
+    assert_select ".stock-code", text: /SZ000002/
+    assert_select ".stock-code", text: /SZ000003/, count: 0
+  end
+
+  # A horizon can be unrecorded, and SignalFamily.classify treats that as
+  # neither buy nor sell. The SQL filter has to agree, or a stock shows under
+  # All and under no filter at all.
+  test "a stock with one horizon unrecorded is grouped as SignalFamily would" do
+    {
+      "sz000001" => [nil, "BUY5"],
+      "sz000003" => [nil, "SEL7"],
+      "sz000005" => [nil, "WAT9"]
+    }.each do |stock, (year_signal, lohas_signal)|
+      StocksCoefsStav.create!(
+        stock: stock, area: Stock::SZSTK, price: 10,
+        year_signal: year_signal, lohas_signal: lohas_signal, date: Date.new(2026, 7, 31)
+      )
+    end
+
+    get stocks_by_area_path(Stock::SZSTK)
+    assert_response :success
+    assert_select ".signal-filter", text: /All.*3/m
+    assert_select ".signal-filter", text: /Buy agreement.*0/m
+    assert_select ".signal-filter", text: /Sell alert.*1/m
+    assert_select ".signal-filter", text: /Watch.*2/m
+
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "watch" }
+    assert_select ".stock-code", count: 2
+    assert_select ".stock-code", text: /SZ000001/
+    assert_select ".stock-code", text: /SZ000005/
+
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "sell" }
+    assert_select ".stock-code", count: 1, text: /SZ000003/
+
+    get stocks_by_area_path(Stock::SZSTK), params: { signal: "buy" }
+    assert_select ".stock-code", count: 0
+  end
+
   test "invalid action filters safely default to all" do
     get stocks_by_area_path(Stock::SZSTK), params: { signal: "unknown" }
 
