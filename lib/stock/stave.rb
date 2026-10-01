@@ -46,14 +46,14 @@ module Stock
           lohas_bolls:  nil, lohas_mup:    nil, lohas_mdn:   nil,
           years_bolls:  nil, years_mup:    nil, years_mdn:   nil
         }
-        # A stock's stave rows and its channel rows plot the same price series,
-        # so build it once per engine instead of once per series.
+        # The channel tables plot the same price series as the stave tables, so
+        # one series per engine fills both rather than building it twice.
         loha_price  = _series_price(loha_engine, LOHAS, stock)
         year_price  = _series_price(year_engine, YEARS, stock)
         data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, stock, price: loha_price)
         data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, stock, price: year_price)
-        _, data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, stock, price: loha_price)
-        _, data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, stock, price: year_price)
+        data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, stock)
+        data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, stock)
 
         stave_series = [
           { table: StocksStaveLoha, prefix: :lohas, keys: %w[price trend up1 dn1 top bot] },
@@ -291,9 +291,9 @@ module Stock
     end
 
 
-    def _bolls(stocks, years, stock, price: nil)
-      bolls_price   = price || _series_price(stocks, years, stock)
-
+    # Returns no price: the channel table's price column is filled from the
+    # stave series above, so a second one built here was thrown away.
+    def _bolls(stocks, years, stock)
       bolls_bolls   = stocks.aver(stock, STAVE         )
       bolls_mup     = stocks.boll(stock, STAVE,  true  )
       bolls_mdn     = stocks.boll(stock, STAVE,  false )
@@ -302,7 +302,7 @@ module Stock
       bolls_mup     = _better(bolls_mup,    years )
       bolls_mdn     = _better(bolls_mdn,    years )
 
-      return bolls_price, bolls_bolls, bolls_mup, bolls_mdn
+      return bolls_bolls, bolls_mup, bolls_mdn
     end
 
     def classify_trend(coef)
