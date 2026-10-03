@@ -34,6 +34,26 @@ bundle exec rails daily_refresh
   `Another Stock Stave refresh already holds the lock` 后直接跳过；
   安装 systemd 定时器时也会自动删掉遗留的 cron 条目
 
+## 信号邮件通知
+
+每次 `daily_refresh` 完成后，会自动对比最近两个交易日的信号快照，把信号家族
+发生变化的股票（新进入买入区、新的卖出警报、跌回观望区）汇总成一封邮件。
+未配置收件人时不会发送，只在日志里打印摘要。
+
+需要设置以下环境变量（详见 README 的 "Signal email notifications"）：
+
+- `STAVE_NOTIFY_EMAIL` — 收件邮箱；设置后才真正发送
+- `STAVE_SMTP_ADDRESS` / `STAVE_SMTP_PORT` — SMTP 服务器，如 QQ 邮箱 `smtp.qq.com:587`
+- `STAVE_SMTP_USER` / `STAVE_SMTP_PASSWORD` — 邮箱账号和授权码
+- `STAVE_HOST` — 可选，让邮件里的个股链接可点击
+
+发送失败只记录日志，不影响刷新本身的成功状态。手动预览：
+
+```powershell
+bundle exec rails signal_notify       # 打印摘要；已配置时同时发送
+bundle exec rails "signal_notify[sz]" # 只看某个市场
+```
+
 ## 什么时候可以回测
 
 连续运行 **20 个交易日** 后，才能看到回测报告：

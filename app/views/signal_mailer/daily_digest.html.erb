@@ -1,0 +1,32 @@
+<h2>Stock Stave signal changes for <%= @report.area.upcase %></h2>
+<p><%= @report.previous_date %> &rarr; <%= @report.signal_date %></p>
+
+<% @families.each do |family, events| -%>
+<% next if events.empty? -%>
+<h3><%= family.upcase %> (<%= events.size %>)</h3>
+<table>
+  <thead>
+    <tr><th>Stock</th><th>Change</th><th>Price</th><th>Signals (year/lohas)</th></tr>
+  </thead>
+  <tbody>
+    <% events.each do |event| -%>
+    <tr>
+      <td>
+        <% if stock_url_for(event.stock) -%>
+          <%= link_to event.stock, stock_url_for(event.stock) %>
+        <% else -%>
+          <%= event.stock %>
+        <% end -%>
+      </td>
+      <td><%= event.previous_family || "new" %> &rarr; <%= event.family %></td>
+      <td><%= number_with_precision(event.price, precision: 2) %></td>
+      <td><%= [event.year_signal, event.lohas_signal].compact.join(" / ") %></td>
+    </tr>
+    <% end -%>
+  </tbody>
+</table>
+<% end -%>
+
+<% if @base_url -%>
+<p><%= link_to "Open the full list", "#{@base_url}/#{@report.area}" %> in Stock Stave.</p>
+<% end -%>

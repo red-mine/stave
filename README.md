@@ -165,6 +165,40 @@ while the data ages. The status records the runner's own start time in
 `bin/install-daily-refresh-cron.sh` remains available as a deprecated fallback
 for Linux systems without systemd user services.
 
+### Signal email notifications
+
+Every `daily_refresh` run diffs the two newest signal snapshot dates and
+reports stocks whose signal family changed — newly entering the buy zone,
+new sell alerts, or dropping back to watch. When no recipient is configured
+the digest is printed to the refresh log instead, so the run stays useful
+offline.
+
+Email is opt-in via the environment; nothing is sent unless
+`STAVE_NOTIFY_EMAIL` is set, and a delivery failure is logged without
+failing the refresh:
+
+```powershell
+$env:STAVE_NOTIFY_EMAIL  = "you@example.com"   # recipient; enables sending
+$env:STAVE_SMTP_ADDRESS  = "smtp.qq.com"       # e.g. QQ Mail
+$env:STAVE_SMTP_PORT     = "587"               # optional, default 587
+$env:STAVE_SMTP_USER     = "you@qq.com"
+$env:STAVE_SMTP_PASSWORD = "<mailbox auth code>"
+$env:STAVE_HOST          = "http://localhost:3000"  # optional; makes stock links in the email clickable
+```
+
+`STAVE_SMTP_FROM` overrides the sender (it defaults to `STAVE_SMTP_USER`),
+and `STAVE_SMTP_AUTH` / `STAVE_SMTP_STARTTLS` override the default `plain`
+authentication and TLS. For QQ Mail generate an authorization code in the
+mailbox settings instead of using the account password.
+
+Preview the digest for one market or all markets without waiting for the
+scheduled run:
+
+```powershell
+bundle exec rails signal_notify      # prints the digest, sends when configured
+bundle exec rails "signal_notify[sz]"
+```
+
 Refresh all three markets with one command:
 
 ```powershell

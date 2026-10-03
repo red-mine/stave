@@ -123,6 +123,22 @@ task daily_refresh: :environment do
 
       stored = StockSignalSnapshot.group(:area).count
       puts "Daily refresh complete. Captured rows: #{captured.sort.to_h.inspect}. Stored history rows: #{stored.sort.to_h.inspect}"
+
+      Stock::AREAS.each do |area|
+        report = Stock::SignalNotifier.new(area).call
+        next if report.empty?
+
+        if ENV["STAVE_NOTIFY_EMAIL"].present?
+          begin
+            SignalMailer.daily_digest(report).deliver_now
+            puts "Sent #{area.upcase} signal changes to #{ENV['STAVE_NOTIFY_EMAIL']}: #{report.buys.size} buy, #{report.sells.size} sell"
+          rescue StandardError => error
+            puts "Signal email for #{area.upcase} failed: #{error.message}"
+          end
+        else
+          puts "#{area.upcase} signal changes: #{report.buys.size} buy, #{report.sells.size} sell (set STAVE_NOTIFY_EMAIL to receive these by email)"
+        end
+      end
     end
   rescue Stock::RefreshRun::AlreadyRunning => error
     abort error.message
@@ -154,6 +170,34 @@ task snapshot_status: :environment do
   Stock::AREAS.each do |area|
     snapshots = StockSignalSnapshot.where(area: area)
     puts "#{area.upcase}: rows=#{snapshots.count} dates=#{snapshots.distinct.count(:signal_date)} latest=#{snapshots.maximum(:signal_date) || 'missing'}"
+  end
+end
+
+desc "Print the signal-change digest for a market (or all markets) and email it when STAVE_NOTIFY_EMAIL is set"
+task :signal_notify, [:area] => :environment do |_task, args|
+  areas = args.area.present? ? [args.area] : Stock::AREAS
+  unsupported = areas - Stock::AREAS
+  abort "Unsupported market(s): #{unsupported.join(', ')}" unless unsupported.empty?
+
+  areas.each do |area|
+    report = Stock::SignalNotifier.new(area).call
+    if report.signal_date.nil?
+      puts "#{area.upcase}: not enough signal history yet."
+      next
+    end
+    if report.empty?
+      puts "#{area.upcase}: no signal changes between #{report.previous_date} and #{report.signal_date}."
+      next
+    end
+
+    message = SignalMailer.daily_digest(report)
+    puts message.text_part.decoded
+    if ENV["STAVE_NOTIFY_EMAIL"].present?
+      message.deliver_now
+      puts "Sent to #{ENV['STAVE_NOTIFY_EMAIL']}."
+    else
+      puts "STAVE_NOTIFY_EMAIL is not set; printed the digest without sending."
+    end
   end
 end
 
