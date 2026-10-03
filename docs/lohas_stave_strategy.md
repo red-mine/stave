@@ -58,6 +58,7 @@ long-term, low-maintenance investing (no daily monitoring needed), hence the
 | Per-stock five-line series | `StocksStaveLoha` / `StocksStaveYear` tables |
 | Per-stock channel series | `StocksBollsLoha` / `StocksBollsYear` tables |
 | Combined LOHAS+Year signal | `StocksCoefsStav` table (`loha`/`year` = slope, `lohas_signal`/`year_signal` = signal code, `boll3`/`stav3`/`boll1`/`stav1` = zone codes) |
+| Index/ETF readings | `Stock::IndexSignals` ([lib/stock/index_signals.rb](../lib/stock/index_signals.rb)) — same math over curated TDX index/ETF daily files, computed on demand (no table); the stock pipeline's 100-yuan close-price guard is lifted, every other precondition is identical |
 
 ## Signal codes (`_price`) — current status
 
@@ -155,7 +156,9 @@ signal-code bug above:
    mode (deteriorating company fundamentals) isn't guarded against at all.
 
 2. **No grid-trading execution.** The strategy mentions treating the four bands between
-   the five lines as grid-trading zones for capital allocation. The app is a
-   classification/charting tool only — no position sizing or execution logic exists. This
-   is likely acceptable as scope (decision support vs. auto-trading), not a bug, but is
-   listed here for completeness.
+   the five lines as grid-trading zones for capital allocation. The app only simulates
+   this: `simulate_strategy` can weight entries by how deep the fill-day zone is
+   (below −2SD ×2.0, −1SD..−2SD ×1.5, shallower ×1.0) and compares the result against
+   equal sizing, but it is a backtest comparison, not live execution logic. This is
+   likely acceptable as scope (decision support vs. auto-trading), but is listed here
+   for completeness.

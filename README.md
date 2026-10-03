@@ -277,6 +277,28 @@ bundle exec rails "stave[sz]"
 
 Repeat with `sh` or `bj` as required.
 
+## Read broad-market indexes and ETFs with the same stave
+
+The five-line method is documented for ETFs as much as for stocks, and the
+TongdaXin daily files already carry the index and ETF daily bars, so a curated
+set of benchmarks can be read on demand — no extra data source and no database
+table:
+
+```powershell
+bundle exec rails index_signals          # SH + SZ instruments, side by side
+bundle exec rails "index_signals[sh]"    # one market
+```
+
+The same LOHAS (3.5y) and YEARS (1y) regression plus the same combined
+signal codes apply; the difference from the stock pipeline is only that the
+stock data guard (which silently skips anything closing above 100 yuan, a
+sanity cap for stock prices that every index point level violates) is lifted.
+Every other precondition is unchanged: an instrument whose trend slope fails
+the strategy's bar reports `no model` instead of producing a signal, exactly
+like a downtrending stock. Note the slope bar is an absolute yuan-per-day
+threshold, so it is near-automatic for four-digit indexes and genuinely hard
+for low-priced ETFs — that quirk is the strategy's own, applied consistently.
+
 ## Simulate the strategy on the saved signal history
 
 Once 20 or more trading dates of snapshots are recorded (see

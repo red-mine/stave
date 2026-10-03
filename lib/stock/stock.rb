@@ -1,11 +1,12 @@
 module Stock
   class Stock
 
-    def initialize(area, years, trim: 0)
+    def initialize(area, years, trim: 0, max_price: STAVE)
       @area    = area
       @years   = years
       @days    = years + STAVE
       @trim    = trim
+      @max_price = max_price
       @models  = []
       @data_cache = {}
     end
@@ -97,6 +98,21 @@ module Stock
 
     def valid_model?(stock)
       _model(stock).present?
+    end
+
+    # Combined stave+channel reading for a single instrument. Indexes and
+    # ETFs trade at point levels far above the stock sanity cap, so the
+    # caller builds its engine with max_price: nil; anything without a
+    # usable model (missing data or non-positive slope) returns nil. The
+    # first slot of _price is the above-both-midlines boolean (stored in
+    # the stocks tables' "good" column), not a price -- the last price
+    # lives on model[:price].
+    def signal_for(stock)
+      model = _model(stock)
+      return nil if model.empty?
+
+      above, stave, boll, stav = _price(model)
+      { model: model, above_midlines: above, stave: stave, boll: boll, stav: stav }
     end
 
     def trend(stock)
@@ -356,7 +372,7 @@ module Stock
       File.open(path, "rb") do |file|
         file.seek(-(1 + @trim) * 32, IO::SEEK_END)
         last = _read_record(file, -1)
-        return [] if last[:price] > STAVE
+        return [] if @max_price && last[:price] > @max_price
 
         file.seek(-(@days + @trim) * 32, IO::SEEK_END)
         binary = file.read(@days * 32)
@@ -407,7 +423,7 @@ module Stock
         binary = file.read(@days * 32)
         last_offset = (@days - 1) * 32
         last = _record(binary, last_offset, -1)
-        return [[], nil] if last[:price] > STAVE
+        return [[], nil] if @max_price && last[:price] > @max_price
 
         prices = Array.new(@days) do |index|
           binary.unpack1("L<", offset: index * 32 + 16).fdiv(STAVE)

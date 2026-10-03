@@ -268,6 +268,42 @@ task :signal_notify, [:area] => :environment do |_task, args|
   end
 end
 
+desc "Print the LOHAS stave signal for broad-market indexes and ETFs"
+task :index_signals, [:area] => :environment do |_task, args|
+  default_areas = Stock::IndexSignals::INSTRUMENTS.map { |instrument| instrument[:area] }.uniq
+  areas = args.area.present? ? [args.area] : default_areas
+  unsupported = areas - Stock::AREAS
+  abort "Unsupported market(s): #{unsupported.join(', ')}" unless unsupported.empty?
+
+  puts "=" * 84
+  puts "Index & ETF stave signals"
+  puts "=" * 84
+
+  areas.each do |area|
+    readings = Stock::IndexSignals.new(area).call
+    puts "\n#{area.upcase}"
+    if readings.empty?
+      puts "  No instruments configured."
+      next
+    end
+
+    puts format("  %-10s %-14s %-11s %10s  %-6s %-6s %-5s %s", "code", "name", "date", "price", "lohas", "years", "family", "trend")
+    readings.each do |reading|
+      if reading.status != :ok
+        puts format("  %-10s %-14s %s", reading.code, reading.name, reading.status.to_s.tr("_", " "))
+        next
+      end
+      puts format("  %-10s %-14s %-11s %10.2f  %-6s %-6s %-5s %s",
+        reading.code, reading.name, reading.date, reading.price,
+        reading.lohas_signal.presence || "-", reading.year_signal.presence || "-",
+        reading.family,
+        Stock::Trend.label(Stock::Trend.classify(reading.year)))
+    end
+  end
+  puts
+end
+
+
 desc "Report stocks whose latest coefficient date trails the market date"
 task stale_stocks: :environment do
   Stock::AREAS.each do |area|
