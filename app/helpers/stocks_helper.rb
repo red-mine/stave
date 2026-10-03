@@ -80,7 +80,56 @@ module StocksHelper
     Stock::Trend.label(status)
   end
 
+  def fundamentals_verdict_label(verdict)
+    {
+      "pass" => "Sound fundamentals",
+      "fail" => "Weak fundamentals",
+      "unknown" => "Fundamentals unverified"
+    }.fetch(verdict)
+  end
+
+  def fundamentals_badge(record)
+    quality = Stock::FundamentalsQuality.new(record).call
+    content_tag(
+      :span, fundamentals_verdict_label(quality.verdict),
+      class: "fundamentals-badge fundamentals-#{quality.verdict}",
+      title: fundamentals_tooltip(record, quality)
+    )
+  end
+
+  def signed_percentage(value)
+    return "—" if value.nil?
+
+    formatted = number_to_percentage(value.abs, precision: 1)
+    value.negative? ? "-#{formatted}" : "+#{formatted}"
+  end
+
+  def market_cap_label(value)
+    return "—" if value.nil?
+
+    number_to_human(value, units: { thousand: "K", million: "M", billion: "B", trillion: "T" }, format: "%n%u")
+  end
+
+  def fundamental_check_label(check)
+    name = { roe: "ROE (annualized)", revenue_yoy: "Revenue YoY", profit_yoy: "Profit YoY" }.fetch(check.name)
+    return "#{name}: no data (needs ≥ #{check.threshold}%)" if check.value.nil?
+
+    comparison = check.met ? "≥" : "<"
+    "#{name}: #{signed_percentage(check.value)} #{comparison} #{check.threshold}%"
+  end
+
   def classify_trend(coef)
     Stock::Trend.classify(coef)
+  end
+
+  private
+
+  def fundamentals_tooltip(record, quality)
+    return "No fundamentals fetched yet. Run bin/rails fundamentals_refresh." if record.nil?
+
+    parts = quality.checks.map { |check| fundamental_check_label(check) }
+    parts << "Report period: #{record.report_date}" if record.report_date
+    parts << "Fetched: #{record.fetched_at.to_date}" if record.fetched_at
+    parts.join(" · ")
   end
 end

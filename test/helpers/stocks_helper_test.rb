@@ -89,4 +89,23 @@ class StocksHelperTest < ActionView::TestCase
     assert_equal "2026-07-29 – 2026-07-31", chart_date_range(series)
     assert_equal "Date range unavailable", chart_date_range([])
   end
+
+  test "fundamentals badge reflects the quality verdict" do
+    record = StockFundamental.new(
+      area: Stock::SZSTK, stock: "sz000001", roe: 5.22, report_date: Date.new(2026, 6, 30),
+      revenue_yoy: 1.78, fetched_at: Time.current
+    )
+
+    assert_includes fundamentals_badge(record), "fundamentals-pass"
+    assert_includes fundamentals_badge(record), "Sound fundamentals"
+    assert_includes fundamentals_badge(nil), "fundamentals-unknown"
+  end
+
+  test "formats signed percentages and market caps" do
+    assert_equal "—", signed_percentage(nil)
+    assert_includes signed_percentage(-3.26), "-3.3%"
+    assert_includes signed_percentage(12.04), "+12.0%"
+    assert_equal "—", market_cap_label(nil)
+    assert_equal "225B", market_cap_label(224_526_473_551)
+  end
 end

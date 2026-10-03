@@ -199,6 +199,43 @@ bundle exec rails signal_notify      # prints the digest, sends when configured
 bundle exec rails "signal_notify[sz]"
 ```
 
+### Fundamentals screening
+
+The strategy's stated precondition is a fundamentally sound company, so the
+app can fetch per-stock fundamentals from Eastmoney's public HTTP endpoints
+and screen buy candidates against them:
+
+```powershell
+bundle exec rails fundamentals_refresh      # all markets
+bundle exec rails "fundamentals_refresh[sz]"
+```
+
+The refresh upserts one row per stock under `stock_fundamentals`: name, PE
+(TTM), PB, total market cap and latest price from the batch quote endpoint
+(Tencent `qt.gtimg.cn`, whose TLS survives where Eastmoney's push2 endpoint
+drops Ruby connections), plus the newest published report's weighted ROE,
+revenue YoY and net-profit YoY from the DataCenter performance report. Funds
+and ETFs in the stock universe are skipped — their PE/PB fields mean nothing.
+Beijing Exchange stocks whose codes were switched to 920xxx keep their report
+matched by company name. Weekly refreshes are enough — reports only change
+quarterly. Nothing is sent when you never run the task; candidate cards
+simply show no badge.
+
+The quality screen is configured through thresholds (percent values; set an
+empty string to disable a check):
+
+```powershell
+$env:FUND_ROE_MIN         = "8"   # annualized weighted ROE, default 8
+$env:FUND_REVENUE_YOY_MIN = "0"   # revenue YoY, default 0
+$env:FUND_PROFIT_YOY_MIN  = ""    # net-profit YoY, disabled by default
+```
+
+ROE is annualized by report quarter (Q1 ×4, half-year ×2, Q3 ×4/3) so
+mid-year reports are not punished against year-ends. Each buy candidate gets
+a fundamentals badge — green "Sound", red "Weak", gray "Unverified" (no data
+or an unjudgeable check) — and every stock page has a fundamentals panel
+with the raw numbers. This is a data screen, not financial advice.
+
 Refresh all three markets with one command:
 
 ```powershell

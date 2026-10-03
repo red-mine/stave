@@ -54,6 +54,23 @@ bundle exec rails signal_notify       # 打印摘要；已配置时同时发送
 bundle exec rails "signal_notify[sz]" # 只看某个市场
 ```
 
+## 基本面数据（可选）
+
+策略要求公司体质良好，可以从东方财富公开接口拉取基本面做初筛：
+
+```powershell
+bundle exec rails fundamentals_refresh       # 全部市场
+bundle exec rails "fundamentals_refresh[sz]" # 单个市场
+```
+
+每周跑一次即可（财报按季度更新）。数据包括 PE(TTM)、PB、市值、最新报告期的
+加权 ROE、营收同比、净利同比。筛选阈值可用环境变量调整：`FUND_ROE_MIN`
+（默认 8，按报告季度年化）、`FUND_REVENUE_YOY_MIN`（默认 0）、
+`FUND_PROFIT_YOY_MIN`（默认关闭，置空字符串即关闭某项）。
+
+买入候选卡片上会显示基本面徽标（绿色合格 / 红色存疑 / 灰色无数据），个股详情页
+有完整基本面面板。不运行此任务不影响其他功能。
+
 ## 什么时候可以回测
 
 连续运行 **20 个交易日** 后，才能看到回测报告：

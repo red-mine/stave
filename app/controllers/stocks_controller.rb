@@ -25,6 +25,7 @@ class StocksController < ApplicationController
       @stocks_stavs = filtered_signals(@stocks_stavs, @signal_filter)
     end
     @buy_candidates = stock ? [] : stave.strongest_buy_candidates
+    @candidate_fundamentals = StockFundamental.where(area: @area, stock: @buy_candidates.map(&:stock)).index_by(&:stock)
     @result_count = @stocks_stavs.count if stock
     refresh_run = Stock::RefreshRun.new
     @refresh_status = refresh_run.status
@@ -97,6 +98,8 @@ class StocksController < ApplicationController
     @trend_health = stave.trend_health(stock)
     @historical_data = @stock_date.present? && @market_date.present? && @stock_date < @market_date
     @signal_timeline = Stock::SignalTimeline.new(area, stock).call
+    @fundamental = StockFundamental.find_by(area: @area, stock: @stock)
+    @fundamental_quality = Stock::FundamentalsQuality.new(@fundamental).call
     if @signal_timeline.any?
       current = @signal_timeline.first
       @current_decision = Stock::SignalFamily.classify(current.year_signal, current.lohas_signal)

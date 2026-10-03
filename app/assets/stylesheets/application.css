@@ -161,6 +161,10 @@ a { color: var(--teal-dark); }
 .buy-card-top span { padding: 4px 7px; border-radius: 999px; color: #0b684f; background: #dff5ec; font-size: 0.6rem; font-weight: 850; }
 .candidate-labels { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
 .buy-card-top .candidate-history { color: #596579; background: #edf1f4; }
+.fundamentals-badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 0.66rem; font-weight: 750; }
+.fundamentals-pass { color: var(--positive); background: rgba(20, 125, 100, 0.12); }
+.fundamentals-fail { color: var(--negative); background: rgba(181, 71, 71, 0.12); }
+.fundamentals-unknown { color: var(--muted); background: #edf1f4; }
 .buy-card-top .candidate-history-new-buy-signal { color: #805817; background: #f8e7bd; }
 .candidate-price { display: flex; align-items: baseline; gap: 8px; margin: 17px 0 5px; color: var(--ink); font-size: 1.25rem; font-weight: 800; }
 .candidate-price small { color: var(--muted); font-size: 0.66rem; font-weight: 650; text-transform: uppercase; }
@@ -637,3 +641,64 @@ a { color: var(--teal-dark); }
 .candidate-trend.trend-weak_uptrend { background: #fdf8e8; color: #9c7c1c; }
 .candidate-trend.trend-flat { background: #f1f3f5; color: #495057; }
 .candidate-trend.trend-downtrend { background: #f9ebeb; color: #b54747; }
+
+/* Fundamentals panel (sourced from Eastmoney) */
+.fundamentals {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 28px 0;
+  padding: 28px;
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.fundamentals .eyebrow { color: var(--teal); }
+
+#fundamentals-title .fundamentals-badge { vertical-align: middle; }
+
+.fundamentals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.fundamentals-grid > div {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.fundamentals-grid dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.fundamentals-grid dd {
+  margin: 6px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.fundamentals-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fundamentals-checks li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.fundamentals-check-met { color: var(--positive); background: rgba(20, 125, 100, 0.12); }
+.fundamentals-check-missed { color: var(--negative); background: rgba(181, 71, 71, 0.12); }
+.fundamentals-check-unknown { color: var(--muted); background: #edf1f4; }

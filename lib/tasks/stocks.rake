@@ -75,6 +75,21 @@ task :refresh, [:area1, :area2, :area3] => :environment do |_task, args|
   end
 end
 
+desc "Fetch fundamentals (PE, PB, ROE, growth) from Eastmoney for a market (or all markets)"
+task :fundamentals_refresh, [:area] => :environment do |_task, args|
+  areas = args.area.present? ? [args.area] : Stock::AREAS
+  unsupported = areas - Stock::AREAS
+  abort "Unsupported market(s): #{unsupported.join(', ')}" unless unsupported.empty?
+
+  puts "Fetching latest performance reports from Eastmoney..."
+  reports = Stock::FundamentalsFetcher.fetch_reports(Stock::FundamentalsFetcher.transport)
+
+  areas.each do |area|
+    counts = Stock::FundamentalsFetcher.new(area).call(reports: reports)
+    puts "#{area.upcase}: stocks=#{counts[:stocks]} upserted=#{counts[:upserted]} with_report=#{counts[:with_report]} skipped=#{counts[:skipped]}"
+  end
+end
+
 desc "Report TongdaXin source and generated-data health"
 task data_status: :environment do
   checker = Stock::DataStatus.new

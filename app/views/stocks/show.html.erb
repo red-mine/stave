@@ -52,6 +52,35 @@
     </section>
   <% end %>
 
+  <% if @fundamental %>
+    <section class="fundamentals" aria-labelledby="fundamentals-title">
+      <div>
+        <p class="eyebrow">Company quality</p>
+        <h2 id="fundamentals-title">
+          Fundamentals
+          <span class="fundamentals-badge fundamentals-<%= @fundamental_quality.verdict %>"><%= fundamentals_verdict_label(@fundamental_quality.verdict) %></span>
+        </h2>
+        <p class="trend-note">The strategy assumes a fundamentally sound company; deteriorating fundamentals break the mean-reversion premise. Source: Eastmoney, latest report <%= @fundamental.report_date || "unknown" %>, fetched <%= @fundamental.fetched_at&.to_date || "unknown" %>.</p>
+      </div>
+      <dl class="fundamentals-grid">
+        <div><dt>Name</dt><dd><%= @fundamental.name || "—" %></dd></div>
+        <div><dt>PE (TTM)</dt><dd><%= formatted_number(@fundamental.pe_ttm) %></dd></div>
+        <div><dt>PB</dt><dd><%= formatted_number(@fundamental.pb) %></dd></div>
+        <div><dt>Market cap</dt><dd><%= market_cap_label(@fundamental.market_cap) %></dd></div>
+        <div><dt>ROE (annualized)</dt><dd><%= @fundamental_quality.annualized_roe ? signed_percentage(@fundamental_quality.annualized_roe) : "—" %></dd></div>
+        <div><dt>Revenue YoY</dt><dd><%= signed_percentage(@fundamental.revenue_yoy) %></dd></div>
+        <div><dt>Profit YoY</dt><dd><%= signed_percentage(@fundamental.profit_yoy) %></dd></div>
+      </dl>
+      <% if @fundamental_quality.checks.any? %>
+        <ul class="fundamentals-checks">
+          <% @fundamental_quality.checks.each do |check| %>
+            <li class="fundamentals-check-<%= check.met.nil? ? "unknown" : (check.met ? "met" : "missed") %>"><%= fundamental_check_label(check) %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+  <% end %>
+
   <% if @signal_timeline.any? %>
     <% current_signal = @signal_timeline.first %>
     <section class="current-decision decision-<%= @current_decision %>" aria-labelledby="current-decision-title">

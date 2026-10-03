@@ -10,7 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_03_000000) do
+  create_table "stock_fundamentals", force: :cascade do |t|
+    t.string "area", null: false
+    t.datetime "created_at", null: false
+    t.datetime "fetched_at", null: false
+    t.bigint "market_cap"
+    t.string "name"
+    t.float "pb"
+    t.float "pe"
+    t.float "pe_ttm"
+    t.float "price"
+    t.float "profit_yoy"
+    t.date "report_date"
+    t.float "revenue_yoy"
+    t.float "roe"
+    t.string "stock", null: false
+    t.datetime "updated_at", null: false
+    t.index ["area", "stock"], name: "index_stock_fundamentals_on_area_and_stock", unique: true
+  end
+
   create_table "stock_signal_snapshots", force: :cascade do |t|
     t.string "area", null: false
     t.datetime "created_at", null: false

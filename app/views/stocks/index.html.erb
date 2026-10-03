@@ -77,6 +77,9 @@
                   <% candidate_trend = classify_trend(candidate.year) %>
                   <span class="candidate-trend trend-<%= candidate_trend %>"><%= trend_status_label(candidate_trend) %></span>
                   <span><%= candidate.year_signal %> + <%= candidate.lohas_signal %></span>
+                  <% if @candidate_fundamentals.key?(candidate.stock) %>
+                    <%= fundamentals_badge(@candidate_fundamentals[candidate.stock]) %>
+                  <% end %>
                 </div>
               </div>
               <div class="candidate-score-row">
