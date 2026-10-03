@@ -729,7 +729,8 @@ class StocksControllerTest < ActionDispatch::IntegrationTest
     ]
     trade = Stock::StrategySimulation::Trade.new(
       stock: "sz000001", entry_date: dates[0], exit_date: dates[2],
-      entry_price: 10.0, exit_price: 10.3, return_pct: 3.0, reason: "sell"
+      entry_price: 10.0, exit_price: 10.3, return_pct: 3.0, reason: "sell",
+      weight: 1.0, zone: -2
     )
     simulation = Stock::StrategySimulation::Result.new(
       ready: true, dates: dates.size, starting_cash: 100_000.0, final_equity: 103_000.0,

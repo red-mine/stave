@@ -277,6 +277,38 @@ bundle exec rails "stave[sz]"
 
 Repeat with `sh` or `bj` as required.
 
+## Simulate the strategy on the saved signal history
+
+Once 20 or more trading dates of snapshots are recorded (see
+`backfill_signal_history` to rebuild history from existing price data), the
+simulation task replays the buy/sell recommendations on every historical day:
+
+```powershell
+bundle exec rails simulate_strategy          # equal vs. grid sizing, side by side
+bundle exec rails "simulate_strategy[sz]"    # both modes for one market
+bundle exec rails "simulate_strategy[sz,grid]"  # one mode, with the daily equity curve
+```
+
+Buys are filled at the close *after* the signal — the signal is derived from
+the close that produced it — with at most 10 concurrent positions and a forced
+exit after 20 trading days without a sell signal. Transaction costs (0.03%
+commission on buys; 0.03% commission + 0.05% stamp duty on sells) are deducted,
+and the result is compared against the market's buy & hold index.
+
+Grid sizing is the strategy's own idea of the four bands as laddered entry
+zones: entries deeper in the pessimistic zone carry a bigger position —
+
+| Fill-day stave zone | Weight |
+|---|---|
+| −3, below the −2SD line | 2.0× |
+| −2, between −1SD and −2SD | 1.5× |
+| anything shallower | 1.0× (equal sizing) |
+
+The default run prints both modes plus a comparison (return, drawdown, win
+rate, and the grid entries broken down by depth weight) so the sizing choice is
+made on data, not vibes. The web app's signal-history page keeps showing the
+equal-weight account simulation.
+
 ## Run the web application
 
 ```powershell

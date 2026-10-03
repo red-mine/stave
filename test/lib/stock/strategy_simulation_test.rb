@@ -1,10 +1,10 @@
 require "test_helper"
 
 class StockStrategySimulationTest < ActiveSupport::TestCase
-  def snapshot(stock:, date:, price:, year_signal:, lohas_signal:)
+  def snapshot(stock:, date:, price:, year_signal:, lohas_signal:, lohas_stave: nil)
     StockSignalSnapshot.create!(
       stock: stock, area: Stock::SZSTK, signal_date: date, price: price,
-      year_signal: year_signal, lohas_signal: lohas_signal
+      year_signal: year_signal, lohas_signal: lohas_signal, lohas_stave: lohas_stave
     )
   end
 
@@ -154,8 +154,75 @@ class StockStrategySimulationTest < ActiveSupport::TestCase
     assert_equal 100_000.0, result.final_equity
   end
 
-  test "reports not ready when there is no signal history" do
-    result = Stock::StrategySimulation.new(Stock::SZSTK).call
+  test "grid sizing weights deeper pessimistic entries more heavily than shallow ones" do
+    dates = 25.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates.each_with_index do |date, index|
+      signals = index.zero? ? ["BUY5", "BUY5"] : ["WAT9", "WAT9"]
+      # Deep zone -3 (below the -2SD line) and mid zone -2 (-1SD..-2SD).
+      snapshot(stock: "sz000001", date: date, price: 10.0 + index * 0.1, year_signal: signals[0], lohas_signal: signals[1], lohas_stave: -3)
+      snapshot(stock: "sz000002", date: date, price: 20.0 + index * 0.2, year_signal: signals[0], lohas_signal: signals[1], lohas_stave: -2)
+    end
+
+    result = Stock::StrategySimulation.new(
+      Stock::SZSTK, sizing: :grid, max_hold_days: 20, buy_cost_rate: 0.0, sell_cost_rate: 0.0
+    ).call
+
+    deep, shallow = result.trades.sort_by(&:stock)
+    assert_equal 2.0, deep.weight
+    assert_equal -3, deep.zone
+    assert_equal 1.5, shallow.weight
+    assert_equal -2, shallow.zone
+
+    # Cash splits 2.0 : 1.5 between the two fills at dates[1] (10.1 and 20.2),
+    # and both positions are force-closed at dates[21] (12.1 and 24.2).
+    deep_cash = 100_000.0 * 2.0 / 3.5
+    shallow_cash = 100_000.0 * 1.5 / 3.5
+    expected = deep_cash * (12.1 / 10.1) + shallow_cash * (24.2 / 20.2)
+    assert_in_delta expected, result.final_equity, 0.01
+    assert_operator result.final_equity, :>, 100_000.0
+  end
+
+  test "equal sizing on the same signals splits cash evenly" do
+    dates = 25.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates.each_with_index do |date, index|
+      signals = index.zero? ? ["BUY5", "BUY5"] : ["WAT9", "WAT9"]
+      snapshot(stock: "sz000001", date: date, price: 10.0 + index * 0.1, year_signal: signals[0], lohas_signal: signals[1], lohas_stave: -3)
+      snapshot(stock: "sz000002", date: date, price: 20.0 + index * 0.2, year_signal: signals[0], lohas_signal: signals[1], lohas_stave: -2)
+    end
+
+    result = Stock::StrategySimulation.new(
+      Stock::SZSTK, max_hold_days: 20, buy_cost_rate: 0.0, sell_cost_rate: 0.0
+    ).call
+
+    expected = 50_000.0 * (12.1 / 10.1) + 50_000.0 * (24.2 / 20.2)
+    assert_in_delta expected, result.final_equity, 0.01
+    assert result.trades.all? { |trade| trade.weight == 1.0 }
+  end
+
+  test "grid sizing falls back to the base weight when the stave zone is missing" do
+    dates = 25.times.map { |index| Date.new(2026, 1, 1) + index }
+    dates.each_with_index do |date, index|
+      signals = index.zero? ? ["BUY5", "BUY5"] : ["WAT9", "WAT9"]
+      snapshot(stock: "sz000001", date: date, price: 10.0, year_signal: signals[0], lohas_signal: signals[1])
+      snapshot(stock: "sz000002", date: date, price: 10.0, year_signal: signals[0], lohas_signal: signals[1])
+    end
+
+    result = Stock::StrategySimulation.new(
+      Stock::SZSTK, sizing: :grid, max_hold_days: 20, buy_cost_rate: 0.0, sell_cost_rate: 0.0
+    ).call
+
+    assert_equal 2, result.trades.size
+    assert result.trades.all? { |trade| trade.weight == Stock::StrategySimulation::BASE_WEIGHT }
+    assert_equal 100_000.0, result.final_equity
+  end
+
+  test "rejects an unknown sizing mode" do
+    error = assert_raises(ArgumentError) { Stock::StrategySimulation.new(Stock::SZSTK, sizing: :martingale) }
+
+    assert_match(/martingale/, error.message)
+  end
+
+  test "reports not ready when there is no signal history" do    result = Stock::StrategySimulation.new(Stock::SZSTK).call
 
     refute result.ready
     assert_equal 0, result.dates

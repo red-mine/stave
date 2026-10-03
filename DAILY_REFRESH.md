@@ -78,7 +78,13 @@ bundle exec rails "fundamentals_refresh[sz]" # 单个市场
 ```powershell
 bundle exec rails backtest[sz]
 bundle exec rails backtest[sh]
+bundle exec rails simulate_strategy[sz]   # 等权 vs 网格仓位对比
 ```
+
+`simulate_strategy` 会同时跑等权和网格两种仓位模式并打印对比（收益、回撤、
+胜率、以及网格仓位按深度的分布）。网格按建仓当天的五线谱档位加权：跌破
+-2SD 悲观线（档位 -3）权重 2.0，-1SD ~ -2SD 之间（档位 -2）权重 1.5，其余 1.0。
+指定单一模式可以看到每日权益曲线，例如 `bundle exec rails "simulate_strategy[sz,grid]"`。
 
 ## 定时自动运行（Windows）
 

@@ -1,3 +1,55 @@
+def print_simulation(mode, result, area, detail: false)
+  puts "\n## #{mode} sizing"
+  puts "-" * 40
+
+  unless result.ready
+    puts "  No signal history available for #{area.upcase}."
+    return
+  end
+
+  benchmark = Stock::IndexBenchmark.new(area, result.equity_curve.map(&:date)).call
+
+  puts "Trading dates:     #{result.dates}"
+  puts "Starting cash:     #{format('%.2f', result.starting_cash)}"
+  puts "Final equity:      #{format('%.2f', result.final_equity)}"
+  puts "Total return:      #{result.total_return}%"
+  puts "Max drawdown:      #{result.max_drawdown}%"
+  if benchmark.available
+    puts "Benchmark (#{benchmark.index_code}): #{benchmark.total_return}% buy & hold (strategy #{(result.total_return - benchmark.total_return).round(2) >= 0 ? "+" : ""}#{(result.total_return - benchmark.total_return).round(2)}pp vs. index)"
+  else
+    puts "Benchmark:         no index data available for #{area.upcase}"
+  end
+
+  if result.trades.any?
+    wins = result.trades.count { |trade| trade.return_pct.positive? }
+    avg_hold = result.trades.sum { |trade| (trade.exit_date - trade.entry_date).to_i }.fdiv(result.trades.size)
+    puts "Trades closed:     #{result.trades.size}"
+    puts "Win rate:          #{(wins.fdiv(result.trades.size) * 100).round(2)}%"
+    puts "Avg holding days:  #{avg_hold.round(1)}"
+  else
+    puts "No trades were closed."
+  end
+  return unless detail
+
+  puts
+  puts "Daily equity curve:"
+  entries_by_date = result.trades.group_by(&:entry_date)
+  exits_by_date = result.trades.group_by(&:exit_date)
+  previous_equity = result.starting_cash
+  result.equity_curve.each do |point|
+    change_pct = ((point.equity - previous_equity) / previous_equity * 100).round(2)
+    buys = entries_by_date[point.date]&.size || 0
+    sells = exits_by_date[point.date]&.size || 0
+    activity = []
+    activity << "#{buys} buy#{'s' unless buys == 1}" if buys.positive?
+    activity << "#{sells} sell#{'s' unless sells == 1}" if sells.positive?
+    activity_note = activity.any? ? "  [#{activity.join(', ')}]" : ""
+    sign = change_pct >= 0 ? "+" : ""
+    puts "  #{point.date}: #{format('%.2f', point.equity)} (#{sign}#{change_pct}%)#{activity_note}"
+    previous_equity = point.equity
+  end
+end
+
 desc "lohas"
 task :lohas, [:area, :days] => :environment do |task, args|
   area = unless args.area.nil? then args.area else Stock::SZSTK end
@@ -280,64 +332,52 @@ task :backtest, [:area] => :environment do |_task, args|
   puts "      Overlapping holding periods are included in the sample."
 end
 
-desc "Simulate following the buy/sell recommendation on every historical day"
-task :simulate_strategy, [:area] => :environment do |_task, args|
+desc "Simulate following the buy/sell recommendation (equal vs. grid position sizing)"
+task :simulate_strategy, [:area, :sizing] => :environment do |_task, args|
   area = args.area || Stock::SZSTK
-  result = Stock::StrategySimulation.new(area).call
+  modes = args.sizing.present? ? [args.sizing] : %w[equal grid]
+  results = modes.to_h do |mode|
+    [mode, Stock::StrategySimulation.new(area, sizing: mode.to_sym).call]
+  end
 
   puts "=" * 60
-  puts "Strategy simulation for #{area.upcase}"
+  puts "Strategy simulation for #{area.upcase} (#{results.keys.join(' vs. ')})"
   puts "=" * 60
 
-  if result.ready
-    benchmark = Stock::IndexBenchmark.new(area, result.equity_curve.map(&:date)).call
+  results.each do |mode, result|
+    print_simulation(mode, result, area, detail: results.size == 1)
+  end
 
-    puts "Trading dates:     #{result.dates}"
-    puts "Starting cash:     #{format('%.2f', result.starting_cash)}"
-    puts "Final equity:      #{format('%.2f', result.final_equity)}"
-    puts "Total return:      #{result.total_return}%"
-    puts "Max drawdown:      #{result.max_drawdown}%"
-    if benchmark.available
-      puts "Benchmark (#{benchmark.index_code}): #{benchmark.total_return}% buy & hold (strategy #{(result.total_return - benchmark.total_return).round(2) >= 0 ? "+" : ""}#{(result.total_return - benchmark.total_return).round(2)}pp vs. index)"
-    else
-      puts "Benchmark:         no index data available for #{area.upcase}"
-    end
-    puts
-
-    if result.trades.any?
+  if results.size > 1 && results.values.all?(&:ready)
+    equal, grid = results.values
+    puts "\n## Sizing comparison"
+    puts "-" * 40
+    puts format("  %-6s %10s %14s %10s %8s %9s %8s", "sizing", "return", "final_equity", "max_dd", "trades", "win_rate", "avg_cap")
+    results.each do |mode, result|
       wins = result.trades.count { |trade| trade.return_pct.positive? }
-      avg_hold = result.trades.sum { |trade| (trade.exit_date - trade.entry_date).to_i }.fdiv(result.trades.size)
-      puts "Trades closed:     #{result.trades.size}"
-      puts "Win rate:          #{(wins.fdiv(result.trades.size) * 100).round(2)}%"
-      puts "Avg holding days:  #{avg_hold.round(1)}"
-    else
-      puts "No trades were closed."
+      avg_committed = result.trades.any? ? result.trades.sum(&:weight) / result.trades.size : 0.0
+      puts format("  %-6s %9s%% %14.2f %9s%% %8d %8s%% %8.2f",
+        mode, result.total_return, result.final_equity, result.max_drawdown,
+        result.trades.size, result.trades.any? ? (wins.fdiv(result.trades.size) * 100).round(2) : "—", avg_committed)
     end
+    delta = (grid.total_return - equal.total_return).round(2)
+    dd_delta = (grid.max_drawdown - equal.max_drawdown).round(2)
+    puts "  grid minus equal: #{delta >= 0 ? '+' : ''}#{delta}pp return, #{dd_delta >= 0 ? '+' : ''}#{dd_delta}pp max drawdown"
 
-    puts
-    puts "Daily equity curve:"
-    entries_by_date = result.trades.group_by(&:entry_date)
-    exits_by_date = result.trades.group_by(&:exit_date)
-    previous_equity = result.starting_cash
-    result.equity_curve.each do |point|
-      change_pct = ((point.equity - previous_equity) / previous_equity * 100).round(2)
-      buys = entries_by_date[point.date]&.size || 0
-      sells = exits_by_date[point.date]&.size || 0
-      activity = []
-      activity << "#{buys} buy#{'s' unless buys == 1}" if buys.positive?
-      activity << "#{sells} sell#{'s' unless sells == 1}" if sells.positive?
-      activity_note = activity.any? ? "  [#{activity.join(', ')}]" : ""
-      sign = change_pct >= 0 ? "+" : ""
-      puts "  #{point.date}: #{format('%.2f', point.equity)} (#{sign}#{change_pct}%)#{activity_note}"
-      previous_equity = point.equity
+    zones = grid.trades.group_by { |trade| trade.weight }.sort_by { |weight, _| weight }
+    if zones.any?
+      breakdown = zones.map do |weight, trades|
+        wins = trades.count { |trade| trade.return_pct.positive? }
+        "#{weight}x n=#{trades.size} win=#{(wins.fdiv(trades.size) * 100).round}%"
+      end
+      puts "  grid entries by depth weight: #{breakdown.join(', ')}"
     end
-  else
-    puts "No signal history available for #{area.upcase}."
   end
 
   puts "\n" + "=" * 60
-  puts "Note: Equal-weight sizing, forced exit after #{Stock::StrategySimulation::MAX_HOLD_DAYS} trading"
-  puts "      days without a sell signal. Assumes #{(Stock::StrategySimulation::BUY_COST_RATE * 100).round(2)}% commission on buys and"
+  puts "Note: grid sizing weights entries #{Stock::StrategySimulation::GRID_WEIGHTS.map { |zone, weight| "#{zone}x zone=#{weight}" }.join(', ')}"
+  puts "      (stave zone -3 = below the -2SD line, -2 = between -1SD and -2SD); equal sizing is unweighted."
+  puts "      Forced exit after #{Stock::StrategySimulation::MAX_HOLD_DAYS} trading days without a sell signal. Assumes #{(Stock::StrategySimulation::BUY_COST_RATE * 100).round(2)}% commission on buys and"
   puts "      #{(Stock::StrategySimulation::SELL_COST_RATE * 100).round(2)}% commission + stamp duty on sells."
 end
 

@@ -9,21 +9,35 @@ module Stock
     BUY_COST_RATE = 0.0003
     SELL_COST_RATE = 0.0008
 
+    # Grid sizing scales each entry with how deep price sits in the
+    # pessimistic five-line zone at the fill, read from the snapshot's stave
+    # zone code: -3 = below the -2SD line (deepest), -2 = between -1SD and
+    # -2SD, anything else keeps the base weight. This is the strategy's own
+    # grid idea — the four bands as laddered entry zones, weighted by depth
+    # of pessimism instead of a flat equal-weight split.
+    GRID_WEIGHTS = { -3 => 2.0, -2 => 1.5 }.freeze
+    BASE_WEIGHT = 1.0
+    SIZING_MODES = %i[equal grid].freeze
+
     Result = Data.define(:ready, :dates, :starting_cash, :final_equity, :total_return, :max_drawdown, :trades, :equity_curve)
-    Trade = Data.define(:stock, :entry_date, :exit_date, :entry_price, :exit_price, :return_pct, :reason)
+    Trade = Data.define(:stock, :entry_date, :exit_date, :entry_price, :exit_price, :return_pct, :reason, :weight, :zone)
     EquityPoint = Data.define(:date, :equity)
     # entry_cash is the gross cash committed before buy_cost_rate is deducted;
     # allocated_capital is the net exposure that actually tracks price moves.
-    Position = Struct.new(:stock, :entry_index, :entry_date, :entry_price, :entry_cash, :allocated_capital, :last_price)
+    Position = Struct.new(:stock, :entry_index, :entry_date, :entry_price, :entry_cash, :allocated_capital, :last_price, :weight, :zone)
 
     def initialize(area, starting_cash: STARTING_CASH, max_hold_days: MAX_HOLD_DAYS,
-                   max_positions: MAX_POSITIONS, buy_cost_rate: BUY_COST_RATE, sell_cost_rate: SELL_COST_RATE)
+                   max_positions: MAX_POSITIONS, buy_cost_rate: BUY_COST_RATE, sell_cost_rate: SELL_COST_RATE,
+                   sizing: :equal)
       @area = area
       @starting_cash = starting_cash.to_f
       @max_hold_days = max_hold_days
       @max_positions = max_positions
       @buy_cost_rate = buy_cost_rate
       @sell_cost_rate = sell_cost_rate
+      raise ArgumentError, "Unknown sizing mode: #{sizing.inspect}" unless SIZING_MODES.include?(sizing)
+
+      @sizing = sizing
     end
 
     def call
@@ -107,15 +121,26 @@ module Stock
         .first(slots)
       return cash if fillable.empty?
 
-      per_position = cash / fillable.size
-      net_exposure = per_position * (1 - @buy_cost_rate)
+      weights = fillable.map { |stock| entry_weight(today[stock]) }
+      total_weight = weights.sum
 
-      fillable.each do |stock|
+      spent = 0.0
+      fillable.each_with_index do |stock, offset|
+        per_position = cash * weights[offset] / total_weight
+        spent += per_position
         price = today[stock].price
-        positions[stock] = Position.new(stock, index, date, price, per_position, net_exposure, price)
+        positions[stock] = Position.new(stock, index, date, price, per_position, per_position * (1 - @buy_cost_rate), price, weights[offset], today[stock].lohas_stave)
       end
 
-      cash - per_position * fillable.size
+      cash - spent
+    end
+
+    # Equal sizing is the degenerate case: every weight is 1.0, so the split
+    # stays cash / n.
+    def entry_weight(snapshot)
+      return BASE_WEIGHT unless @sizing == :grid
+
+      GRID_WEIGHTS.fetch(snapshot&.lohas_stave, BASE_WEIGHT)
     end
 
     # Selection is by stock code when there are more signals than slots. That is
@@ -148,7 +173,7 @@ module Stock
         stock: position.stock, entry_date: position.entry_date, exit_date: exit_date,
         entry_price: position.entry_price, exit_price: exit_price,
         return_pct: rounded((net_proceeds / position.entry_cash - 1) * 100),
-        reason: reason
+        reason: reason, weight: position.weight, zone: position.zone
       )
       net_proceeds
     end
