@@ -32,8 +32,8 @@ module Stock
           [StocksStaveLoha, StocksStaveYear, StocksBollsLoha, StocksBollsYear].each do |table|
             table.where(stock: stock, area: @area).delete_all
           end
-        loha_engine = _engin(@area, LOHAS)
-        year_engine = _engin(@area, YEARS)
+        loha_engine = build_engine(@area, LOHAS)
+        year_engine = build_engine(@area, YEARS)
         unless loha_engine.valid_model?(stock) && year_engine.valid_model?(stock)
           StocksCoefsStav.where(stock: stock, area: @area).delete_all
           next
@@ -48,12 +48,12 @@ module Stock
         }
         # The channel tables plot the same price series as the stave tables, so
         # one series per engine fills both rather than building it twice.
-        loha_price  = _series_price(loha_engine, LOHAS, stock)
-        year_price  = _series_price(year_engine, YEARS, stock)
-        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = _stave(loha_engine, LOHAS, stock, price: loha_price)
-        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = _stave(year_engine, YEARS, stock, price: year_price)
-        data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = _bolls(loha_engine, LOHAS, stock)
-        data[:years_bolls], data[:years_mup], data[:years_mdn] = _bolls(year_engine, YEARS, stock)
+        loha_price  = resampled_price_series(loha_engine, LOHAS, stock)
+        year_price  = resampled_price_series(year_engine, YEARS, stock)
+        data[:lohas_price], data[:lohas_trend], data[:lohas_up1], data[:lohas_dn1], data[:lohas_top], data[:lohas_bot] = compute_stave_series(loha_engine, LOHAS, stock, price: loha_price)
+        data[:years_price], data[:years_trend], data[:years_up1], data[:years_dn1], data[:years_top], data[:years_bot] = compute_stave_series(year_engine, YEARS, stock, price: year_price)
+        data[:lohas_bolls], data[:lohas_mup], data[:lohas_mdn] = compute_bolls_series(loha_engine, LOHAS, stock)
+        data[:years_bolls], data[:years_mup], data[:years_mdn] = compute_bolls_series(year_engine, YEARS, stock)
 
         stave_series = [
           { table: StocksStaveLoha, prefix: :lohas, keys: %w[price trend up1 dn1 top bot] },
@@ -98,10 +98,10 @@ module Stock
     end
 
     def chart_data(stock)
-      stave_lohas = _stave_data(stock, StocksStaveLoha)
-      stave_years = _stave_data(stock, StocksStaveYear)
-      bolls_lohas = _bolls_data(stock, StocksBollsLoha)
-      bolls_years = _bolls_data(stock, StocksBollsYear)
+      stave_lohas = build_stave_data(stock, StocksStaveLoha)
+      stave_years = build_stave_data(stock, StocksStaveYear)
+      bolls_lohas = build_bolls_data(stock, StocksBollsLoha)
+      bolls_years = build_bolls_data(stock, StocksBollsYear)
 
       return stave_lohas, stave_years, bolls_lohas, bolls_years
     end
@@ -145,12 +145,12 @@ module Stock
 
     private
 
-    def _engin(area, years)
+    def build_engine(area, years)
       engine  = Stock.new(area, years)
       engine
     end
 
-    def _week(stave)
+    def weekly_points(stave)
       week    = []
       stave.each do |_stave|
         date  = _stave[0]
@@ -162,7 +162,7 @@ module Stock
       week
     end
 
-    def _month(stave)
+    def monthly_points(stave)
       month   = []
       stave.each do |_stave|
         date  = _stave[0]
@@ -174,7 +174,7 @@ module Stock
       month
     end
 
-    def _quarter(stave)
+    def quarterly_points(stave)
       quarter = []
       stave.each do |_stave|
         date  = _stave[0]
@@ -185,7 +185,7 @@ module Stock
       quarter
     end
 
-    def _smooth(stave)
+    def interpolate_daily(stave)
       smooth  = []
       _date   = nil
       _price  = 0
@@ -211,28 +211,28 @@ module Stock
       smooth
     end
 
-    def _better(stave, years)
-      smooth = _smooth(stave)
+    def resample_series(stave, years)
+      smooth = interpolate_daily(stave)
       better = if years == LOHAS
-        _quarter(smooth)
+        quarterly_points(smooth)
       else
-        _month(smooth)
+        monthly_points(smooth)
       end
       better
     end
 
-    def _price(stocks, years, stock)
+    def extract_price(stocks, years, stock)
       start         = STAVE - SMUTH
       length        = years + 1
       price         = stocks.aver(stock, SMUTH).slice(start, length)
       price
     end
 
-    def _series_price(stocks, years, stock)
-      _better(_price(stocks, years, stock), years)
+    def resampled_price_series(stocks, years, stock)
+      resample_series(extract_price(stocks, years, stock), years)
     end
 
-    def _filter(table, filter, stock)
+    def fetch_series(table, filter, stock)
       arel  = table.arel_table
       stave = table
         .where(arel[:area].eq(@area))
@@ -243,13 +243,13 @@ module Stock
       stave
     end
 
-    def _stave_data(stock, table)
-      stave_price = _filter(table,  "price",  stock )
-      stave_trend = _filter(table,  "trend",  stock )
-      stave_up1   = _filter(table,  "up1",    stock )
-      stave_dn1   = _filter(table,  "dn1",    stock )
-      stave_top   = _filter(table,  "top",    stock )
-      stave_bot   = _filter(table,  "bot",    stock )
+    def build_stave_data(stock, table)
+      stave_price = fetch_series(table,  "price",  stock )
+      stave_trend = fetch_series(table,  "trend",  stock )
+      stave_up1   = fetch_series(table,  "up1",    stock )
+      stave_dn1   = fetch_series(table,  "dn1",    stock )
+      stave_top   = fetch_series(table,  "top",    stock )
+      stave_bot   = fetch_series(table,  "bot",    stock )
 
       stave_data = [
         { name: STAVE_SERIES_NAMES[:price], data: stave_price },
@@ -263,11 +263,11 @@ module Stock
       return stave_data
     end
 
-    def _bolls_data(stock, table)
-      bolls_price = _filter(table,  "price",  stock )
-      bolls_bolls = _filter(table,  "bolls",  stock )
-      bolls_mup   = _filter(table,  "mup",    stock )
-      bolls_mdn   = _filter(table,  "mdn",    stock )
+    def build_bolls_data(stock, table)
+      bolls_price = fetch_series(table,  "price",  stock )
+      bolls_bolls = fetch_series(table,  "bolls",  stock )
+      bolls_mup   = fetch_series(table,  "mup",    stock )
+      bolls_mdn   = fetch_series(table,  "mdn",    stock )
 
       bolls_data = [
         { name: BOLLS_SERIES_NAMES[:price], data: bolls_price },
@@ -279,8 +279,8 @@ module Stock
       return bolls_data
     end
 
-    def _stave(stocks, years, stock, price: nil)
-      stave_price   = price || _series_price(stocks, years, stock)
+    def compute_stave_series(stocks, years, stock, price: nil)
+      stave_price   = price || resampled_price_series(stocks, years, stock)
 
       stave_trend   = stocks.trend(stock             )
       stave_up1     = stocks.stave_band(stock,  true,   1 )
@@ -288,11 +288,11 @@ module Stock
       stave_top     = stocks.stave_band(stock,  true,   2 )
       stave_bot     = stocks.stave_band(stock,  false,  2 )
 
-      stave_trend   = _better(stave_trend,  years )
-      stave_up1     = _better(stave_up1,    years )
-      stave_dn1     = _better(stave_dn1,    years )
-      stave_top     = _better(stave_top,    years )
-      stave_bot     = _better(stave_bot,    years )
+      stave_trend   = resample_series(stave_trend,  years )
+      stave_up1     = resample_series(stave_up1,    years )
+      stave_dn1     = resample_series(stave_dn1,    years )
+      stave_top     = resample_series(stave_top,    years )
+      stave_bot     = resample_series(stave_bot,    years )
 
       return stave_price, stave_trend, stave_up1, stave_dn1, stave_top, stave_bot
     end
@@ -300,14 +300,14 @@ module Stock
 
     # Returns no price: the channel table's price column is filled from the
     # stave series above, so a second one built here was thrown away.
-    def _bolls(stocks, years, stock)
+    def compute_bolls_series(stocks, years, stock)
       bolls_bolls   = stocks.aver(stock, STAVE         )
       bolls_mup     = stocks.boll(stock, STAVE,  true  )
       bolls_mdn     = stocks.boll(stock, STAVE,  false )
 
-      bolls_bolls   = _better(bolls_bolls,  years )
-      bolls_mup     = _better(bolls_mup,    years )
-      bolls_mdn     = _better(bolls_mdn,    years )
+      bolls_bolls   = resample_series(bolls_bolls,  years )
+      bolls_mup     = resample_series(bolls_mup,    years )
+      bolls_mdn     = resample_series(bolls_mdn,    years )
 
       return bolls_bolls, bolls_mup, bolls_mdn
     end
