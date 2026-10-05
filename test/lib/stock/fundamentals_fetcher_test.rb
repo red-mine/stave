@@ -39,6 +39,32 @@ class Stock::FundamentalsFetcherTest < ActiveSupport::TestCase
     assert_nil second.report_date
   end
 
+  test "parses Shanghai quotes with the same layout as Shenzhen" do
+    StocksCoefsStav.create!(
+      stock: "sh600000", area: Stock::SHSTK, date: Date.new(2026, 9, 30), price: 10,
+      loha: 0.03, year: 0.02, lohas_signal: "BUY5", year_signal: "SAF1",
+      boll3: 1, stav3: 1, boll1: 0, stav1: -1
+    )
+    fields = Array.new(56, "-")
+    fields[1] = "浦发银行"
+    fields[2] = "600000"
+    fields[3] = "9.48"
+    fields[39] = "6.16"    # PE TTM
+    fields[45] = "3157.39" # total market cap (yi)
+    fields[46] = "0.42"    # PB
+    fields[52] = "5.10"    # PE (dynamic)
+    transport = ->(_url, _params) { %(v_sh600000="#{fields.join("~")}";).encode("GB18030") }
+
+    Stock::FundamentalsFetcher.new(Stock::SHSTK, transport: transport).call(reports: {})
+
+    record = StockFundamental.find_by!(stock: "sh600000")
+    assert_in_delta 9.48, record.price
+    assert_in_delta 6.16, record.pe_ttm
+    assert_in_delta 0.42, record.pb
+    assert_in_delta 5.10, record.pe
+    assert_equal 315_739_000_000, record.market_cap
+  end
+
   test "skips stocks missing from the quote response" do
     create_stock "sz000001"
     create_stock "sz000099"
@@ -189,7 +215,7 @@ class Stock::FundamentalsFetcherTest < ActiveSupport::TestCase
   end
 
   def tencent_row(stock, name, price:, pe_ttm:, pe:, pb:, market_cap_yi:)
-    fields = Array.new(53, "-")
+    fields = Array.new(56, "-")
     fields[1] = name
     fields[2] = stock.delete_prefix("sz")
     fields[3] = price

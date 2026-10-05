@@ -21,13 +21,14 @@ module Stock
     MAX_ATTEMPTS = 4
 
     # Tencent's ~-separated quote rows use the same layout on every market:
-    # 39 = PE (TTM), 45 = total market cap (yi), 46 = PB, 52 = PE (static).
-    # Indices were cross-checked against known quotes (Moutai PE TTM ~19,
-    # PB ~6.3; ICBC PB ~0.74) for SZ, SH and BJ stocks alike — an earlier
-    # per-market offset for SH/BJ read garbage (empty PE TTM, PB of -1).
-    QUOTE_LAYOUTS = {
-      pe_ttm: 39, pe: 52, market_cap_yi: 45, pb: 46, min_fields: 53
-    }.freeze
+    # 39 = PE (TTM), 45 = total market cap (yi), 46 = PB, 52 = PE (dynamic).
+    # Indices were validated against Eastmoney's f9/f20/f23/f115 on live
+    # quotes: SZ 000001, SH 600000/600519/601398 and BJ 430418/920002.
+    # Note these are 0-based positions in String#split("~"); an earlier
+    # per-market offset keyed off 1-based field listings and read garbage
+    # (empty PE TTM, PB of -1).
+    QUOTE_LAYOUT = { pe_ttm: 39, pe: 52, market_cap_yi: 45, pb: 46 }.freeze
+    MIN_FIELDS = 53
 
     # The stock universe also carries funds and ETFs (SZ 15/16/18xxxx,
     # SH 50/51/52/56/58xxxx), whose PE/PB/cap fields are meaningless. Leave
@@ -165,13 +166,13 @@ module Stock
     # ~-separated. Rows that are too short to trust (suspended stocks) are
     # ignored, which marks the stock as skipped in #call.
     def fetch_quotes(stocks)
-      layout = QUOTE_LAYOUTS
+      layout = QUOTE_LAYOUT
       quotes = {}
       stocks.each_slice(QUOTE_BATCH) do |batch|
         body = @transport.call("#{QUOTE_URL}#{batch.join(",")}", nil)
         body.to_s.force_encoding("GB18030").encode("UTF-8", invalid: :replace, undef: :replace).scan(/^v_(\w+)="([^"]*)";/) do |stock, payload|
           fields = payload.split("~")
-          next if fields.size < layout[:min_fields] || fields[2].empty?
+          next if fields.size < MIN_FIELDS || fields[2].empty?
 
           market_cap_yi = self.class.to_float(fields[layout[:market_cap_yi]])
           quotes[stock] = {
