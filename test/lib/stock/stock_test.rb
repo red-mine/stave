@@ -192,9 +192,37 @@ class StockCalculationTest < ActiveSupport::TestCase
   test "exactly linear prices have zero-width stave deviation" do
     prices = Array.new(Stock::STAVE * 2) { |index| 20.0 + index * 0.25 }
     engine = StockWithData.new(prices)
+    model = engine.send(:_model, "TEST")
+    bands = engine.send(:_signal_bands, prices, model)
 
     assert_equal engine.trend("TEST"), engine.stave_band("TEST", true, 2)
     assert_equal engine.trend("TEST"), engine.stave_band("TEST", false, 2)
+    # The signal path must agree: a perfect fit has no deviation anywhere.
+    assert_equal bands[:trend], bands[:up1]
+    assert_equal bands[:trend], bands[:dn1]
+    assert_equal bands[:trend], bands[:up2]
+    assert_equal bands[:trend], bands[:dn2]
+  end
+
+  test "signal bands equal the chart series' last values" do
+    prices = Array.new(Stock::STAVE * 2) do |index|
+      30.0 + index * 0.08 + Math.sin(index.fdiv(7)) * 2
+    end
+    engine = StockWithData.new(prices)
+    model = engine.send(:_model, "TEST")
+    bands = engine.send(:_signal_bands, prices, model)
+
+    # The stored signal must come from the same five lines the charts draw;
+    # any drift here means the website's charts and its signal labels can
+    # disagree stock by stock.
+    assert_equal engine.trend("TEST")[-1][1], bands[:trend]
+    assert_equal engine.stave_band("TEST", true, 1)[-1][1], bands[:up1]
+    assert_equal engine.stave_band("TEST", false, 1)[-1][1], bands[:dn1]
+    assert_equal engine.stave_band("TEST", true, 2)[-1][1], bands[:up2]
+    assert_equal engine.stave_band("TEST", false, 2)[-1][1], bands[:dn2]
+    assert_equal engine.aver("TEST", Stock::STAVE)[-1][1], bands[:boll]
+    assert_equal engine.boll("TEST", Stock::STAVE, true)[-1][1], bands[:mup]
+    assert_equal engine.boll("TEST", Stock::STAVE, false)[-1][1], bands[:mdn]
   end
 
   test "non-positive trends are excluded from eligible models" do

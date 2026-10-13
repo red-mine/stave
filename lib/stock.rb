@@ -10,6 +10,11 @@ module Stock
   STAVE = 20  * WEEKS
   LOHAS = 3   * YEARS + YEARS / 2
   SMUTH = 2   * WEEKS
+  # TongdaXin .day records store prices as integers scaled by 100
+  # (cent-yuan). Deliberately its own constant: the decode factor is a
+  # data-format detail, not the same thing as the unrelated STAVE
+  # moving-average window even though both numerically equal 100 today.
+  PRICE_SCALE = 100
 
   def self.data_root
     default_root = if RUBY_PLATFORM.include?("linux")

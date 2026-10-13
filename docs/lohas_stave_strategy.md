@@ -147,13 +147,26 @@ confirmed strategy rules.
 Ways the current implementation falls short of the strategy as described, beyond the
 signal-code bug above:
 
-1. **No fundamentals screen.** The strategy explicitly requires the underlying company to
-   be fundamentally sound ("股票背后的公司必须为良好体质的公司") — mean reversion is
-   assumed to fail otherwise. The app has no fundamentals data source or company-quality
-   check anywhere; it applies the statistical method to any stock that has enough price
-   history and a positive regression slope. This is the largest gap between the
-   documented strategy and the implementation, since the strategy's own stated failure
-   mode (deteriorating company fundamentals) isn't guarded against at all.
+1. **Fundamentals screen: implemented as a badge, not a filter.** The strategy
+   explicitly requires the underlying company to be fundamentally sound
+   ("股票背后的公司必须为良好体质的公司") — mean reversion is assumed to fail otherwise.
+   The app now fetches per-stock fundamentals (`fundamentals_refresh`) and judges buy
+   candidates against them (`Stock::FundamentalsQuality`): PE(TTM), PB, market cap and
+   latest price, plus the newest published report's weighted ROE (annualized by report
+   period, since Eastmoney reports cumulative figures), revenue YoY and net-profit YoY.
+   Verdicts are `pass` / `fail` / `unknown`, surfaced as a green *Sound* / red *Weak* /
+   gray *Unverified* badge on candidate cards and a panel on each stock page.
+
+   What it does **not** do: it does not remove candidates. The statistical method is
+   still applied — and every buy signal still listed — for any stock with enough price
+   history and a positive regression slope, including ones the screen marks `fail` or
+   `unknown`. The thresholds (`FUND_ROE_MIN` default 8, `FUND_REVENUE_YOY_MIN` default 0,
+   `FUND_PROFIT_YOY_MIN` disabled) are tunable defaults, not values validated against the
+   strategy's own backtests, and nothing is fetched at all until the refresh task runs,
+   so a fresh install shows gray everywhere. Funds and ETFs are skipped (their PE/PB are
+   meaningless) and Beijing stocks whose codes were switched to 920xxx are matched to
+   reports by company name. Read the badge as a prompt to check the company yourself,
+   not as the precondition the strategy asks for being satisfied.
 
 2. **No grid-trading execution.** The strategy mentions treating the four bands between
    the five lines as grid-trading zones for capital allocation. The app only simulates

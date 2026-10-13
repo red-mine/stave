@@ -239,18 +239,25 @@ module Stock
 
       boll       = prices.last(STAVE).sum.fdiv(STAVE).round(2)
 
-      # Preserve the legacy Bollinger alignment while calculating only its
-      # final value instead of rebuilding the complete series three times.
+      # averages[i] is the mean of prices[i .. i + STAVE - 1], which is the
+      # trailing STAVE-day average ending at record i + STAVE - 1. Pair each
+      # average with the record its own window ends on, so the deviation
+      # matches the chart series' channel alignment (price against its own
+      # trailing average), and round the mean before the root the same way
+      # the chart's rolling series does.
       averages   = _move(prices, STAVE)
       distances  = averages.each_with_index.map do |average, index|
-        (prices[index] - average) ** 2
+        (prices[index + STAVE - 1] - average) ** 2
       end
-      deviation  = Math.sqrt(distances.last(STAVE).sum.fdiv(STAVE)).round(2)
+      deviation  = Math.sqrt(distances.last(STAVE).sum.fdiv(STAVE).round(2)).round(2)
 
       last_index = prices.length - 1
       trend      = (model[:coef] * last_index + model[:inter]).round(2)
+      # Residuals against the regression line evaluated at each record's own
+      # index, over the same window the chart's _sqrt covers (records
+      # STAVE - 1 .. last, the series with the moving-average warm-up dropped).
       residuals  = prices.each_with_index.drop(STAVE - 1).map do |price, index|
-        expected = model[:coef] * (index + STAVE - 1) + model[:inter]
+        expected = model[:coef] * index + model[:inter]
         (price - expected.round(2)) ** 2
       end
       sqrt       = if residuals.empty?
@@ -347,7 +354,7 @@ module Stock
       year   = date / 10_000
       month  = date / 100 % 100
       day    = date % 100
-      price  = values[4].fdiv(STAVE)
+      price  = values[4].fdiv(PRICE_SCALE)
       stock  = {
         date:       Date.new(year, month, day),
         price:      price,
@@ -426,7 +433,7 @@ module Stock
         return [[], nil] if @max_price && last[:price] > @max_price
 
         prices = Array.new(@days) do |index|
-          binary.unpack1("L<", offset: index * 32 + 16).fdiv(STAVE)
+          binary.unpack1("L<", offset: index * 32 + 16).fdiv(PRICE_SCALE)
         end
         [prices, last[:date]]
       end
