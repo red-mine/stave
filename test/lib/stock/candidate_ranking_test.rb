@@ -13,11 +13,21 @@ class StockCandidateRankingTest < ActiveSupport::TestCase
     candidates = Stock::CandidateRanking.new(Stock::SHSTK).call
 
     assert_equal %w[sh603087 sh600001], candidates.map(&:stock)
-    assert_equal 100, candidates.first.score
+    assert_equal 88, candidates.first.score
     assert_equal "Strong", candidates.first.confidence
     assert_equal strong, candidates.first.record
     assert_includes candidates.first.reasons, "Price position is supported on both horizons"
     assert_equal "First recorded", candidates.first.history_state
+  end
+
+  test "ranks signals in the order the event study supports" do
+    %w[BUY4 BUY5 CHP0 SAF1].each_with_index do |signal, index|
+      create_candidate(stock: "sz00000#{index}", year_signal: signal, lohas_signal: signal)
+    end
+
+    candidates = Stock::CandidateRanking.new(Stock::SZSTK).call
+
+    assert_equal %w[SAF1 CHP0 BUY5 BUY4], candidates.map(&:year_signal)
   end
 
   test "identifies new and continuing buys from prior recorded snapshots" do

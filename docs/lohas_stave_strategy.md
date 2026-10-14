@@ -38,7 +38,9 @@ long-term, low-maintenance investing (no daily monitoring needed), hence the
 - Price breaks above the (relatively) optimistic line → consider **selling**.
 - **Slope of the trend line matters**: positive slope (uptrend) → higher win rate for
   "buy low, sell high"; negative slope (downtrend) → lower win rate, can lose money —
-  the strategy is meant to be applied only to confirmed uptrends.
+  the strategy is meant to be applied only to confirmed uptrends. (This app's backtest
+  finds that the uptrend filter itself cost returns in 2021–2026; see Known
+  limitations, item 3.)
 - The four bands between the five lines can be treated as grid-trading zones.
 - Pair with the **乐活通道 (LOHAS Channel)** — built from past-high average, 20-week MA,
   past-low average — to avoid over-trading in extreme zones during black-swan/fat-tail moves.
@@ -175,3 +177,17 @@ signal-code bug above:
    equal sizing, but it is a backtest comparison, not live execution logic. This is
    likely acceptable as scope (decision support vs. auto-trading), but is listed here
    for completeness.
+
+3. **The uptrend precondition has a measured cost.** The rule "apply only to confirmed
+   uptrends" is implemented as `coef >= 1.0 / STAVE` (0.01 yuan a day) plus the 100-yuan
+   price cap. Over 2021–2026, the stocks that pass it trailed the equal-weighted A-share
+   market by about 2.9% per 60 trading days on the 3.5-year window and 1.5% on the
+   1.4-year (350-day) year window, before any signal is applied ([event study](event_study.md),
+   sections 1 and 10). On the 3.5-year window the cost comes from the trend itself
+   (long-horizon reversal): picking the same number of stocks by log-price slope does
+   worse, not better. On the year window more of it comes from the yuan-per-day
+   threshold favouring high-priced stocks. Within the stocks that pass, the signal
+   codes add little: no family's excess return survives multiple-testing correction,
+   and only the year-window buy-minus-sell spread does. Treat the signals as a
+   description of where price sits in its band, not as evidence that a buy will beat
+   the alternatives.

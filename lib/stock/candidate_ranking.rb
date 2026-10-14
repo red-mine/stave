@@ -1,10 +1,14 @@
 module Stock
   class CandidateRanking
+    # Ordered by 60-day excess return over the model universe in
+    # docs/event_study.md: SAF1 > CHP0 > BUY5 > BUY4 on both horizons.
+    # None of the differences survives multiple-testing correction, so the
+    # order is the evidence; the spacing is not.
     SIGNAL_POINTS = {
-      "BUY5" => 30,
-      "BUY4" => 27,
-      "CHP0" => 24,
-      "SAF1" => 20
+      "SAF1" => 30,
+      "CHP0" => 27,
+      "BUY5" => 24,
+      "BUY4" => 20
     }.freeze
     BUY_SIGNALS = SignalFamily::BUY
     A_SHARE_CODE_PATTERNS = {
