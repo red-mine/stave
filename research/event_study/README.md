@@ -26,6 +26,9 @@ python fetch_adjusted.py $VIP $OUT/sina
 
 # 4. Statistics -> $OUT/results.csv
 python analyze.py $OUT $VIP
+
+# 5. Trend-filter decomposition (report section 10)
+python trend_filter.py $OUT $VIP
 ```
 
 | File | Role |
@@ -37,6 +40,7 @@ python analyze.py $OUT $VIP
 | `fetch_xdxr.py` | Ex-rights events from the TDX quote servers (pytdx) and the multiplicative adjustment of the engine's own TDX closes |
 | `fetch_adjusted.py` | Same adjustment from Sina hfq factors; used to cross-check `fetch_xdxr.py` |
 | `analyze.py` | Date-weighted excess returns, Newey-West errors, Holm correction |
+| `trend_filter.py` | Separates the trend and the price-level parts of the engine's slope filter |
 
 The TDX files are append-only, so pinning `--end` (default 2026-10-13) keeps
 the replay stable while the nightly refresh keeps adding days.
