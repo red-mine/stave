@@ -8,7 +8,7 @@ install_service() {
   local name="$1"
   install -m 644 "$REPO_DIR/extras/systemd/${name}.service" "$USER_UNITS/${name}.service"
   install -m 644 "$REPO_DIR/extras/systemd/${name}.timer" "$USER_UNITS/${name}.timer"
-  sed -i "s|%h/work/stave|$REPO_DIR|g" "$USER_UNITS/${name}.service"
+  sed -i "s|%h/work/lohas-stave|$REPO_DIR|g" "$USER_UNITS/${name}.service"
   sed -i "s|%h|$HOME|g" "$USER_UNITS/${name}.service"
 }
 

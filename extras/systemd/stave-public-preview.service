@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/work/stave
+WorkingDirectory=%h/work/lohas-stave
 Environment="PATH=%h/.rbenv/bin:%h/.rbenv/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=%h/work/stave/bin/start-public-preview.sh
+ExecStart=%h/work/lohas-stave/bin/start-public-preview.sh
 
 [Install]
 WantedBy=default.target

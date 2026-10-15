@@ -12,7 +12,7 @@ UNITS=(
 mkdir -p "$USER_UNITS"
 for unit in "${UNITS[@]}"; do
   install -m 644 "$REPO_DIR/extras/systemd/$unit" "$USER_UNITS/$unit"
-  sed -i "s|%h/work/stave|$REPO_DIR|g" "$USER_UNITS/$unit"
+  sed -i "s|%h/work/lohas-stave|$REPO_DIR|g" "$USER_UNITS/$unit"
   sed -i "s|%h|$HOME|g" "$USER_UNITS/$unit"
 done
 

@@ -14,7 +14,7 @@
 ```powershell
 $env:Path = "C:\Ruby34-x64\bin;" + $env:Path
 $env:TDX_DATA_PATH = "C:\new_tdx\vipdoc"
-cd C:\Users\huntl\work\stave
+cd C:\Users\huntl\work\lohas-stave
 bundle exec rails daily_refresh
 ```
 
