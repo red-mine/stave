@@ -58,6 +58,41 @@ foreach ($file in @($RubyPath, $database, $cloudflared)) {
   }
 }
 
+$env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
+$env:STOCK_DATABASE = $database
+$env:RAILS_ENV = "production"
+$env:RACK_ENV = "production"
+$env:RAILS_LOG_LEVEL = "warn"
+$env:RAILS_SERVE_STATIC_FILES = "1"
+# Production insists on a secret_key_base, but nothing in this app signs a
+# session or a cookie and no route writes, so a per-run value satisfies the boot
+# check without leaving a secret on disk or anywhere near the repository.
+$env:SECRET_KEY_BASE = "$(New-Guid)$(New-Guid)".Replace("-", "")
+
+# Production turns off config.assets.compile, so no page renders until the
+# fingerprinted bundle exists. The monitor re-runs this script whenever the
+# preview looks unhealthy, so rebuild only when the bundle is missing or older
+# than its sources rather than on every restart.
+$assetDirectory = Join-Path $repository "public\assets"
+$manifest = Get-ChildItem -LiteralPath $assetDirectory -Force -File -ErrorAction SilentlyContinue |
+  Where-Object { $_.Name -eq ".manifest.json" -or $_.Name -like ".sprockets-manifest-*" } |
+  Select-Object -First 1
+$sources = @(Join-Path $repository "app\assets", (Join-Path $repository "app\javascript"), (Join-Path $repository "config\importmap.rb")) |
+  Where-Object { Test-Path -LiteralPath $_ }
+$assetsStale = -not $manifest
+if ($manifest -and -not $assetsStale) {
+  $newer = foreach ($source in $sources) {
+    Get-ChildItem -LiteralPath $source -Recurse -File -ErrorAction SilentlyContinue |
+      Where-Object { $_.LastWriteTime -gt $manifest.LastWriteTime }
+  }
+  $assetsStale = @($newer).Count -gt 0
+}
+if ($assetsStale) {
+  Write-Output "Precompiling assets for the production preview"
+  & $RubyPath bin/rails assets:precompile
+  if ($LASTEXITCODE -ne 0) { throw "assets:precompile failed with exit code $LASTEXITCODE" }
+}
+
 function Stop-VerifiedProcess([int]$ProcessId, [string]$Name, [string]$CommandPattern) {
   $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
   if (-not $process) { return }
@@ -99,15 +134,6 @@ if (-not $urlMatch.Success) {
 }
 
 $publicUrl = $urlMatch.Value
-$publicHost = ([Uri]$publicUrl).Host
-$env:Path = "$(Split-Path -Parent $RubyPath);$env:Path"
-$env:STOCK_DATABASE = $database
-$env:RAILS_ENV = "development"
-$env:RACK_ENV = "development"
-$env:RAILS_LOG_LEVEL = "warn"
-$env:PUBLIC_TUNNEL_HOST = $publicHost
-$env:PUBLIC_PREVIEW = "1"
-$env:ASSET_CACHE_PATH = "memory"
 $server = Start-Process -FilePath $RubyPath `
   -ArgumentList "bin/rails", "server", "-p", $Port, "-b", "127.0.0.1" `
   -WorkingDirectory $repository -WindowStyle Hidden `
@@ -133,7 +159,7 @@ function Test-ApplicationHealth([string]$Uri) {
       -not $market -or -not $market.ready -or -not $market.date -or [int]$market.rows -le 0 -or
         $market.snapshot_date -ne $market.date -or [int]$market.snapshot_rows -ne [int]$market.rows
     }).Count -eq 0
-    return $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $body.log_level -eq "warn" -and $body.dates_aligned -and $marketsReady
+    return $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "production" -and $body.log_level -eq "warn" -and $body.dates_aligned -and $marketsReady
   } catch {
     return $false
   }
@@ -177,7 +203,7 @@ $status = @{
   tunnel_pid = $tunnel.Id
   database = $database
   port = $Port
-  environment = "development"
+  environment = "production"
   log_level = "warn"
 }
 $status | ConvertTo-Json | Set-Content -LiteralPath $statusPath -Encoding utf8

@@ -355,10 +355,12 @@ Tunnel URLs are temporary and may change when this command is run again. The
 startup is atomically locked, so a scheduled recovery cannot race a manual
 publish restart. It retries all-market tunnel readiness for up to 90 seconds and
 cleans up newly started processes if any startup gate ultimately fails. The
-managed preview uses an in-memory asset cache to avoid Windows file-rename
-collisions during concurrent asset compilation. It also suppresses detailed
-development exception pages so local paths and source snippets are not exposed
-through the public tunnel.
+preview runs Rails in production, so it precompiles its asset bundle first —
+only when the fingerprinted files are missing or older than their sources — and
+serves them with `RAILS_SERVE_STATIC_FILES`. Production also leaves no
+development surface to protect: the `/rails/info` routes are not mounted at all,
+`web-console` is not loaded, and error detail is not shown to any requester, so
+exposure no longer hinges on the tunnel's `X-Forwarded-For` header.
 
 The public-preview command rejects every other database path, including the
 tracked `db/stock.sqlite3`; health monitoring also treats a non-isolated recorded

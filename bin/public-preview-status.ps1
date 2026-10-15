@@ -58,7 +58,7 @@ function Get-ApplicationHealth([string]$Uri) {
     }).Count -eq 0
     return [pscustomobject]@{
       Code = $response.StatusCode
-      Ready = $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "development" -and $body.log_level -eq "warn" -and $body.dates_aligned -and $marketsReady
+      Ready = $response.StatusCode -eq 200 -and $body.status -eq "ready" -and $body.environment -eq "production" -and $body.log_level -eq "warn" -and $body.dates_aligned -and $marketsReady
       Markets = $details -join ", "
     }
   } catch {
@@ -106,7 +106,7 @@ $report = [pscustomobject]@{
   PublicApplication = "$($publicApplication.Code)/$(if ($publicApplication.Ready) { 'ready' } else { 'incomplete' }) [$($publicApplication.Markets)]"
   IsolatedDatabase = $databaseIsIsolated
   DatabaseBytes = $database.Length
-  Healthy = $rails -and $tunnel -and $marketsHealthy -and $localApplication.Ready -and $publicApplication.Ready -and $databaseIsIsolated -and $status.environment -eq "development" -and $serverEnvironment -eq "development" -and $status.log_level -eq "warn"
+  Healthy = $rails -and $tunnel -and $marketsHealthy -and $localApplication.Ready -and $publicApplication.Ready -and $databaseIsIsolated -and $status.environment -eq "production" -and $serverEnvironment -eq "production" -and $status.log_level -eq "warn"
 }
 $report
 if (-not $report.Healthy -and -not $ReturnOnly) { exit 1 }

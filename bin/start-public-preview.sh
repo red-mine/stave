@@ -67,6 +67,27 @@ if [[ ! -f "$DATABASE" ]]; then
   exit 1
 fi
 
+export STOCK_DATABASE="$DATABASE"
+export RAILS_ENV="production"
+export RACK_ENV="production"
+export RAILS_LOG_LEVEL="warn"
+export RAILS_SERVE_STATIC_FILES="1"
+# Production insists on a secret_key_base, but nothing in this app signs a
+# session or a cookie and no route writes, so a per-run value satisfies the boot
+# check without leaving a secret on disk or anywhere near the repository.
+export SECRET_KEY_BASE="$(openssl rand -hex 64)"
+
+# Production turns off config.assets.compile, so no page renders until the
+# fingerprinted bundle exists. The monitor re-runs this script whenever the
+# preview looks unhealthy, so rebuild only when the bundle is missing or older
+# than its sources rather than on every restart.
+assets_manifest=$(ls public/assets/.manifest.json public/assets/.sprockets-manifest-*.json 2>/dev/null | head -1 || true)
+if [[ -z "$assets_manifest" ]] ||
+   [[ -n "$(find app/assets app/javascript config/importmap.rb -newer "$assets_manifest" -print -quit 2>/dev/null)" ]]; then
+  echo "Precompiling assets for the production preview"
+  bundle exec rails assets:precompile
+fi
+
 # Refuse to stop a process this script did not start. Puma rewrites its own
 # process title on Linux, so identify a process by the executable it is running
 # and the directory it was started from; a rails_pid this script recorded
@@ -120,13 +141,6 @@ sleep 1
 
 rm -f "$TUNNEL_OUT" "$TUNNEL_ERR" "$SERVER_OUT" "$SERVER_ERR"
 
-export STOCK_DATABASE="$DATABASE"
-export RAILS_ENV="development"
-export RACK_ENV="development"
-export RAILS_LOG_LEVEL="warn"
-export PUBLIC_PREVIEW="1"
-export ASSET_CACHE_PATH="memory"
-
 # Start cloudflared tunnel.
 "$CLOUDFLARED" tunnel --no-autoupdate --url "http://127.0.0.1:$PORT" --http-host-header localhost \
   >"$TUNNEL_OUT" 2>"$TUNNEL_ERR" &
@@ -145,8 +159,6 @@ if [[ -z "$PUBLIC_URL" ]]; then
   echo "Cloudflare did not issue a public URL within 60 seconds" >&2
   exit 1
 fi
-
-export PUBLIC_TUNNEL_HOST="${PUBLIC_URL#https://}"
 
 # Start Rails server.
 bundle exec rails server -p "$PORT" -b 127.0.0.1 >"$SERVER_OUT" 2>"$SERVER_ERR" &
@@ -170,7 +182,7 @@ health_ok() {
   local url="$1"
   local body
   body=$(curl -fsS --max-time 15 "$url/preview-health" 2>/dev/null) || return 1
-  [[ "$body" == *'"status":"ready"'* ]] && [[ "$body" == *'"environment":"development"'* ]]
+  [[ "$body" == *'"status":"ready"'* ]] && [[ "$body" == *'"environment":"production"'* ]]
 }
 
 markets_ok() {
@@ -210,7 +222,7 @@ cat >"$STATUS_PATH" <<EOF
   "tunnel_pid": $TUNNEL_PID,
   "database": "$DATABASE",
   "port": $PORT,
-  "environment": "development",
+  "environment": "production",
   "log_level": "warn"
 }
 EOF

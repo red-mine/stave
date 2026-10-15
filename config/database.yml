@@ -22,4 +22,7 @@ test:
 
 production:
   <<: *default
-  database: db/stock.sqlite3
+  # The public preview runs here and refuses to start unless STOCK_DATABASE is
+  # the isolated tmp/ui-stock.sqlite3; hardcoding the path would let it serve
+  # the computed database instead and quietly defeat that check.
+  database: <%= ENV.fetch("STOCK_DATABASE", "db/stock.sqlite3") %>

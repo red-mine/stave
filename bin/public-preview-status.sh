@@ -40,7 +40,7 @@ health_report() {
   local ready="incomplete"
   if [[ "$code" == "200" ]] && \
      echo "$body" | grep -q '"status":"ready"' && \
-     echo "$body" | grep -q '"environment":"development"' && \
+     echo "$body" | grep -q '"environment":"production"' && \
      echo "$body" | grep -q '"log_level":"warn"'; then
     ready="ready"
   fi

@@ -39,6 +39,17 @@ if grep -q 'tmp.ui-stock\.sqlite3' bin/daily-refresh.ps1; then
   fail "bin/daily-refresh.ps1 still defaults to the isolated preview database"
 fi
 
+# The preview is the only automation reachable from the public internet, and
+# railties mounts /rails/info only while Rails.env.development? -- so running it
+# in production is a security property, not a style choice. Both platforms have
+# to launch it the same way, and neither may fall back to development.
+for name in bin/start-public-preview.sh bin/start-public-preview.ps1; do
+  grep -q 'production' "$name" ||
+    fail "$name does not run the preview in production"
+  grep -q 'development' "$name" &&
+    fail "$name still refers to the development environment"
+done
+
 # Every maintained script should exist on the other platform too. The
 # daily-refresh installers are named for what each one installs -- a Scheduled
 # Task, a cron entry, or a systemd timer -- so they are listed rather than
