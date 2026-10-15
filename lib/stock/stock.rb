@@ -54,7 +54,8 @@ module Stock
       Rails.logger.info "Stock'in... #{@years} #{@area}"
       stocks.with_progress do |stock|
         Progress.note   = stock.upcase
-        next if complete[stock] == _last_date(stock)
+        # Without a table both sides are nil for a stock that has no data file.
+        next if table && complete[stock] == _last_date(stock)
         model = _model(stock)
         next if model.empty?
         @models.push model
