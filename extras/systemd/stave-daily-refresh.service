@@ -4,6 +4,6 @@ After=network.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=%h/work/lohas-stave
+WorkingDirectory=%h/work/stockstave
 Environment="PATH=%h/.rbenv/bin:%h/.rbenv/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
-ExecStart=%h/work/lohas-stave/bin/daily-refresh.sh --source scheduled
+ExecStart=%h/work/stockstave/bin/daily-refresh.sh --source scheduled
