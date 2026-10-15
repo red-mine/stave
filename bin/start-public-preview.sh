@@ -148,7 +148,8 @@ TUNNEL_PID=$!
 
 PUBLIC_URL=""
 for _ in $(seq 1 30); do
-  PUBLIC_URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_OUT" 2>/dev/null | head -1 || true)
+  # cloudflared logs the issued URL to stderr; read both streams like the PowerShell launcher.
+  PUBLIC_URL=$(grep -hoE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_OUT" "$TUNNEL_ERR" 2>/dev/null | head -1 || true)
   if [[ -n "$PUBLIC_URL" ]]; then
     break
   fi
@@ -166,13 +167,13 @@ SERVER_PID=$!
 
 # Wait for Rails to listen.
 for _ in $(seq 1 40); do
-  if lsof -ti tcp:"$PORT" >/dev/null 2>&1; then
+  if lsof -ti tcp:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
     break
   fi
   sleep 3
 done
 
-if ! lsof -ti tcp:"$PORT" >/dev/null 2>&1; then
+if ! lsof -ti tcp:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "Rails did not listen on port $PORT within 120 seconds" >&2
   exit 1
 fi
@@ -213,7 +214,9 @@ if [[ "$HEALTHY" != "true" ]]; then
 fi
 
 # Write status file.
-RAILS_PID=$(lsof -ti tcp:"$PORT" | head -1)
+# Without -sTCP:LISTEN the tunnel's client socket sorts first and the status file
+# records cloudflared as rails_pid, which the status script then reads as dead.
+RAILS_PID=$(lsof -ti tcp:"$PORT" -sTCP:LISTEN | head -1)
 cat >"$STATUS_PATH" <<EOF
 {
   "url": "$PUBLIC_URL",

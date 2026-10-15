@@ -50,6 +50,14 @@ for name in bin/start-public-preview.sh bin/start-public-preview.ps1; do
     fail "$name still refers to the development environment"
 done
 
+# The tunnel holds client sockets on the preview port too, and one of them sorts
+# ahead of Rails in an unfiltered lookup, so rails_pid gets recorded as cloudflared
+# and the status scripts read a live preview as dead. PowerShell filters with
+# -State Listen, so bash has to make the same filter.
+if grep 'lsof -ti tcp:' bin/start-public-preview.sh | grep -qv 'sTCP:LISTEN'; then
+  fail "bin/start-public-preview.sh looks up the preview port without -sTCP:LISTEN"
+fi
+
 # Every maintained script should exist on the other platform too. The
 # daily-refresh installers are named for what each one installs -- a Scheduled
 # Task, a cron entry, or a systemd timer -- so they are listed rather than
