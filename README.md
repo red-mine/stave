@@ -251,6 +251,13 @@ already have the latest source date. To refresh selected markets only:
 bundle exec rails "refresh[sz,sh]"
 ```
 
+Backups named `stock-YYYYMMDD-HHMMSS-LLL.sqlite3` are the automated ones, and the
+newest `STOCK_BACKUP_KEEP` of them survive each refresh. A backup made by hand for
+a specific change — `stock-pre-fundamentals-migration-...` — matches no pattern, so
+pruning deliberately leaves it alone: a scheduled job should not decide when a
+safety net a person kept on purpose has become unnecessary. Delete those yourself
+once the change has proven out.
+
 Verify source freshness, imported dates, row counts, and chart coverage:
 
 ```powershell
