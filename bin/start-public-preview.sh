@@ -25,7 +25,10 @@ cleanup() {
     kill "$TUNNEL_PID" 2>/dev/null || true
     wait "$TUNNEL_PID" 2>/dev/null || true
   fi
-  rm -f "$LOCK_PATH"
+  # The lock is a directory (acquire_lock mkdirs it); `rm -f` cannot unlink a
+  # directory, so a run that used rm -f leaked the lock and blocked the next
+  # start for five minutes.
+  rmdir "$LOCK_PATH" 2>/dev/null || true
 }
 
 trap cleanup EXIT
@@ -64,20 +67,56 @@ if [[ ! -f "$DATABASE" ]]; then
   exit 1
 fi
 
+# Refuse to stop a process this script did not start. Puma rewrites its own
+# process title on Linux, so identify a process by the executable it is running
+# and the directory it was started from; a rails_pid this script recorded
+# earlier is accepted as proof of ownership too, because the repository
+# directory has moved before and a stale cwd would otherwise never match.
+# Mirrors Stop-VerifiedProcess in start-public-preview.ps1.
+recorded_pid() {
+  ruby -rjson -e 'print JSON.parse(File.read(ARGV[0])).fetch(ARGV[1], "")' \
+    "$STATUS_PATH" "$1" 2>/dev/null || true
+}
+
+process_executable() {
+  basename "$(readlink -f "/proc/$1/exe" 2>/dev/null || true)" 2>/dev/null || true
+}
+
+refuse_unexpected() {
+  local pid="$1" executable="$2" what="$3"
+  echo "Refusing to stop unexpected process $pid ($executable) $what" >&2
+  echo "Stop it yourself, or remove $STATUS_PATH if it is a stale preview." >&2
+  exit 1
+}
+
 # Stop any existing Rails server on the same port.
-pids=$(lsof -ti tcp:"$PORT" 2>/dev/null || true)
-if [[ -n "$pids" ]]; then
-  echo "Stopping existing Rails server on port $PORT"
-  kill "$pids" 2>/dev/null || true
-  sleep 2
-fi
+recorded_rails_pid="$(recorded_pid rails_pid)"
+while read -r pid; do
+  [[ -n "$pid" ]] || continue
+  executable="$(process_executable "$pid")"
+  working_directory="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+  if [[ "$executable" != ruby* ]]; then
+    refuse_unexpected "$pid" "$executable" "listening on port $PORT"
+  fi
+  if [[ "$working_directory" != "$REPO_DIR" && "$pid" != "$recorded_rails_pid" ]]; then
+    refuse_unexpected "$pid" "$executable" "listening on port $PORT from $working_directory"
+  fi
+  echo "Stopping existing Rails server $pid on port $PORT"
+  kill "$pid" 2>/dev/null || true
+done < <(lsof -ti tcp:"$PORT" -sTCP:LISTEN 2>/dev/null || true)
+sleep 2
 
 # Stop any existing cloudflared tunnel.
-existing_tunnel=$(pgrep -f "cloudflared.*tunnel.*127.0.0.1:$PORT" || true)
-if [[ -n "$existing_tunnel" ]]; then
-  kill "$existing_tunnel" 2>/dev/null || true
-  sleep 1
-fi
+while read -r pid; do
+  [[ -n "$pid" ]] || continue
+  executable="$(process_executable "$pid")"
+  if [[ "$executable" != cloudflared* ]]; then
+    refuse_unexpected "$pid" "$executable" "matching the tunnel pattern for port $PORT"
+  fi
+  echo "Stopping existing cloudflared tunnel $pid"
+  kill "$pid" 2>/dev/null || true
+done < <(pgrep -f "cloudflared.*tunnel.*127.0.0.1:$PORT" 2>/dev/null || true)
+sleep 1
 
 rm -f "$TUNNEL_OUT" "$TUNNEL_ERR" "$SERVER_OUT" "$SERVER_ERR"
 

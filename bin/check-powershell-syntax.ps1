@@ -1,5 +1,11 @@
 $ErrorActionPreference = "Stop"
-$scripts = Get-ChildItem -LiteralPath $PSScriptRoot -Filter "*.ps1" -File
+# bin/ holds the scheduled automation, but the repository root holds the
+# hand-run ones (install, stocks, cred), and a syntax error there is only found
+# when someone is already trying to recover. Parse both.
+$directories = @($PSScriptRoot, (Split-Path -Parent $PSScriptRoot))
+$scripts = foreach ($directory in $directories) {
+  Get-ChildItem -LiteralPath $directory -Filter "*.ps1" -File
+}
 $failures = @()
 
 foreach ($script in $scripts) {

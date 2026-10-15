@@ -21,16 +21,25 @@ TUNNEL_PID=$(read_json tunnel_pid)
 DATABASE=$(read_json database)
 
 is_running() {
-  kill -0 "$1" 2>/dev/null
+  local pid="$1" expected="$2" executable
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  executable="$(basename "$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)" 2>/dev/null || true)"
+  [[ "$executable" == "$expected"* ]]
 }
 
 health_report() {
   local url="$1"
-  local body
-  body=$(curl -fsS --max-time 15 "$url/preview-health" 2>/dev/null) || { echo "0/unavailable"; return; }
-  local code=200
+  local response code body
+  # No -f: the endpoint answers 503 when the preview data is incomplete, and
+  # the report should say so rather than collapse it into "unavailable".
+  response=$(curl -sS --max-time 15 -w $'\n%{http_code}' "$url/preview-health" 2>/dev/null) ||
+    { echo "0/unavailable"; return; }
+  code="${response##*$'\n'}"
+  body="${response%$'\n'*}"
   local ready="incomplete"
-  if echo "$body" | grep -q '"status":"ready"' && \
+  if [[ "$code" == "200" ]] && \
+     echo "$body" | grep -q '"status":"ready"' && \
      echo "$body" | grep -q '"environment":"development"' && \
      echo "$body" | grep -q '"log_level":"warn"'; then
     ready="ready"
@@ -57,10 +66,10 @@ PUBLIC_MARKETS=$(market_codes "$PUBLIC_URL")
 RAILS_RUNNING="false"
 TUNNEL_RUNNING="false"
 DATABASE_ISOLATED="false"
-if [[ "$RAILS_PID" =~ ^[0-9]+$ ]] && kill -0 "$RAILS_PID" 2>/dev/null; then
+if is_running "$RAILS_PID" ruby; then
   RAILS_RUNNING="true"
 fi
-if [[ "$TUNNEL_PID" =~ ^[0-9]+$ ]] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
+if is_running "$TUNNEL_PID" cloudflared; then
   TUNNEL_RUNNING="true"
 fi
 [[ "$DATABASE" == "$REPO_DIR/tmp/ui-stock.sqlite3" ]] && DATABASE_ISOLATED="true"
